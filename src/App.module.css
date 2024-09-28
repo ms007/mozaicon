@@ -1,0 +1,20 @@
+.container {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 342px minmax(480px, 1fr) 342px;
+  grid-template-rows: 1fr;
+  gap: 0px 0px;
+  grid-template-areas: 'sidebar canvas inspector';
+}
+
+.sidebar {
+  grid-area: sidebar;
+}
+
+.canvas {
+  grid-area: canvas;
+}
+
+.inspector {
+  grid-area: inspector;
+}

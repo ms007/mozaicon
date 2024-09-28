@@ -1,7 +1,15 @@
-import './App.css';
+import { Sidebar } from './components/sidebar'
+import { Inspector } from './components/inspector'
+import { Canvas } from './components/canvas'
 
-function App() {
-  return <div>first commit</div>;
+import { container } from './App.module.css'
+
+export function App() {
+  return (
+    <div className={container}>
+      <Sidebar />
+      <Canvas />
+      <Inspector />
+    </div>
+  )
 }
-
-export default App;
