@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "jotai": "^2.10.0",
+    "jotai-devtools": "^0.10.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-use": "^17.5.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
