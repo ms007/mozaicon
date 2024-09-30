@@ -1,7 +1,7 @@
-import { box } from './Inspector.module.css'
+import styles from './Inspector.module.css'
 
 const Inspector = () => {
-  return <div className={box}>Inspector</div>
+  return <div className={styles.box}>Inspector</div>
 }
 
 export default Inspector

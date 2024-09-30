@@ -1,7 +1,7 @@
 .container {
   height: 100%;
   display: grid;
-  grid-template-columns: 342px minmax(480px, 1fr) 342px;
+  grid-template-columns: var(--sidebar-width) minmax(480px, 1fr) var(--inspector-width);
   grid-template-rows: 1fr;
   gap: 0px 0px;
   grid-template-areas: 'sidebar canvas inspector';
