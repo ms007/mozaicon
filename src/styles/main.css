@@ -2,5 +2,7 @@
 @import 'variables.css';
 
 body {
+  overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen';
+  color: var(--body);
 }

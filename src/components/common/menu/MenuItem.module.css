@@ -1,0 +1,15 @@
+.item {
+  all: unset;
+  border-radius: 3px;
+  display: flex;
+  align-items: centner;
+  height: 25px;
+  padding: 8px 8px;
+  position: relative;
+  user-select: none;
+
+  &[data-highlighted] {
+    background-color: var(--color-neutral-300);
+    cursor: pointer;
+  }
+}

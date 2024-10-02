@@ -1,0 +1,13 @@
+.box {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-neutral-600);
+}
+
+.highlighted {
+  color: var(--color-neutral-600);
+}

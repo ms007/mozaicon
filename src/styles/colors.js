@@ -12,6 +12,7 @@ export const light = {
   canvas: '#F6F6F6',
   sidebar: '#FFFFFF',
   inspector: '#FFFFFF',
+  'menu-button': '#EDEDED',
 }
 
 export const dark = {
@@ -27,5 +28,6 @@ export const dark = {
   'color-neutral-600': '#FFFFFF',
   canvas: '#2B3345',
   sidebar: '#1E2433',
-  inspector: '#2B3345',
+  inspector: '#1E2433',
+  'menu-button': '#2B3345',
 }
