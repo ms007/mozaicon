@@ -9,11 +9,11 @@ export const light = {
   'color-neutral-400': '#989898',
   'color-neutral-500': '#77797C',
   'color-neutral-600': '#565A66',
+  'color-neutral-800': '#2a2a2a',
   canvas: '#F6F6F6',
   panels: '#FFFFFF',
   inspector: '#FFFFFF',
   'menu-button': '#EDEDED',
-  logo: '#2a2a2a',
   dots: '#b9bcc0',
 }
 
@@ -26,11 +26,11 @@ export const dark = {
   'color-neutral-200': '#262c3b',
   'color-neutral-300': '#707582',
   'color-neutral-400': '#C6C8CC',
-  'color-neutral-500': '#DEDEDE',
-  'color-neutral-600': '#FFFFFF',
+  'color-neutral-500': '#d5d7db',
+  'color-neutral-600': '#dedede',
+  'color-neutral-800': '#ececec',
   canvas: '#2B3345',
   panels: '#1E2433',
   'menu-button': '#2B3345',
-  logo: '#ececec',
   dots: '#505663',
 }

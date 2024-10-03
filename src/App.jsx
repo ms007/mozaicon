@@ -28,10 +28,10 @@ export function App() {
   }
 
   return (
-    <div className={container}>
+    <main className={container}>
       <Sidebar />
       <Canvas />
       <Inspector />
-    </div>
+    </main>
   )
 }
