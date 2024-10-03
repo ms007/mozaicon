@@ -1,12 +1,12 @@
-import { Header } from './header'
+import { SidePanel } from '@/components/common'
 
-import styles from './Sidebar.module.css'
+import { Header } from './header'
 
 const Sidebar = () => {
   return (
-    <div className={styles.box}>
+    <SidePanel>
       <Header />
-    </div>
+    </SidePanel>
   )
 }
 

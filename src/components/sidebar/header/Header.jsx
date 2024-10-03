@@ -13,13 +13,13 @@ MenuButton.displayName = 'MenuButton'
 
 export default function Header() {
   return (
-    <div className={styles.box}>
+    <section className={styles.box}>
       <Logo />
       <div>
         <Menu width="230" align="end" renderMenuButton={() => <MenuButton />}>
           <ThemeSwitchMenuItem />
         </Menu>
       </div>
-    </div>
+    </section>
   )
 }

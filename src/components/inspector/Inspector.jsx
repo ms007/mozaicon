@@ -1,7 +1,7 @@
-import styles from './Inspector.module.css'
+import { SidePanel } from '@/components/common'
 
 const Inspector = () => {
-  return <div className={styles.box}>Inspector</div>
+  return <SidePanel>Inspector</SidePanel>
 }
 
 export default Inspector

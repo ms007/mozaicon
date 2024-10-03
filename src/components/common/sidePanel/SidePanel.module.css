@@ -1,0 +1,4 @@
+.box {
+  color: var(--body);
+  background-color: var(--panels);
+}
