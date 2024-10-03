@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useLocalStorage } from 'react-use'
-import { useAtom } from 'jotai'
+import { atom, useAtom } from 'jotai'
 
 import { light, dark } from '@/styles/colors'
-import { presetsThemeAtom } from '@/atoms/presetsAtom'
 import { useGlobalVariables } from '@/hooks/useGlobalVariables'
+
+const presetsThemeAtom = atom(null)
 
 const colors = {
   light,

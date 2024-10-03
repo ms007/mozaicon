@@ -1,7 +1,13 @@
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
+import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { atomEffect } from 'jotai-effect'
 
-import { globalVariablesAtom, appendGlobalVariablesAtom } from '@/atoms/globalVariablesAtoms'
+const globalVariablesAtom = atom({})
+
+const appendGlobalVariablesAtom = atom(null, (get, set, variables) => {
+  const currentVariables = get(globalVariablesAtom)
+  const allVariables = { ...currentVariables, ...variables }
+  set(globalVariablesAtom, allVariables)
+})
 
 const updateGlobalVariablesAtom = atomEffect((get) => {
   const variables = get(globalVariablesAtom)

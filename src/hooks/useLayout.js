@@ -2,7 +2,8 @@ import { useEffect } from 'react'
 import { useAtom } from 'jotai'
 
 import { useGlobalVariables } from './useGlobalVariables'
-import { sidebarWidthAtom, inspectorWidthAtom } from '@/atoms/layoutAtoms'
+import { sidebarWidthAtom } from '@/atoms/sidebar'
+import { inspectorWidthAtom } from '@/atoms/inspector'
 
 export const useLayout = () => {
   const [, setVariables] = useGlobalVariables()
