@@ -1,3 +1,3 @@
-import { presetsDimensionsAtom } from './atom'
+import { presetsIconSize, presetsDimensionsAtom } from './atom'
 
-export { presetsDimensionsAtom }
+export { presetsIconSize, presetsDimensionsAtom }

@@ -1,5 +1,12 @@
 .box {
+  box-sizing: content-box;
   background-color: #ffffff;
+  border-color: #ffffff;
+  border-style: solid;
   box-shadow: 0 0 2px 0 #b9bcc0cc;
-  border-radius: 2px;
+  border-radius: 20px;
+}
+
+:global(.dark) .box {
+  box-shadow: none;
 }

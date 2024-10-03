@@ -13,6 +13,7 @@ export const light = {
   sidebar: '#FFFFFF',
   inspector: '#FFFFFF',
   'menu-button': '#EDEDED',
+  dots: '#b9bcc0',
 }
 
 export const dark = {
@@ -30,4 +31,5 @@ export const dark = {
   sidebar: '#1E2433',
   inspector: '#1E2433',
   'menu-button': '#2B3345',
+  dots: '#505663',
 }
