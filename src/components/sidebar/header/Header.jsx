@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { Menu, MoreButton } from '@/components/common'
+import { Logo, Menu, MoreButton } from '@/components/common'
 import { ThemeSwitchMenuItem } from './menuItems'
 
 import styles from './Header.module.css'
@@ -14,7 +14,7 @@ MenuButton.displayName = 'MenuButton'
 export default function Header() {
   return (
     <div className={styles.box}>
-      <div>Logo</div>
+      <Logo />
       <div>
         <Menu width="230" align="end" renderMenuButton={() => <MenuButton />}>
           <ThemeSwitchMenuItem />
