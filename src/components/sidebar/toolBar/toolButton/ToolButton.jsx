@@ -7,7 +7,7 @@ export default function ToolButton({ selected, children, onClick }) {
 
   const handleClick = (event) => {
     event.stopPropagation()
-    onClick
+    onClick()
   }
 
   return (

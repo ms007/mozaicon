@@ -6,7 +6,7 @@ import { Grid } from './grid'
 
 import styles from './Artboard.module.css'
 
-export default function Artboard() {
+export default function Artboard({ children }) {
   const { margin } = useAtomValue(artboardAtom)
   const iconSize = useAtomValue(presetsIconSize)
   const artboardSize = useAtomValue(artboardSizeAtom)
@@ -30,6 +30,7 @@ export default function Artboard() {
         overflow="visible"
       >
         <Grid size={iconSize} />
+        {children}
       </svg>
     </div>
   )
