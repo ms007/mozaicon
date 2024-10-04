@@ -1,6 +1,10 @@
 .heading {
+  font-size: 14px;
+  letter-spacing: 1px;
   font-weight: 700;
+  text-transform: uppercase;
   margin: 0;
   margin-bottom: 16px;
-  color: var(--color-neutral-800);
+  user-select: none;
+  color: var(--color-neutral-500);
 }
