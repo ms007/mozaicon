@@ -7,6 +7,12 @@
   border-radius: 20px;
 }
 
+.rectangle {
+  cursor: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcKICAgIGZpbGw9Im5vbmUiCiAgPjxwYXRoIHN0cm9rZT0iIzFlMjQzMyIgZD0iTTE0LjUgMS41aDh2OGgtOHoiIC8+PHBhdGgKICAgICAgc3Ryb2tlPSIjRkZGIgogICAgICBkPSJNMTMuNS41aDEwdjEwaC0xMHoiCiAgICAvPjxwYXRoIHN0cm9rZT0iI0ZGRiIgZD0iTTE1LjUgMi41aDZ2NmgtNnoiIC8+PHBhdGgKICAgICAgZD0iTTcuNSAxMC41djEybS02LTZoMTIiCiAgICAgIHN0cm9rZT0iI0ZGRiIKICAgICAgc3Ryb2tlLXdpZHRoPSIzIgogICAgICBzdHJva2UtbGluZWNhcD0ic3F1YXJlIgogICAgLz48cGF0aAogICAgICBkPSJNNy41IDEwLjV2MTJtLTYtNmgxMiIKICAgICAgc3Ryb2tlPSIjMWUyNDMzIgogICAgICBzdHJva2UtbGluZWNhcD0ic3F1YXJlIgogICAgLz48L2c+PC9zdmc+Cg==)
+      7.5 17.5,
+    auto;
+}
+
 :global(.dark) .box {
   box-shadow: none;
 }
