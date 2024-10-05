@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { v4 as uuid } from 'uuid'
 import { useSetAtom } from 'jotai'
+import { useKey } from 'react-use'
 
 import { useCanvasItemCreate } from '@/hooks/useCanvasItemCreate'
 import {
@@ -15,6 +16,8 @@ export function NewCanvasItem({ type }) {
   const setCanvasItemType = useSetAtom(canvasNewItemTypeAtom)
   const setIsCreatingCanvasItem = useSetAtom(canvasIsCreatingNewItemAtom)
   const setItems = useSetAtom(canvasItemsAtom)
+
+  useKey('Escape', () => reset())
 
   const reset = () => {
     setIsCreatingCanvasItem(false)

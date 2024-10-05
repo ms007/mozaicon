@@ -1,4 +1,5 @@
 import { useSetAtom } from 'jotai'
+import { useKey } from 'react-use'
 
 import { H4 } from '@/components/common'
 
@@ -13,6 +14,9 @@ import styles from './ToolBar.module.css'
 
 export default function ToolBar() {
   const startCreateCanvasItem = useSetAtom(canvasWithNewCanvasItemAtom)
+
+  useKey('r', () => onToolBarButtonClick('rectangle'))
+  useKey('R', () => onToolBarButtonClick('rectangle'))
 
   const onToolBarButtonClick = (type) => {
     startCreateCanvasItem(type)
