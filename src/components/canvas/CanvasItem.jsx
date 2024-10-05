@@ -4,8 +4,8 @@ import { canvasItemsAtomFamily } from '@/atoms/canvas'
 
 export function CanvasItem({ id }) {
   const state = useAtomValue(canvasItemsAtomFamily({ id }))
-  console.log(state)
+  const { x, y, width, height } = state
 
-  const Shape = () => <rect x="2" y="2" width="2" height="2" />
+  const Shape = () => <rect x={x} y={y} width={width} height={height} />
   return <Shape />
 }

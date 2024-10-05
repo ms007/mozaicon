@@ -1,3 +1,16 @@
-import { canvasItemsAtom, canvasItemsAtomFamily } from './atom'
+import {
+  canvasItemsAtom,
+  canvasItemsAtomFamily,
+  canvasIsCreatingNewItemAtom,
+  canvasNewItemTypeAtom,
+} from './atom'
 
-export { canvasItemsAtom, canvasItemsAtomFamily }
+import { canvasWithNewCanvasItemAtom } from './withNewCanvasItem'
+
+export {
+  canvasItemsAtom,
+  canvasItemsAtomFamily,
+  canvasIsCreatingNewItemAtom,
+  canvasNewItemTypeAtom,
+  canvasWithNewCanvasItemAtom,
+}
