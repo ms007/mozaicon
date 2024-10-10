@@ -1,3 +1,1 @@
-import { artboardAtom, artboardSizeAtom } from './atom'
-
-export { artboardAtom, artboardSizeAtom }
+export * from './atoms'

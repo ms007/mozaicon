@@ -2,7 +2,7 @@ import { atom } from 'jotai'
 
 import { sidebarWidthAtom } from '../sidebar'
 import { inspectorWidthAtom } from '../inspector'
-import { presetsDimensionsAtom } from '../presets'
+import { presetsDimensionsAtom, presetsIconSize } from '../presets'
 
 export const artboardAtom = atom({ margin: 80, minWidth: 300, maxWidth: 900 })
 
@@ -19,4 +19,11 @@ export const artboardSizeAtom = atom((get) => {
   artboardWidth = artboardWidth >= minWidth ? artboardWidth : minWidth
   artboardWidth = artboardWidth <= maxWidth ? artboardWidth : maxWidth
   return artboardWidth
+})
+
+export const artboardPixelSize = atom((get) => {
+  const artboardSize = get(artboardSizeAtom)
+  const iconSize = get(presetsIconSize)
+
+  return iconSize / artboardSize
 })

@@ -1,37 +1,29 @@
 import { useState } from 'react'
-import { v4 as uuid } from 'uuid'
 import { useSetAtom } from 'jotai'
 import { useKey } from 'react-use'
 
 import { useCanvasItemCreate } from '@/hooks/useCanvasItemCreate'
 import {
-  canvasItemsAtom,
-  canvasItemsAtomFamily,
   canvasIsCreatingNewItemAtom,
   canvasNewItemTypeAtom,
+  canvasCreateCanvasItem,
 } from '@/atoms/canvas'
 
 export function NewCanvasItem({ type }) {
   const [newItem, setNewItem] = useState(null)
   const setCanvasItemType = useSetAtom(canvasNewItemTypeAtom)
   const setIsCreatingCanvasItem = useSetAtom(canvasIsCreatingNewItemAtom)
-  const setItems = useSetAtom(canvasItemsAtom)
+  const createNewCanvasItem = useSetAtom(canvasCreateCanvasItem)
 
   useKey('Escape', () => reset())
 
   const reset = () => {
-    setIsCreatingCanvasItem(false)
     setCanvasItemType(null)
+    setTimeout(() => setIsCreatingCanvasItem(false), 0)
   }
 
   const addNewCanvasItem = (canvasItem) => {
-    const id = uuid()
-    setItems((prev) => [...prev, id])
-    canvasItemsAtomFamily({
-      ...canvasItem,
-      id,
-      name: type.charAt(0).toUpperCase() + type.slice(1),
-    })
+    createNewCanvasItem(canvasItem)
     reset()
   }
 
@@ -70,7 +62,6 @@ export function NewCanvasItem({ type }) {
     if (status === 'end') {
       addNewCanvasItem({
         type,
-
         x: Math.round(newItem.x),
         y: Math.round(newItem.y),
         width: Math.round(newItem.width),

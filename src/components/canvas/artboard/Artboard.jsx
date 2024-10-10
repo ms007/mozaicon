@@ -1,11 +1,16 @@
-import { useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import cx from 'clsx'
 
 import { Grid } from './grid'
 
 import { artboardAtom, artboardSizeAtom } from '@/atoms/artboard'
 import { presetsIconSize } from '@/atoms/presets'
-import { canvasNewItemTypeAtom } from '@/atoms/canvas'
+import {
+  canvasNewItemTypeAtom,
+  canvasIsResizingItemAtom,
+  canvasResetSelectedItems,
+  canvasIsCreatingNewItemAtom,
+} from '@/atoms/canvas'
 
 import styles from './Artboard.module.css'
 
@@ -14,6 +19,16 @@ export default function Artboard({ children }) {
   const iconSize = useAtomValue(presetsIconSize)
   const artboardSize = useAtomValue(artboardSizeAtom)
   const newItemType = useAtomValue(canvasNewItemTypeAtom)
+  const isResizing = useAtomValue(canvasIsResizingItemAtom)
+  const isCreating = useAtomValue(canvasIsCreatingNewItemAtom)
+  const resetSelection = useSetAtom(canvasResetSelectedItems)
+
+  const onClick = () => {
+    if (!isResizing && !isCreating) {
+      console.log('resetting', isResizing, isCreating)
+      resetSelection()
+    }
+  }
 
   const style = {
     width: `${artboardSize}px`,
@@ -34,6 +49,7 @@ export default function Artboard({ children }) {
         height={artboardSize}
         overflow="visible"
         className={cx(newItemType === 'rectangle' && styles.rectangle)}
+        onClick={onClick}
       >
         <Grid size={iconSize} />
         {children}

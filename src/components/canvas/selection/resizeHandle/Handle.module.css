@@ -1,0 +1,5 @@
+.handle {
+  stroke: var(--color-accent-primary);
+  fill: white;
+  pointer-events: all;
+}

@@ -3,6 +3,7 @@ import { useAtomValue } from 'jotai'
 import { Artboard } from './artboard'
 import { CanvasItem } from './CanvasItem'
 import { NewCanvasItem } from './NewCanvasItem'
+import { Selection, Hover } from './selection'
 
 import { canvasIsCreatingNewItemAtom, canvasItemsAtom, canvasNewItemTypeAtom } from '@/atoms/canvas'
 
@@ -21,6 +22,9 @@ const Canvas = () => {
         {canvasItems.map((item) => {
           return <CanvasItem key={item} id={item} />
         })}
+
+        <Hover />
+        <Selection />
       </Artboard>
     </div>
   )

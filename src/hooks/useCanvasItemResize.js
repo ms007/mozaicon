@@ -1,30 +1,23 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-
-import { useSvgContainer } from './useSvgContainer'
+import { useState, useCallback, useEffect } from 'react'
 import { useSvgMousePosition } from './useSvgMousePosition'
 
-export function useCanvasItemCreate(func) {
-  const svg = useSvgContainer()
-  const [isCreating, setIsCreating] = useState(false)
+export function useCanvasItemResize(func) {
   const [isMoving, setIsMoving] = useState(false)
-  const mouseUpEventFired = useRef(false)
 
   const getMousePosition = useSvgMousePosition()
 
   const callback = useCallback(
-    (status, position) => {
-      func({ status, position })
+    (status, position, event) => {
+      func({ status, event, position })
     },
     [func]
   )
 
   const handleMouseDown = useCallback(
-    (event) => {
-      setIsCreating(true)
-      setIsMoving(true)
-
+    (event, props) => {
       const position = getMousePosition(event)
-      callback('start', position)
+      setIsMoving(true)
+      callback('start', position, event, props)
     },
     [callback, getMousePosition]
   )
@@ -36,34 +29,23 @@ export function useCanvasItemCreate(func) {
       }
 
       const position = getMousePosition(event)
-      callback('moving', position)
+      callback('moving', position, event)
     },
     [callback, getMousePosition, isMoving]
   )
 
   const handleMouseUp = useCallback(
     (event) => {
-      if (!isMoving || mouseUpEventFired.current) {
+      if (!isMoving) {
         return
       }
 
-      setIsCreating(false)
       setIsMoving(false)
-
       const position = getMousePosition(event)
-      callback('end', position)
-      mouseUpEventFired.current = true
+      callback('end', position, event)
     },
     [callback, getMousePosition, isMoving]
   )
-
-  useEffect(() => {
-    if (!isCreating) {
-      svg.addEventListener('mousedown', handleMouseDown)
-    }
-
-    return () => svg.removeEventListener('mousedown', handleMouseDown)
-  }, [svg, handleMouseDown, isCreating])
 
   useEffect(() => {
     function addEventListeners() {
@@ -81,5 +63,7 @@ export function useCanvasItemCreate(func) {
     return removeEventListeners
   }, [handleMouseMove, handleMouseUp, isMoving])
 
-  return
+  return {
+    onMouseDown: handleMouseDown,
+  }
 }

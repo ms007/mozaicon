@@ -8,18 +8,18 @@ import { ToolCaption } from './toolCaption'
 import { ToolTitle } from './toolTitle'
 import { Rectangle } from './shapes'
 
-import { canvasWithNewCanvasItemAtom } from '@/atoms/canvas'
+import { canvasCreateCanvasItemType } from '@/atoms/canvas'
 
 import styles from './ToolBar.module.css'
 
 export default function ToolBar() {
-  const startCreateCanvasItem = useSetAtom(canvasWithNewCanvasItemAtom)
+  const createCanvasItem = useSetAtom(canvasCreateCanvasItemType)
 
   useKey('r', () => onToolBarButtonClick('rectangle'))
   useKey('R', () => onToolBarButtonClick('rectangle'))
 
   const onToolBarButtonClick = (type) => {
-    startCreateCanvasItem(type)
+    createCanvasItem(type)
   }
 
   return (

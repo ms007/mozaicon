@@ -1,0 +1,6 @@
+.path {
+  fill: none;
+  stroke: var(--color-accent-primary);
+  shaperendering: 'crispEdges';
+  pointer-events: none;
+}
