@@ -1,11 +1,7 @@
 import { useState } from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
 
-import {
-  canvasItemsAtomFamily,
-  canvasIsCreatingNewItemAtom,
-  canvasHoveredItemAtom,
-} from '@/atoms/canvas'
+import { canvasItemsAtomFamily, canvasHoveredItemAtom } from '@/atoms/canvas'
 
 import { useCanvasItemMove } from '@/hooks/useCanvasItemMove'
 import { useCanvasItemSelect } from '@/hooks/useCanvasItemSelect'
@@ -17,11 +13,9 @@ export function CanvasItem({ id }) {
   const [originalPointerPosition, setOriginalPointerPosition] = useState(null)
   const [isMoving, setIsMoving] = useState(false)
   const itemState = useAtomValue(canvasItemsAtomFamily(id))
-  const isCreatingNewCanvasItem = useAtomValue(canvasIsCreatingNewItemAtom)
   const setHoveredCanvasItem = useSetAtom(canvasHoveredItemAtom)
   const moveSelectedItems = useSelectedItemsMove(id)
   const selectCanvasItem = useCanvasItemSelect()
-  const noop = () => {}
 
   const { onMouseDown } = useCanvasItemMove(({ status, position, event }) => {
     if (status === 'start') {
@@ -65,10 +59,10 @@ export function CanvasItem({ id }) {
     <Shape
       {...itemState}
       onClick={onClick}
-      onMouseDown={isCreatingNewCanvasItem ? noop : onMouseDown}
+      onMouseDown={onMouseDown}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      selectable={!isCreatingNewCanvasItem}
+      selectable={true}
       isMoving={isMoving}
     />
   )

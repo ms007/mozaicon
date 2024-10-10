@@ -1,13 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 import { useSvgContainer } from './useSvgContainer'
 import { useSvgMousePosition } from './useSvgMousePosition'
 
-export function useCanvasItemCreate(func) {
+export function useCanvasItemCreate(isCreating, func) {
   const svg = useSvgContainer()
-  const [isCreating, setIsCreating] = useState(false)
   const [isMoving, setIsMoving] = useState(false)
-  const mouseUpEventFired = useRef(false)
 
   const getMousePosition = useSvgMousePosition()
 
@@ -20,7 +18,6 @@ export function useCanvasItemCreate(func) {
 
   const handleMouseDown = useCallback(
     (event) => {
-      setIsCreating(true)
       setIsMoving(true)
 
       const position = getMousePosition(event)
@@ -43,24 +40,21 @@ export function useCanvasItemCreate(func) {
 
   const handleMouseUp = useCallback(
     (event) => {
-      if (!isMoving || mouseUpEventFired.current) {
+      if (!isMoving) {
         return
       }
 
-      setIsCreating(false)
       setIsMoving(false)
 
       const position = getMousePosition(event)
       callback('end', position)
-      mouseUpEventFired.current = true
     },
     [callback, getMousePosition, isMoving]
   )
 
   useEffect(() => {
-    if (!isCreating) {
-      svg.addEventListener('mousedown', handleMouseDown)
-    }
+    if (!isCreating) return
+    svg.addEventListener('mousedown', handleMouseDown)
 
     return () => svg.removeEventListener('mousedown', handleMouseDown)
   }, [svg, handleMouseDown, isCreating])

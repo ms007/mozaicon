@@ -1,25 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSetAtom } from 'jotai'
 import { useKey } from 'react-use'
 
 import { useCanvasItemCreate } from '@/hooks/useCanvasItemCreate'
-import {
-  canvasIsCreatingNewItemAtom,
-  canvasNewItemTypeAtom,
-  canvasCreateCanvasItem,
-} from '@/atoms/canvas'
+import { canvasCreateCanvasItem } from '@/atoms/canvas'
+import { subscribe, unsubscribe } from '@/utils/event'
 
-export function NewCanvasItem({ type }) {
+export function NewCanvasItem({ toggleCursor }) {
+  const [isCreating, setIsCreating] = useState(false)
+  const [type, setType] = useState(null)
   const [newItem, setNewItem] = useState(null)
-  const setCanvasItemType = useSetAtom(canvasNewItemTypeAtom)
-  const setIsCreatingCanvasItem = useSetAtom(canvasIsCreatingNewItemAtom)
   const createNewCanvasItem = useSetAtom(canvasCreateCanvasItem)
 
   useKey('Escape', () => reset())
 
+  useEffect(() => {
+    subscribe('onCreateCanvasItem', ({ detail }) => {
+      setIsCreating(true)
+      setType(detail.type)
+      toggleCursor(detail.type)
+    })
+
+    return () => unsubscribe('onCreateCanvasItem')
+  }, [toggleCursor])
+
   const reset = () => {
-    setCanvasItemType(null)
-    setTimeout(() => setIsCreatingCanvasItem(false), 0)
+    setIsCreating(false)
+    setNewItem(null)
+    setType(null)
+    toggleCursor(null)
   }
 
   const addNewCanvasItem = (canvasItem) => {
@@ -27,7 +36,7 @@ export function NewCanvasItem({ type }) {
     reset()
   }
 
-  useCanvasItemCreate(({ status, position }) => {
+  useCanvasItemCreate(isCreating, ({ status, position }) => {
     if (status === 'start') {
       const x = Math.round(position.x)
       const y = Math.round(position.y)

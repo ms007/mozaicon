@@ -5,27 +5,19 @@ import { Grid } from './grid'
 
 import { artboardAtom, artboardSizeAtom } from '@/atoms/artboard'
 import { presetsIconSize } from '@/atoms/presets'
-import {
-  canvasNewItemTypeAtom,
-  canvasIsResizingItemAtom,
-  canvasResetSelectedItems,
-  canvasIsCreatingNewItemAtom,
-} from '@/atoms/canvas'
+import { canvasIsResizingItemAtom, canvasResetSelectedItems } from '@/atoms/canvas'
 
 import styles from './Artboard.module.css'
 
-export default function Artboard({ children }) {
+export default function Artboard({ cursor, children }) {
   const { margin } = useAtomValue(artboardAtom)
   const iconSize = useAtomValue(presetsIconSize)
   const artboardSize = useAtomValue(artboardSizeAtom)
-  const newItemType = useAtomValue(canvasNewItemTypeAtom)
   const isResizing = useAtomValue(canvasIsResizingItemAtom)
-  const isCreating = useAtomValue(canvasIsCreatingNewItemAtom)
   const resetSelection = useSetAtom(canvasResetSelectedItems)
 
   const onClick = () => {
-    if (!isResizing && !isCreating) {
-      console.log('resetting', isResizing, isCreating)
+    if (!isResizing) {
       resetSelection()
     }
   }
@@ -36,6 +28,8 @@ export default function Artboard({ children }) {
     margin: `${margin}px ${(margin / 100) * 70}px`,
     borderWidth: artboardSize > 600 ? '35px' : '20px',
   }
+
+  const cursorClass = cx(cursor && styles[cursor])
 
   return (
     <div className={styles.box} style={style}>
@@ -48,8 +42,8 @@ export default function Artboard({ children }) {
         width={artboardSize}
         height={artboardSize}
         overflow="visible"
-        className={cx(newItemType === 'rectangle' && styles.rectangle)}
         onClick={onClick}
+        className={cursorClass}
       >
         <Grid size={iconSize} />
         {children}
