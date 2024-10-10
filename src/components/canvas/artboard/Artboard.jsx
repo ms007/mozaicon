@@ -5,7 +5,7 @@ import { Grid } from './grid'
 
 import { artboardAtom, artboardSizeAtom } from '@/atoms/artboard'
 import { presetsIconSize } from '@/atoms/presets'
-import { canvasIsResizingItemAtom, canvasResetSelectedItems } from '@/atoms/canvas'
+import { canvasResetSelectedItems } from '@/atoms/canvas'
 
 import styles from './Artboard.module.css'
 
@@ -13,13 +13,10 @@ export default function Artboard({ cursor, children }) {
   const { margin } = useAtomValue(artboardAtom)
   const iconSize = useAtomValue(presetsIconSize)
   const artboardSize = useAtomValue(artboardSizeAtom)
-  const isResizing = useAtomValue(canvasIsResizingItemAtom)
   const resetSelection = useSetAtom(canvasResetSelectedItems)
 
   const onClick = () => {
-    if (!isResizing) {
-      resetSelection()
-    }
+    resetSelection()
   }
 
   const style = {
@@ -42,10 +39,9 @@ export default function Artboard({ cursor, children }) {
         width={artboardSize}
         height={artboardSize}
         overflow="visible"
-        onClick={onClick}
         className={cursorClass}
       >
-        <Grid size={iconSize} />
+        <Grid size={iconSize} onClick={onClick} />
         {children}
       </svg>
     </div>

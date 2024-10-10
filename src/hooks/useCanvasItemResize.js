@@ -13,8 +13,16 @@ export function useCanvasItemResize(func) {
     [func]
   )
 
+  const stopPropagation = (event) => {
+    event.stopPropagation()
+    event.nativeEvent
+      ? event.nativeEvent.stopImmediatePropagation()
+      : event.stopImmediatePropagation()
+  }
+
   const handleMouseDown = useCallback(
     (event, props) => {
+      stopPropagation(event)
       const position = getMousePosition(event)
       setIsMoving(true)
       callback('start', position, event, props)
@@ -24,6 +32,7 @@ export function useCanvasItemResize(func) {
 
   const handleMouseMove = useCallback(
     (event) => {
+      stopPropagation(event)
       if (!isMoving) {
         return
       }
@@ -36,6 +45,7 @@ export function useCanvasItemResize(func) {
 
   const handleMouseUp = useCallback(
     (event) => {
+      stopPropagation(event)
       if (!isMoving) {
         return
       }

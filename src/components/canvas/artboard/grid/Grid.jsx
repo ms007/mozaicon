@@ -1,6 +1,6 @@
 import styles from './Grid.module.css'
 
-export default function Grid({ size }) {
+export default function Grid({ onClick, size }) {
   const radius = 2 / size
 
   return (
@@ -10,7 +10,14 @@ export default function Grid({ size }) {
           <circle className={styles.dots} cx={0.5} cy={0.5} r={radius} />
         </pattern>
       </defs>
-      <rect x={-0.5} y={-0.5} width={size + 1} height={size + 1} fill="url(#grid)" />
+      <rect
+        x={-0.5}
+        y={-0.5}
+        width={size + 1}
+        height={size + 1}
+        fill="url(#grid)"
+        onClick={onClick}
+      />
     </>
   )
 }

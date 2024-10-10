@@ -1,28 +1,18 @@
-import { useMemo } from 'react'
-import { useAtomValue, useSetAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 
 import { Border } from './border'
 import { ResizeHandle } from './resizeHandle'
-import {
-  canvasIsResizingItemAtom,
-  canvasSelectedCanvasItemsCoordinats,
-  canvasSelectionGripCords,
-} from '@/atoms/canvas'
+import { canvasSelectedCanvasItemsCoordinats, canvasSelectionGripCords } from '@/atoms/canvas'
 
 import { useSelectedItemsResize } from '@/hooks/useSelectedItemsResize'
 
 export default function Selection() {
   const coordinates = useAtomValue(canvasSelectedCanvasItemsCoordinats)
   const gripCoords = useAtomValue(canvasSelectionGripCords)
-  const setIsResizing = useSetAtom(canvasIsResizingItemAtom)
   const resize = useSelectedItemsResize()
 
   if (coordinates == null) {
     return null
-  }
-
-  const onResizeStart = () => {
-    setIsResizing(true)
   }
 
   const onResize = (direction, position) => {
@@ -33,7 +23,6 @@ export default function Selection() {
     // ToDo: Make snap to grid configurable?
     const options = { snapToGrid: true }
     resize(direction, position, coordinates, options)
-    setTimeout(() => setIsResizing(false), 0)
   }
 
   return (
@@ -50,7 +39,6 @@ export default function Selection() {
             cy={y}
             onResize={onResize}
             onResizeEnd={onResizeEnd}
-            onResizeStart={onResizeStart}
           />
         )
       })}

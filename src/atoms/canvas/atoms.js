@@ -5,7 +5,6 @@ export const canvasItemsMap = atom({})
 export const canvasItemsAtom = atom([])
 export const canvasSelectedItemsAtom = atom([])
 export const canvasHoveredItemAtom = atom(null)
-export const canvasIsResizingItemAtom = atom(false)
 
 export const canvasItemsAtomFamily = atomFamily(
   (id) => {

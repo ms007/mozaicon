@@ -10,9 +10,7 @@ const ResizeHandle = ({ direction, onResizeStart, onResize, onResizeEnd, ...prop
   const size = sizeOfOnePixel * 4
   const strokeWidth = sizeOfOnePixel * 2
 
-  const { onMouseDown } = useCanvasItemResize(({ status, event, position }) => {
-    event.stopPropagation()
-
+  const { onMouseDown } = useCanvasItemResize(({ status, position }) => {
     if (status === 'start') {
       onResizeStart(direction, position)
     }
@@ -26,12 +24,18 @@ const ResizeHandle = ({ direction, onResizeStart, onResize, onResizeEnd, ...prop
     }
   })
 
+  const onClick = (event) => {
+    event.stopPropagation()
+    event.nativeEvent.stopImmediatePropagation()
+  }
+
   return (
     <Handle
       size={size}
       direction={direction}
       onMouseDown={onMouseDown}
       strokeWidth={strokeWidth}
+      onClick={onClick}
       {...props}
     />
   )
