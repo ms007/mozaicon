@@ -3,7 +3,7 @@ import { isValidElement, Children, cloneElement } from 'react'
 import omit from '@/utils/omit'
 
 export function Shape({ children, ...props }) {
-  const validProps = omit(props, ['id', 'isMoving'])
+  const validProps = omit(props, ['id', 'type'])
 
   if (isValidElement(children)) {
     return cloneElement(children, {

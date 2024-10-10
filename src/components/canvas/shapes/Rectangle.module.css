@@ -1,3 +1,7 @@
 .selectable {
   pointer-events: visiblePainted;
 }
+
+.moving {
+  cursor: move;
+}
