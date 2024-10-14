@@ -5,7 +5,11 @@ import { canvasItemsAtom, canvasItemsAtomFamily, canvasSelectedItemsAtom } from 
 
 export const canvasCreateCanvasItem = atom(null, (_, set, canvasItem) => {
   const id = nanoid()
-  const { type } = canvasItem
+
+  const { type, width, height } = canvasItem
+  canvasItem.width = width > 0 ? width : 1
+  canvasItem.height = height > 0 ? height : 1
+
   set(canvasItemsAtom, (canvasItems) => [...canvasItems, id])
   set(canvasItemsAtomFamily(id), {
     ...canvasItem,

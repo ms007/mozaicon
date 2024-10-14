@@ -1,0 +1,35 @@
+.wrapper {
+  position: relative;
+}
+
+.box {
+  position: absolute;
+  margin-left: -10px;
+  width: calc(100% + 20px);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0.1s ease, opacity 0.1s ease;
+  z-index: 1;
+
+  &.show {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+.circle {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--color-accent-primary);
+}
+
+.line {
+  height: 2px;
+  width: 100%;
+  background-color: var(--color-accent-primary);
+}

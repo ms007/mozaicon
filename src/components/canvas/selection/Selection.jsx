@@ -37,6 +37,7 @@ export default function Selection() {
             direction={key}
             cx={x}
             cy={y}
+            onResizeStart={onResize}
             onResize={onResize}
             onResizeEnd={onResizeEnd}
           />

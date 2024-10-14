@@ -1,0 +1,31 @@
+.box {
+  height: 44px;
+  margin-left: -10px;
+  width: calc(100% + 20px);
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  color: var(--color-neutral-600);
+  cursor: pointer;
+  z-index: 0;
+
+  &.selected,
+  &.hovered {
+    color: var(--body);
+  }
+
+  &.selected {
+    background-color: var(--color-neutral-300);
+  }
+}
+
+global(.dark) {
+  .box {
+    color: var(--color-neutral-400);
+  }
+}
+
+.dragging {
+  cursor: grabbing;
+}

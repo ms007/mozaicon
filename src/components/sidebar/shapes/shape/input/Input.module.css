@@ -1,0 +1,38 @@
+.box {
+  margin-left: 10px;
+  width: 100%;
+}
+
+.text {
+  width: 100%;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  margin-left: -2px;
+  background: none;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  user-select: text;
+
+  &:hover {
+    color: 0 0 2px 0 #b9bcc0;
+    cursor: pointer;
+  }
+
+  &:focus {
+    background-color: #ffffff;
+    cursor: text;
+    outline: 2px solid var(--color-accent-primary);
+    filter: drop-shadow(0px 0px 3px rgb(86, 90, 102, 0.2));
+  }
+
+  &::selection {
+    background: var(--color-accent-tertiary);
+  }
+}
+
+:global(.dark) .text:focus {
+  color: #222;
+  outline: 2px solid var(--color-accent-secondary);
+}

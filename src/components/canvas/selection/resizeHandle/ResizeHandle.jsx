@@ -5,7 +5,13 @@ import { Handle } from './Handle'
 import { useCanvasItemResize } from '@/hooks/useCanvasItemResize'
 import { artboardPixelSize } from '@/atoms/artboard'
 
-const ResizeHandle = ({ direction, onResizeStart, onResize, onResizeEnd, ...props }) => {
+export default function ResizeHandle({
+  direction,
+  onResizeStart,
+  onResize,
+  onResizeEnd,
+  ...props
+}) {
   const sizeOfOnePixel = useAtomValue(artboardPixelSize)
   const size = sizeOfOnePixel * 4
   const strokeWidth = sizeOfOnePixel * 2
@@ -40,5 +46,3 @@ const ResizeHandle = ({ direction, onResizeStart, onResize, onResizeEnd, ...prop
     />
   )
 }
-
-export default ResizeHandle
