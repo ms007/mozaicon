@@ -14,7 +14,6 @@ export const canvasItemsAtomFamily = atomFamily(
         const map = get(canvasItemsMap)
         const prev = map[id]
         const updates = typeof item === 'function' ? item(prev) : item
-        console.log(updates)
         set(canvasItemsMap, { ...map, [id]: { ...prev, ...updates } })
       }
     )
