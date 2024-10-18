@@ -1,17 +1,19 @@
 import { atom } from 'jotai'
 
-import { canvasItemsAtom, canvasSelectedItemsAtom, canvasHoveredItemAtom } from '../canvas'
-import { sidebarDraggedItemAtom, sidebarEditingItemAtom } from './atoms'
+import { canvasSelectedItemsAtom, canvasHoveredItemAtom } from '@/atoms/canvas'
+import { sidebarItemsAtom, sidebarDraggedItemAtom, sidebarEditingItemAtom } from '../atoms'
 
-export const sidebarItemsAtom = atom(
-  (get) => {
-    const canvasItems = get(canvasItemsAtom)
-    return [...canvasItems].reverse()
-  },
-  (_, set, items) => {
-    set(canvasItemsAtom, [...items].reverse())
-  }
-)
+export const sidebarSelectedItemsSortedAtom = atom((get) => {
+  const selectedItems = get(canvasSelectedItemsAtom)
+  const canvasItems = get(sidebarItemsAtom)
+
+  return selectedItems.slice().sort((id1, id2) => {
+    const index1 = canvasItems.findIndex((item) => item === id1)
+    const index2 = canvasItems.findIndex((item) => item === id2)
+
+    return index1 - index2
+  })
+})
 
 export const sidebarHoveredItemAtom = atom(
   (get) => {
@@ -41,39 +43,6 @@ export const sidebarHoveredItemAtom = atom(
     set(canvasHoveredItemAtom, id)
   }
 )
-
-export const sidebarItemDraggingConstraints = (id) => {
-  const sidebarItemDraggingConstraints = atom((get) => {
-    const defaultValues = {
-      canDropBefore: false,
-      canDropAfter: false,
-    }
-
-    if (id == null) {
-      return defaultValues
-    }
-
-    const canvasItems = get(sidebarItemsAtom)
-    const draggedItem = get(sidebarDraggedItemAtom)
-
-    const count = canvasItems.length
-    if (draggedItem == null || count < 2) {
-      return defaultValues
-    }
-
-    const draggingIndex = canvasItems.indexOf(draggedItem)
-    const hoveredIndex = canvasItems.indexOf(id)
-
-    const canDropBefore = !(draggingIndex === hoveredIndex || draggingIndex + 1 === hoveredIndex)
-    const canDropAfter = !(draggingIndex === hoveredIndex || draggingIndex - 1 === hoveredIndex)
-
-    return {
-      canDropBefore,
-      canDropAfter,
-    }
-  })
-  return sidebarItemDraggingConstraints
-}
 
 export const sidebarNextItemAtom = atom((get) => {
   const editingId = get(sidebarEditingItemAtom)

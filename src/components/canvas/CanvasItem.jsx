@@ -39,7 +39,7 @@ export function CanvasItem({ id }) {
   })
 
   const onClick = (event) => {
-    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'center' })
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth' })
     event.stopPropagation()
   }
 

@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { useAtom, useSetAtom } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { useLatest } from 'react-use'
 
 import { H4 } from '@/components/common'
@@ -8,32 +8,19 @@ import { Shape } from './shape'
 import { DragLayer } from './dragLayer'
 import { Divider } from './divider'
 
-import { canvasSelectedItemsAtom } from '@/atoms/canvas'
-import { sidebarItemsAtom } from '@/atoms/sidebar'
+import { sidebarItemsAtom, sidebarUpdateSidebarOrderAtom } from '@/atoms/sidebar'
 
 import styles from './Shapes.module.css'
 
 export default function Shapes() {
   const [dropIndex, setDropIndex] = useState(-1)
-  const [canvasItems, setCanvasItems] = useAtom(sidebarItemsAtom)
-  const setSelectedItems = useSetAtom(canvasSelectedItemsAtom)
-
+  const sidebarItems = useAtomValue(sidebarItemsAtom)
+  const updateSidebarItemsOrder = useSetAtom(sidebarUpdateSidebarOrderAtom)
   const latestDropIndex = useLatest(dropIndex)
-  const latestCanvasItems = useLatest(canvasItems)
 
   const onDrop = ({ id }) => {
-    const latestItems = latestCanvasItems.current
-    const latestIndex = latestDropIndex.current
-
-    if (latestIndex >= 0) {
-      setCanvasItems([
-        ...latestItems.slice(0, latestIndex).filter((item) => item !== id),
-        id,
-        ...latestItems.slice(latestIndex).filter((item) => item !== id),
-      ])
-      setSelectedItems([id])
-    }
-
+    const index = latestDropIndex.current
+    updateSidebarItemsOrder({ index, id })
     setDropIndex(-1)
   }
 
@@ -43,7 +30,7 @@ export default function Shapes() {
     }
   }
 
-  if (!canvasItems.length) {
+  if (!sidebarItems.length) {
     return null
   }
 
@@ -52,7 +39,7 @@ export default function Shapes() {
       <H4>Shapes</H4>
 
       <ScrollBox>
-        {canvasItems.map((id, index) => (
+        {sidebarItems.map((id, index) => (
           <Fragment key={id}>
             <Divider visible={dropIndex === index} />
             <Shape id={id} index={index} onDrop={onDrop} onDropIndexChange={onDropIndexChange} />
