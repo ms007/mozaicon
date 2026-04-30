@@ -1,0 +1,57 @@
+/* Storybook Docs (MDX) theme bridge.
+ *
+ * Storybook's MDX components ship Emotion-styled markdown with hardcoded
+ * theme colors baked in (`theme.color.defaultText`, `.dark`, …), so the
+ * toolbar dark toggle — which only flips `.dark` on <html> — leaves the
+ * Docs chrome stuck on the light values. There are no per-element
+ * `sbdocs-*` classes either; MDX renders plain `<h1>`/`<p>`/`<a>`/… inside
+ * `.sbdocs-content`.
+ *
+ * The doubled `.sbdocs.sbdocs-content` selector is Storybook's documented
+ * specificity escape hatch (beats single-class Emotion rules without
+ * `!important`). Re-route the descendants onto our tokens; once `.dark` is
+ * on <html>, the same rules pick up dark values for free.
+ */
+
+.sbdocs.sbdocs-wrapper,
+.sbdocs.sbdocs-content {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.sbdocs.sbdocs-content h1,
+.sbdocs.sbdocs-content h2,
+.sbdocs.sbdocs-content h3,
+.sbdocs.sbdocs-content h4,
+.sbdocs.sbdocs-content h5,
+.sbdocs.sbdocs-content h6,
+.sbdocs.sbdocs-content p,
+.sbdocs.sbdocs-content li,
+.sbdocs.sbdocs-content blockquote,
+.sbdocs.sbdocs-content th,
+.sbdocs.sbdocs-content td {
+  color: var(--foreground);
+}
+
+.sbdocs.sbdocs-content a {
+  color: var(--primary);
+}
+
+.sbdocs.sbdocs-content code,
+.sbdocs.sbdocs-content pre {
+  background-color: var(--muted);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.sbdocs.sbdocs-content hr,
+.sbdocs.sbdocs-content table,
+.sbdocs.sbdocs-content th,
+.sbdocs.sbdocs-content td {
+  border-color: var(--border);
+}
+
+.sbdocs.sbdocs-preview {
+  background-color: var(--card);
+  border-color: var(--border);
+}

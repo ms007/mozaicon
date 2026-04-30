@@ -1,17 +1,44 @@
-// Tailwind v4 entrypoint: `@import 'tailwindcss'` + `@theme inline` + tokens.
-// Importing here pulls the same cascade Vite ships in production into the
-// Storybook preview iframe; `parentSelector: 'html'` below mirrors how the
-// app applies dark mode (`@custom-variant dark (&:is(.dark *))`).
-//
-// Layer-ordering spike outcome: the Storybook-Vite builder picks up the root
-// `vite.config.ts` (with `@tailwindcss/vite`) and the `@/` alias automatically.
-// `storybook build` produced a CSS bundle containing both `:root` tokens and
-// `.dark { … }` overrides with `text-foreground` utilities resolving to
-// `var(--foreground)` — no `viteFinal` override or `preview.css` shim needed.
+// Pull the app's Tailwind v4 cascade (tokens, `@custom-variant dark`) into
+// the preview iframe so stories render against the same surfaces as prod.
 import '../src/index.css'
+// Bridges the Docs chrome (MDX page) onto the same tokens. See preview.css.
+import './preview.css'
 
 import { withThemeByClassName } from '@storybook/addon-themes'
 import type { Preview } from '@storybook/react-vite'
+import { GLOBALS_UPDATED, SET_GLOBALS } from 'storybook/internal/core-events'
+import { addons } from 'storybook/preview-api'
+
+const themes = { light: '', dark: 'dark' } as const
+
+type GlobalsPayload = { globals?: { theme?: unknown } }
+
+// `withThemeByClassName` owns the toolbar UI but only applies the theme
+// class via a decorator — bypassed on docs-only MDX pages (Introduction,
+// Foundations) that have no <Story>. Mirror the `theme` global off the
+// preview channel so every page (story or docs) tracks the toolbar.
+const applyTheme = ({ globals }: GlobalsPayload) => {
+  const want = globals?.theme === themes.dark
+  // `classList.toggle` always writes the attribute, which would re-fire
+  // MutationObservers (the foundations swatches) on every globals update
+  // — including ones unrelated to theme. Guard against the no-op write.
+  const root = document.documentElement
+  if (root.classList.contains(themes.dark) === want) return
+  root.classList.toggle(themes.dark, want)
+}
+
+const channel = addons.getChannel()
+channel.on(SET_GLOBALS, applyTheme)
+channel.on(GLOBALS_UPDATED, applyTheme)
+
+// The preview channel is a Vite-HMR-surviving singleton; without cleanup,
+// each preview.ts re-evaluation would stack a duplicate listener pair.
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    channel.off(SET_GLOBALS, applyTheme)
+    channel.off(GLOBALS_UPDATED, applyTheme)
+  })
+}
 
 const preview: Preview = {
   parameters: {
@@ -20,7 +47,7 @@ const preview: Preview = {
   },
   decorators: [
     withThemeByClassName({
-      themes: { light: '', dark: 'dark' },
+      themes,
       defaultTheme: 'light',
       parentSelector: 'html',
     }),
