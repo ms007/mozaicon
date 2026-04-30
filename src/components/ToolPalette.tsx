@@ -15,6 +15,7 @@ export type ToolPaletteProps = {
   options: ToolOption[]
   value: string
   onChange: (value: string) => void
+  onItemClick?: (value: string) => void
   'aria-label'?: string
   className?: string
 }
@@ -23,6 +24,7 @@ export function ToolPalette({
   options,
   value,
   onChange,
+  onItemClick,
   'aria-label': ariaLabel,
   className,
 }: ToolPaletteProps) {
@@ -46,6 +48,7 @@ export function ToolPalette({
                 toggle's data-[state=on] selector keeps working. */}
             <div>
               <ToggleGroupItem
+                onClick={() => onItemClick?.(option.value)}
                 value={option.value}
                 aria-label={option.label}
                 className={cn(

@@ -97,4 +97,41 @@ describe('ToolPalette', () => {
     const group = screen.getByRole('group', { name: 'Styled palette' })
     expect(group.className).toContain('custom-class')
   })
+
+  describe('onItemClick', () => {
+    it('fires onItemClick with clicked value when clicking a non-active item', async () => {
+      const onItemClick = vi.fn()
+      const onChange = vi.fn()
+      renderPalette({ onItemClick, onChange, value: 'rect' })
+
+      await userEvent.click(screen.getByRole('radio', { name: 'Ellipse' }))
+
+      expect(onItemClick).toHaveBeenCalledTimes(1)
+      expect(onItemClick).toHaveBeenCalledWith('ellipse')
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('ellipse')
+    })
+
+    it('fires onItemClick but not onChange when re-clicking the active item', async () => {
+      const onItemClick = vi.fn()
+      const onChange = vi.fn()
+      renderPalette({ onItemClick, onChange, value: 'rect' })
+
+      await userEvent.click(screen.getByRole('radio', { name: 'Rectangle' }))
+
+      expect(onItemClick).toHaveBeenCalledTimes(1)
+      expect(onItemClick).toHaveBeenCalledWith('rect')
+      expect(onChange).not.toHaveBeenCalled()
+    })
+
+    it('does not break when onItemClick is not provided', async () => {
+      const onChange = vi.fn()
+      renderPalette({ onChange, value: 'rect' })
+
+      await userEvent.click(screen.getByRole('radio', { name: 'Ellipse' }))
+
+      expect(onChange).toHaveBeenCalledTimes(1)
+      expect(onChange).toHaveBeenCalledWith('ellipse')
+    })
+  })
 })
