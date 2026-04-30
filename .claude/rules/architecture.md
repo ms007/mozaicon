@@ -1,7 +1,7 @@
 ---
 paths:
-  - "src/store/**"
-  - "src/features/canvas/**"
+  - 'src/store/**'
+  - 'src/features/canvas/**'
 ---
 
 # Store & Canvas Architecture

@@ -1,7 +1,7 @@
 ---
 paths:
-  - "src/components/ui/**"
-  - "src/components/primitives/**"
+  - 'src/components/ui/**'
+  - 'src/components/primitives/**'
 ---
 
 # UI Primitives
