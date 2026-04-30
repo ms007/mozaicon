@@ -32,19 +32,19 @@ OKLCH → dark OKLCH. Copy-paste OKLCH values from this table; they match
 
 | DS name            | CSS var                  | shadcn role          | Tailwind utility            | Light OKLCH                | Dark OKLCH                 |
 | ------------------ | ------------------------ | -------------------- | --------------------------- | -------------------------- | -------------------------- |
-| `--bg-base`        | `--background`           | `background`         | `bg-background`             | `oklch(1 0 0)`             | `oklch(0.141 0.005 285.8)` |
-| `--text-primary`   | `--foreground`           | `foreground`         | `text-foreground`           | `oklch(0.141 0.005 285.8)` | `oklch(0.944 0.004 286.3)` |
-| `--bg-surface`     | `--card`                 | `card`               | `bg-card`                   | `oklch(0.985 0 0)`         | `oklch(0.177 0.004 286)`   |
-| —                  | `--card-foreground`      | `card-foreground`    | `text-card-foreground`      | `oklch(0.141 0.005 285.8)` | `oklch(0.944 0.004 286.3)` |
-| —                  | `--popover`              | `popover`            | `bg-popover`                | `oklch(0.985 0 0)`         | `oklch(0.177 0.004 286)`   |
-| —                  | `--popover-foreground`   | `popover-foreground` | `text-popover-foreground`   | `oklch(0.141 0.005 285.8)` | `oklch(0.944 0.004 286.3)` |
-| `--bg-elevated`    | `--secondary`            | `secondary`          | `bg-secondary`              | `oklch(0.967 0.001 286.4)` | `oklch(0.216 0.007 286)`   |
-| —                  | `--secondary-foreground` | `secondary-fg`       | `text-secondary-foreground` | `oklch(0.141 0.005 285.8)` | `oklch(0.944 0.004 286.3)` |
-| `--bg-elevated`    | `--muted`                | `muted`              | `bg-muted`                  | `oklch(0.967 0.001 286.4)` | `oklch(0.216 0.007 286)`   |
-| `--text-secondary` | `--muted-foreground`     | `muted-foreground`   | `text-muted-foreground`     | `oklch(0.421 0.011 286)`   | `oklch(0.647 0.011 286)`   |
-| `--bg-elevated`    | `--input`                | `input`              | `bg-input` / `border-input` | `oklch(0.967 0.001 286.4)` | `oklch(0.216 0.007 286)`   |
-| `--bg-hover`       | `--accent`               | `accent` (neutral)   | `bg-accent`                 | `oklch(0.921 0.002 286.3)` | `oklch(0.257 0.009 286)`   |
-| —                  | `--accent-foreground`    | `accent-foreground`  | `text-accent-foreground`    | `oklch(0.141 0.005 285.8)` | `oklch(0.944 0.004 286.3)` |
+| `--bg-base`        | `--background`           | `background`         | `bg-background`             | `oklch(0.971 0.003 286.4)` | `oklch(0.141 0.004 285.8)` |
+| `--text-primary`   | `--foreground`           | `foreground`         | `text-foreground`           | `oklch(0.181 0.014 284.9)` | `oklch(0.944 0.005 286.3)` |
+| `--bg-surface`     | `--card`                 | `card`               | `bg-card`                   | `oklch(1 0 0)`             | `oklch(0.179 0.004 286)`   |
+| —                  | `--card-foreground`      | `card-foreground`    | `text-card-foreground`      | `oklch(0.181 0.014 284.9)` | `oklch(0.944 0.005 286.3)` |
+| —                  | `--popover`              | `popover`            | `bg-popover`                | `oklch(1 0 0)`             | `oklch(0.179 0.004 286)`   |
+| —                  | `--popover-foreground`   | `popover-foreground` | `text-popover-foreground`   | `oklch(0.181 0.014 284.9)` | `oklch(0.944 0.005 286.3)` |
+| `--bg-elevated`    | `--secondary`            | `secondary`          | `bg-secondary`              | `oklch(0.941 0.005 286.3)` | `oklch(0.22 0.01 285.6)`   |
+| —                  | `--secondary-foreground` | `secondary-fg`       | `text-secondary-foreground` | `oklch(0.181 0.014 284.9)` | `oklch(0.944 0.005 286.3)` |
+| `--bg-elevated`    | `--muted`                | `muted`              | `bg-muted`                  | `oklch(0.941 0.005 286.3)` | `oklch(0.22 0.01 285.6)`   |
+| `--text-secondary` | `--muted-foreground`     | `muted-foreground`   | `text-muted-foreground`     | `oklch(0.474 0.026 285.4)` | `oklch(0.651 0.018 285.9)` |
+| `--bg-elevated`    | `--input`                | `input`              | `bg-input` / `border-input` | `oklch(0.941 0.005 286.3)` | `oklch(0.22 0.01 285.6)`   |
+| `--bg-hover`       | `--accent`               | `accent` (neutral)   | `bg-accent`                 | `oklch(0.915 0.008 286.2)` | `oklch(0.255 0.011 285.6)` |
+| —                  | `--accent-foreground`    | `accent-foreground`  | `text-accent-foreground`    | `oklch(0.181 0.014 284.9)` | `oklch(0.944 0.005 286.3)` |
 
 > `--secondary`, `--muted`, and `--input` all resolve to DS `--bg-elevated`
 > per the "three roles, one surface" collapse in the design-system PRD.
@@ -55,24 +55,26 @@ OKLCH → dark OKLCH. Copy-paste OKLCH values from this table; they match
 
 | DS name      | CSS var                | shadcn role    | Tailwind utility          | Light OKLCH                      | Dark OKLCH                       |
 | ------------ | ---------------------- | -------------- | ------------------------- | -------------------------------- | -------------------------------- |
-| brand        | `--primary`            | `primary`      | `bg-primary`              | `oklch(0.585 0.233 277.1)`       | `oklch(0.585 0.233 277.1)`       |
+| brand        | `--primary`            | `primary`      | `bg-primary`              | `oklch(0.525 0.211 275.4)`       | `oklch(0.585 0.204 277.1)`       |
 | brand-fg     | `--primary-foreground` | `primary-fg`   | `text-primary-foreground` | `oklch(1 0 0)`                   | `oklch(1 0 0)`                   |
-| brand-hover  | `--primary-hover`      | (DS extension) | `bg-primary-hover`        | `oklch(0.511 0.262 276.9)`       | `oklch(0.673 0.182 276.9)`       |
-| brand-muted  | `--primary-muted`      | (DS extension) | `bg-primary-muted`        | `oklch(0.585 0.233 277.1 / 10%)` | `oklch(0.585 0.233 277.1 / 15%)` |
-| brand-subtle | `--primary-subtle`     | (DS extension) | `text-primary-subtle`     | `oklch(0.459 0.241 277)`         | `oklch(0.779 0.13 276.3)`        |
+| brand-hover  | `--primary-hover`      | (DS extension) | `bg-primary-hover`        | `oklch(0.585 0.204 277.1)`       | `oklch(0.68 0.158 276.9)`        |
+| brand-muted  | `--primary-muted`      | (DS extension) | `bg-primary-muted`        | `oklch(0.525 0.211 275.4 / 12%)` | `oklch(0.585 0.204 277.1 / 15%)` |
+| brand-subtle | `--primary-subtle`     | (DS extension) | `text-primary-subtle`     | `oklch(0.398 0.177 277.4)`       | `oklch(0.785 0.104 274.7)`       |
 
 Brand indigo is the single accent: active tool, selection, focus ring, slider
-thumb. `--primary-hover` goes **darker** on light backgrounds (Indigo 600) and
-**lighter** on dark backgrounds (Indigo 400) — the raw hex sources differ per
-theme.
+thumb. The resting brand is `#4f52e0` on light and `#6366f1` (Indigo 500) on
+dark. `--primary-hover` always **lifts toward lighter** — `#6366f1` (Indigo 500)
+on light, `#818cf8` (Indigo 400) on dark. The raw hex sources differ per theme.
 
 ### Status
 
-| DS name    | CSS var                | shadcn role    | Tailwind utility              | Light OKLCH                | Dark OKLCH                 |
-| ---------- | ---------------------- | -------------- | ----------------------------- | -------------------------- | -------------------------- |
-| success    | `--success`            | (DS extension) | `bg-success` / `text-success` | `oklch(0.697 0.156 163.5)` | `oklch(0.772 0.155 163.2)` |
-| —          | `--success-foreground` | (DS extension) | `text-success-foreground`     | `oklch(1 0 0)`             | `oklch(0.141 0.005 285.8)` |
-| `--danger` | `--destructive`        | `destructive`  | `bg-destructive`              | `oklch(0.628 0.258 27.3)`  | `oklch(0.628 0.258 27.3)`  |
+| DS name    | CSS var                    | shadcn role    | Tailwind utility              | Light OKLCH               | Dark OKLCH                 |
+| ---------- | -------------------------- | -------------- | ----------------------------- | ------------------------- | -------------------------- |
+| success    | `--success`                | (DS extension) | `bg-success` / `text-success` | `oklch(0.627 0.17 149.2)` | `oklch(0.773 0.153 163.2)` |
+| —          | `--success-foreground`     | (DS extension) | `text-success-foreground`     | `oklch(1 0 0)`            | `oklch(0.141 0.004 285.8)` |
+| `--danger` | `--destructive`            | `destructive`  | `bg-destructive`              | `oklch(0.577 0.215 27.3)` | `oklch(0.637 0.208 25.3)`  |
+| —          | `--destructive-foreground` | (DS extension) | `text-destructive-foreground` | `oklch(1 0 0)`            | `oklch(1 0 0)`             |
+| —          | `--destructive-hover`      | (DS extension) | `bg-destructive-hover`        | `oklch(0.505 0.19 27.5)`  | `oklch(0.704 0.191 22.2)`  |
 
 Status colors are reserved for their role per DS usage rules — never use
 `--destructive` for neutral emphasis.
@@ -81,10 +83,10 @@ Status colors are reserved for their role per DS usage rules — never use
 
 | DS name       | CSS var          | shadcn role    | Tailwind utility      | Light OKLCH                | Dark OKLCH                 |
 | ------------- | ---------------- | -------------- | --------------------- | -------------------------- | -------------------------- |
-| border        | `--border`       | `border`       | `border-border`       | `oklch(0.912 0.003 286.3)` | `oklch(0.257 0.009 286)`   |
-| border-hover  | `--border-hover` | (DS extension) | `border-border-hover` | `oklch(0.856 0.005 286.3)` | `oklch(0.345 0.015 286)`   |
-| ring          | `--ring`         | `ring`         | `ring-ring`           | `oklch(0.585 0.233 277.1)` | `oklch(0.585 0.233 277.1)` |
-| `--bg-active` | `--track`        | (DS extension) | `bg-track`            | `oklch(0.871 0.006 286.3)` | `oklch(0.296 0.011 286)`   |
+| border        | `--border`       | `border`       | `border-border`       | `oklch(0.897 0.011 286.2)` | `oklch(0.255 0.011 285.6)` |
+| border-hover  | `--border-hover` | (DS extension) | `border-border-hover` | `oklch(0.836 0.017 286)`   | `oklch(0.326 0.023 285.1)` |
+| ring          | `--ring`         | `ring`         | `ring-ring`           | `oklch(0.525 0.211 275.4)` | `oklch(0.585 0.204 277.1)` |
+| `--bg-active` | `--track`        | (DS extension) | `bg-track`            | `oklch(0.885 0.011 286.2)` | `oklch(0.288 0.014 285.5)` |
 
 Focus ring is always the brand color — `--ring` = `--primary`.
 
@@ -125,7 +127,7 @@ Derived scale (exposed under Tailwind):
 | Tailwind     | CSS var       | Formula          | Pixels | Use                                                   |
 | ------------ | ------------- | ---------------- | ------ | ----------------------------------------------------- |
 | `rounded-sm` | `--radius-sm` | `--radius - 4px` | 2px    | Tight inner surfaces, checkboxes.                     |
-| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons.**                                          |
+| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons**, tags, badges, small inputs.              |
 | `rounded-lg` | `--radius-lg` | `--radius`       | 6px    | **Cards, panels, inputs.**                            |
 | `rounded-xl` | `--radius-xl` | `--radius + 4px` | 10px   | **Reserved** — don't reach for this without a reason. |
 
@@ -134,14 +136,15 @@ Derived scale (exposed under Tailwind):
 Base is 16px (browser default). Tailwind's `text-*` utilities are overridden
 via `@theme inline` to target DS pixel sizes:
 
-| Utility     | Size | Line height | Role                                      |
-| ----------- | ---- | ----------- | ----------------------------------------- |
-| `text-xs`   | 10px | 1.2         | Labels, eyebrows, status readouts.        |
-| `text-sm`   | 11px | 1.3         | Controls, layer rows.                     |
-| `text-base` | 13px | 1.5         | Body copy (applied globally on `<body>`). |
-| `text-lg`   | 14px | 1.4         | Subsection titles.                        |
-| `text-xl`   | 18px | 1.3         | Section / h2.                             |
-| `text-2xl`  | 34px | 1.1         | Display / page title.                     |
+| Utility     | Size | Line height | Role                                        |
+| ----------- | ---- | ----------- | ------------------------------------------- |
+| `text-xs`   | 10px | 1.2         | Labels, eyebrows, status readouts.          |
+| `text-sm`   | 11px | 1.3         | Layer rows, slider readouts, mono captions. |
+| `text-md`   | 12px | 1.3         | Buttons, compact labels.                    |
+| `text-base` | 13px | 1.5         | Body copy (applied globally on `<body>`).   |
+| `text-lg`   | 14px | 1.4         | Subsection titles.                          |
+| `text-xl`   | 18px | 1.3         | Section / h2.                               |
+| `text-2xl`  | 34px | 1.1         | Display / page title.                       |
 
 The 16px base matters for two reasons:
 
@@ -193,16 +196,20 @@ inconvenient.
 
 ## Motion
 
-Motion tokens live in `:root` and are re-exposed via `@theme inline`, so
-Tailwind's built-in `ease-out` utility resolves to the DS curve.
+Motion tokens live in `:root` and are re-exposed via `@theme inline`. Tailwind's
+own transition defaults (`--default-transition-duration` and
+`--default-transition-timing-function`) are overridden so every `transition-*`
+utility — `transition-colors`, `transition-opacity`, etc. — picks up DS values
+without per-call-site `duration-*` / `ease-*`. Components that genuinely need a
+different cadence (e.g. slide indicators) opt out explicitly.
 
-| Concern            | Value                                        | Notes                                                              |
-| ------------------ | -------------------------------------------- | ------------------------------------------------------------------ |
-| Curve              | `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` | Rebinds Tailwind's `ease-out` utility globally.                    |
-| Button / nav state | `duration-150`                               | Hover, focus, pressed surface transitions.                         |
-| Pill slide         | `duration-200`                               | Segmented-control indicator, tab underlines.                       |
-| Press feedback     | `active:scale-[0.97]`                        | Tactile compress on `:active`; pairs with `transition-transform`.  |
-| Reduced motion     | `@media (prefers-reduced-motion: reduce)`    | Global base-layer rule collapses animations and transitions to ~0. |
+| Concern          | Value                                        | Notes                                                                                         |
+| ---------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Curve            | `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)` | Bound to `--default-transition-timing-function` and to Tailwind's `ease-out` utility.         |
+| Default duration | `120ms`                                      | Bound to `--default-transition-duration`. Hover, focus, pressed, and color/border swaps.      |
+| Pill slide       | `duration-200`                               | Segmented-control indicator, tab underlines — opt out of the default with explicit class.     |
+| Press feedback   | `active:scale-[0.97]`                        | Tactile compress on `:active`. Snaps instantly — `transition-colors` doesn't cover transform. |
+| Reduced motion   | `@media (prefers-reduced-motion: reduce)`    | Global base-layer rule collapses animations and transitions to ~0.                            |
 
 Reduced-motion suppression is deliberately authored at the **token layer**
 (base CSS) rather than per-component: every component inherits the reduction

@@ -19,11 +19,11 @@ import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
   [
-    'inline-flex shrink-0 items-center justify-center gap-2 rounded-md',
-    'text-sm font-medium whitespace-nowrap outline-none',
-    'transition-transform duration-150 ease-out active:scale-[0.97]',
+    'inline-flex shrink-0 items-center justify-center gap-1 rounded-md cursor-pointer select-none',
+    'text-md font-medium whitespace-nowrap outline-none',
+    'transition-colors active:scale-[0.97]',
     'focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]',
-    'disabled:pointer-events-none disabled:opacity-50',
+    'disabled:pointer-events-none disabled:opacity-30',
     'aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
     'aria-pressed:bg-primary-muted aria-pressed:border-primary aria-pressed:text-primary-subtle',
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -32,16 +32,20 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
-        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
-        ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
+          'border bg-secondary text-muted-foreground hover:bg-accent hover:text-foreground hover:border-border-hover',
+        primary:
+          'border border-primary bg-primary text-primary-foreground hover:bg-primary-hover hover:border-primary-hover',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
         destructive:
-          'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40',
+          'border border-destructive bg-destructive text-destructive-foreground hover:bg-destructive-hover hover:border-destructive-hover',
       },
       size: {
         default: 'h-7 px-3 has-[>svg]:px-2.5',
-        sm: 'h-6 gap-1.5 px-2.5 has-[>svg]:px-2',
-        xs: "h-5 gap-1 px-2 text-xs has-[>svg]:px-1.5 [&_svg:not([class*='size-'])]:size-3",
+        // pt-px corrects the system-ui ascent/descent asymmetry — at 11px
+        // the visible cap sits ~1px above the line-box center, which reads
+        // wrong on a 24px control. Other sizes hit it less and don't need it.
+        sm: 'h-6 px-2 pt-px text-sm has-[>svg]:px-1.5',
+        xs: "h-5 px-1.5 text-xs [&_svg:not([class*='size-'])]:size-3",
         icon: 'size-7',
         'icon-sm': 'size-6',
         'icon-xs': "size-5 [&_svg:not([class*='size-'])]:size-3",

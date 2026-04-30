@@ -1,7 +1,7 @@
 ---
 paths:
-  - "src/components/**"
-  - "src/features/**"
+  - 'src/components/**'
+  - 'src/features/**'
 ---
 
 # Design Tokens
@@ -32,9 +32,12 @@ or adjusting spacing. It is the authoritative DS ↔ shadcn ↔ Tailwind mapping
   `rounded-lg` (6px). `rounded-xl` is reserved — don't reach for it without
   a reason.
 - **Focus ring:** always brand. `ring-ring` resolves to `--primary`.
-- **Motion:** Tailwind's `ease-out` is rebound to the DS curve. Use
-  `duration-150` for hover/focus/pressed, `duration-200` for slide
-  indicators. `active:scale-[0.97]` for press feedback.
+- **Motion:** `transition-*` utilities default to **120ms** + DS `ease-out`
+  via `--default-transition-duration` / `--default-transition-timing-function`.
+  Just write `transition-colors` (or `transition-opacity`, etc.) — no
+  `duration-*` / `ease-*` needed. Override only when the cadence genuinely
+  differs (e.g. `duration-200` for slide indicators). `active:scale-[0.97]`
+  for press feedback (snaps instantly).
 - **Dark mode:** `.dark` class on an ancestor (not `[data-theme="dark"]`).
 
 ## Where to change things

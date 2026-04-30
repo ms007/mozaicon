@@ -19,16 +19,18 @@ CSS custom property.
 
 ## Duration Conventions
 
-Durations use Tailwind's built-in `duration-*` utilities. They are not custom
-tokens — the DS prescribes specific values per interaction type.
+The DS overrides Tailwind's `--default-transition-duration` and
+`--default-transition-timing-function` so every `transition-*` utility ships
+with **120ms + DS ease-out** automatically. Components only reach for an
+explicit `duration-*` when the cadence genuinely differs.
 
-| Interaction        | Utility        | Value | Applies to                              |
-| ------------------ | -------------- | ----- | --------------------------------------- |
-| Button / nav state | `duration-150` | 150ms | Hover, focus, pressed surface colors    |
-| Pill slide         | `duration-200` | 200ms | Segmented-control indicator, tab slides |
-| Slider thumb hover | `duration-100` | 100ms | Scale transform on hover                |
-| Press feedback     | instant        | —     | `active:scale-[0.97]`, no transition    |
-| Focus ring         | instant        | —     | 2px accent outline, no transition       |
+| Interaction        | Utility                   | Value | Applies to                              |
+| ------------------ | ------------------------- | ----- | --------------------------------------- |
+| Button / nav state | `transition-colors`       | 120ms | Hover, focus, pressed color/border swap |
+| Pill slide         | `duration-200` (override) | 200ms | Segmented-control indicator, tab slides |
+| Slider thumb hover | `duration-100` (override) | 100ms | Scale transform on hover                |
+| Press feedback     | instant                   | —     | `active:scale-[0.97]`, no transition    |
+| Focus ring         | instant                   | —     | 3px accent ring, no transition          |
 
 ## Motion Demo
 

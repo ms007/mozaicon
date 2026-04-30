@@ -11,9 +11,9 @@
  * parent PRD.
  *
  * Light theme lives in :root; `.dark` carries dark overrides. Runtime
- * default is light. OKLCH is the storage format; conversions from the DS's
- * hex/rgba source are approximate for alpha-composited tokens
- * (notably --primary-muted).
+ * default is light. OKLCH is the storage format; hex→OKLCH conversions are
+ * exact except for --primary-muted, which is alpha-composited from the DS
+ * rgba source and thus approximate.
  * ───────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -22,70 +22,72 @@
   --radius: 0.375rem;
 
   /* Surfaces — DS 5-step surface scale collapsed onto shadcn roles. */
-  --background: oklch(1 0 0); /* #ffffff · DS --bg-base */
-  --foreground: oklch(0.141 0.005 285.8); /* #09090b · DS --text-primary */
+  --background: oklch(0.971 0.003 286.4); /* #f5f5f7 · DS --bg-base */
+  --foreground: oklch(0.181 0.014 284.9); /* #111118 · DS --text-primary */
 
-  --card: oklch(0.985 0 0); /* #fafafa · DS --bg-surface */
-  --card-foreground: oklch(0.141 0.005 285.8);
+  --card: oklch(1 0 0); /* #ffffff · DS --bg-surface */
+  --card-foreground: oklch(0.181 0.014 284.9);
 
-  --popover: oklch(0.985 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.181 0.014 284.9);
 
   /* --secondary / --muted / --input all map to DS --bg-elevated
    * per the "three roles, one surface" collapse in the PRD. */
-  --secondary: oklch(0.967 0.001 286.4); /* #f4f4f5 · DS --bg-elevated */
-  --secondary-foreground: oklch(0.141 0.005 285.8);
+  --secondary: oklch(0.941 0.005 286.3); /* #ebebef · DS --bg-elevated */
+  --secondary-foreground: oklch(0.181 0.014 284.9);
 
-  --muted: oklch(0.967 0.001 286.4);
-  --muted-foreground: oklch(0.421 0.011 286); /* #52525b · DS --text-secondary */
+  --muted: oklch(0.941 0.005 286.3);
+  --muted-foreground: oklch(0.474 0.026 285.4); /* #5a5a6a · DS --text-secondary */
 
-  --input: oklch(0.967 0.001 286.4);
+  --input: oklch(0.941 0.005 286.3);
 
   /* shadcn --accent is the NEUTRAL hover tint (DS --bg-hover), not the
    * brand color. Brand indigo lives on --primary. */
-  --accent: oklch(0.921 0.002 286.3); /* #e8e8eb · DS --bg-hover */
-  --accent-foreground: oklch(0.141 0.005 285.8);
+  --accent: oklch(0.915 0.008 286.2); /* #e2e2e8 · DS --bg-hover */
+  --accent-foreground: oklch(0.181 0.014 284.9);
 
   /* Brand indigo — single accent communicates active tool, selection,
    * focus ring, slider thumb. */
-  --primary: oklch(0.585 0.233 277.1); /* #6366f1 · Indigo 500 */
+  --primary: oklch(0.525 0.211 275.4); /* #4f52e0 · DS --accent */
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.511 0.262 276.9); /* #4f46e5 · Indigo 600 (darker on light) */
-  --primary-muted: oklch(0.585 0.233 277.1 / 10%); /* indigo @ 10% for light backgrounds */
-  --primary-subtle: oklch(0.459 0.241 277); /* #4338ca · Indigo 700 text on --primary-muted */
+  --primary-hover: oklch(0.585 0.204 277.1); /* #6366f1 · DS --accent-hover */
+  --primary-muted: oklch(0.525 0.211 275.4 / 12%); /* DS --accent-muted (indigo @ 12%) */
+  --primary-subtle: oklch(0.398 0.177 277.4); /* #3730a3 · text on --primary-muted */
 
   /* Status colors — reserved per DS usage rules. */
-  --success: oklch(0.697 0.156 163.5); /* #10b981 */
+  --success: oklch(0.627 0.17 149.2); /* #16a34a · DS --success */
   --success-foreground: oklch(1 0 0);
-  --destructive: oklch(0.628 0.258 27.3); /* #ef4444 · DS --danger */
+  --destructive: oklch(0.577 0.215 27.3); /* #dc2626 · DS --danger */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-hover: oklch(0.505 0.19 27.5); /* #b91c1c · darker on light */
 
   /* Borders */
-  --border: oklch(0.912 0.003 286.3); /* #e5e5e8 */
-  --border-hover: oklch(0.856 0.005 286.3); /* #d1d1d6 */
+  --border: oklch(0.897 0.011 286.2); /* #dcdce4 · DS --border */
+  --border-hover: oklch(0.836 0.017 286); /* #c8c8d4 · DS --border-hover */
 
   /* Ring = brand color (focus ring is always accent). */
-  --ring: oklch(0.585 0.233 277.1);
+  --ring: oklch(0.525 0.211 275.4);
 
   /* Slider track / deep-fill surface (DS --bg-active). */
-  --track: oklch(0.871 0.006 286.3); /* #d4d4d8 */
+  --track: oklch(0.885 0.011 286.2); /* #d8d8e0 · DS --bg-active */
 
   /* Preview transparency checkerboard — feature-scoped, not a Tailwind color. */
-  --checker-a: oklch(0.967 0.001 286.4);
-  --checker-b: oklch(1 0 0);
+  --checker-a: oklch(0.885 0.011 286.2); /* #d8d8e0 */
+  --checker-b: oklch(0.921 0.011 286.2); /* #e4e4ec */
 
   /* Motion — cubic-bezier(0.23, 1, 0.32, 1). Rebinds Tailwind's ease-out utility
    * via @theme inline below. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   /* Sidebar tokens — shadcn vendor surface keeps working. */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.8);
-  --sidebar-primary: oklch(0.585 0.233 277.1);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.181 0.014 284.9);
+  --sidebar-primary: oklch(0.525 0.211 275.4);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.921 0.002 286.3);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.8);
-  --sidebar-border: oklch(0.912 0.003 286.3);
-  --sidebar-ring: oklch(0.585 0.233 277.1);
+  --sidebar-accent: oklch(0.915 0.008 286.2);
+  --sidebar-accent-foreground: oklch(0.181 0.014 284.9);
+  --sidebar-border: oklch(0.897 0.011 286.2);
+  --sidebar-ring: oklch(0.525 0.211 275.4);
 
   /* Chart tokens — shadcn defaults retained; not DS-scoped. */
   --chart-1: oklch(0.646 0.222 41.116);
@@ -96,54 +98,56 @@
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.8); /* #09090b · DS --bg-base */
-  --foreground: oklch(0.944 0.004 286.3); /* #ececf0 · DS --text-primary */
+  --background: oklch(0.141 0.004 285.8); /* #09090b · DS --bg-base */
+  --foreground: oklch(0.944 0.005 286.3); /* #ececf0 · DS --text-primary */
 
-  --card: oklch(0.177 0.004 286); /* #111113 · DS --bg-surface */
-  --card-foreground: oklch(0.944 0.004 286.3);
+  --card: oklch(0.179 0.004 286); /* #111113 · DS --bg-surface */
+  --card-foreground: oklch(0.944 0.005 286.3);
 
-  --popover: oklch(0.177 0.004 286);
-  --popover-foreground: oklch(0.944 0.004 286.3);
+  --popover: oklch(0.179 0.004 286);
+  --popover-foreground: oklch(0.944 0.005 286.3);
 
-  --secondary: oklch(0.216 0.007 286); /* #1a1a1f · DS --bg-elevated */
-  --secondary-foreground: oklch(0.944 0.004 286.3);
+  --secondary: oklch(0.22 0.01 285.6); /* #1a1a1f · DS --bg-elevated */
+  --secondary-foreground: oklch(0.944 0.005 286.3);
 
-  --muted: oklch(0.216 0.007 286);
-  --muted-foreground: oklch(0.647 0.011 286); /* #8e8e9a · DS --text-secondary */
+  --muted: oklch(0.22 0.01 285.6);
+  --muted-foreground: oklch(0.651 0.018 285.9); /* #8e8e9a · DS --text-secondary */
 
-  --input: oklch(0.216 0.007 286);
+  --input: oklch(0.22 0.01 285.6);
 
-  --accent: oklch(0.257 0.009 286); /* #222228 · DS --bg-hover */
-  --accent-foreground: oklch(0.944 0.004 286.3);
+  --accent: oklch(0.255 0.011 285.6); /* #222228 · DS --bg-hover */
+  --accent-foreground: oklch(0.944 0.005 286.3);
 
-  --primary: oklch(0.585 0.233 277.1); /* #6366f1 · Indigo 500 */
+  --primary: oklch(0.585 0.204 277.1); /* #6366f1 · DS --accent */
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.673 0.182 276.9); /* #818cf8 · Indigo 400 (lighter on dark) */
-  --primary-muted: oklch(0.585 0.233 277.1 / 15%); /* indigo @ 15% for dark backgrounds */
-  --primary-subtle: oklch(0.779 0.13 276.3); /* #a5b4fc · Indigo 300 text */
+  --primary-hover: oklch(0.68 0.158 276.9); /* #818cf8 · DS --accent-hover */
+  --primary-muted: oklch(0.585 0.204 277.1 / 15%); /* DS --accent-muted (indigo @ 15%) */
+  --primary-subtle: oklch(0.785 0.104 274.7); /* #a5b4fc · DS --accent-text */
 
-  --success: oklch(0.772 0.155 163.2); /* #34d399 */
-  --success-foreground: oklch(0.141 0.005 285.8);
-  --destructive: oklch(0.628 0.258 27.3); /* #ef4444 */
+  --success: oklch(0.773 0.153 163.2); /* #34d399 · DS --success */
+  --success-foreground: oklch(0.141 0.004 285.8);
+  --destructive: oklch(0.637 0.208 25.3); /* #ef4444 · DS --danger */
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-hover: oklch(0.704 0.191 22.2); /* #f87171 · lighter on dark */
 
-  --border: oklch(0.257 0.009 286); /* #222228 */
-  --border-hover: oklch(0.345 0.015 286); /* #333340 */
+  --border: oklch(0.255 0.011 285.6); /* #222228 · DS --border */
+  --border-hover: oklch(0.326 0.023 285.1); /* #333340 · DS --border-hover */
 
-  --ring: oklch(0.585 0.233 277.1);
+  --ring: oklch(0.585 0.204 277.1);
 
-  --track: oklch(0.296 0.011 286); /* #2a2a32 · DS --bg-active */
+  --track: oklch(0.288 0.014 285.5); /* #2a2a32 · DS --bg-active */
 
-  --checker-a: oklch(0.216 0.007 286);
-  --checker-b: oklch(0.177 0.004 286);
+  --checker-a: oklch(0.211 0.008 285.7); /* #18181c */
+  --checker-b: oklch(0.193 0.006 285.8); /* #141417 */
 
-  --sidebar: oklch(0.177 0.004 286);
-  --sidebar-foreground: oklch(0.944 0.004 286.3);
-  --sidebar-primary: oklch(0.585 0.233 277.1);
+  --sidebar: oklch(0.179 0.004 286);
+  --sidebar-foreground: oklch(0.944 0.005 286.3);
+  --sidebar-primary: oklch(0.585 0.204 277.1);
   --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.257 0.009 286);
-  --sidebar-accent-foreground: oklch(0.944 0.004 286.3);
-  --sidebar-border: oklch(0.257 0.009 286);
-  --sidebar-ring: oklch(0.585 0.233 277.1);
+  --sidebar-accent: oklch(0.255 0.011 285.6);
+  --sidebar-accent-foreground: oklch(0.944 0.005 286.3);
+  --sidebar-border: oklch(0.255 0.011 285.6);
+  --sidebar-ring: oklch(0.585 0.204 277.1);
 
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
@@ -186,6 +190,8 @@
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-hover: var(--destructive-hover);
   --color-border: var(--border);
   --color-border-hover: var(--border-hover);
   --color-input: var(--input);
@@ -214,8 +220,10 @@
    * 10/11/13 for chrome; 14/18/34 track the DS type-row specimens. */
   --text-xs: 0.625rem; /* 10px — labels / eyebrows / status readouts */
   --text-xs--line-height: 1.2;
-  --text-sm: 0.6875rem; /* 11px — controls / layer rows */
+  --text-sm: 0.6875rem; /* 11px — layer rows / slider readouts / mono captions */
   --text-sm--line-height: 1.3;
+  --text-md: 0.75rem; /* 12px — buttons / labels / compact controls */
+  --text-md--line-height: 1.3;
   --text-base: 0.8125rem; /* 13px — body */
   --text-base--line-height: 1.5;
   --text-lg: 0.875rem; /* 14px — subsection titles */
@@ -225,8 +233,13 @@
   --text-2xl: 2.125rem; /* 34px — display / page title */
   --text-2xl--line-height: 1.1;
 
-  /* Motion — re-exposes the :root var under Tailwind's utility name. `@theme inline`
-   * resolves var() at utility-emit time, so this isn't a self-reference. */
+  /* Motion — DS defaults for every `transition-*` utility. Components that need
+   * a different cadence (e.g. 200ms slide indicators) opt out with explicit
+   * `duration-*` / `ease-*`. `--ease-out` is also re-exposed under Tailwind's
+   * utility name; `@theme inline` resolves var() at utility-emit time, so the
+   * self-reference isn't circular. */
+  --default-transition-duration: 120ms;
+  --default-transition-timing-function: var(--ease-out);
   --ease-out: var(--ease-out);
 }
 

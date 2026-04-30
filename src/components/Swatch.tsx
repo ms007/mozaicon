@@ -40,7 +40,7 @@ export function Swatch({
         'box-border size-5 shrink-0 rounded-[3px] p-0',
         'outline-border/60 border-2 border-transparent outline-1 -outline-offset-1',
         'data-[active=true]:border-primary',
-        'cursor-pointer transition-colors duration-150 ease-out',
+        'cursor-pointer transition-colors',
         'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:outline-none',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className,
