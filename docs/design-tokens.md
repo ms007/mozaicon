@@ -157,13 +157,15 @@ new `text-*` step to `@theme inline` rather than one-off `text-[12px]`.
 
 | Utility     | Family                                                                  |
 | ----------- | ----------------------------------------------------------------------- |
-| `font-sans` | `'Inter Tight'` (variable, roman + italic) → system-ui fallbacks.       |
+| `font-sans` | `system-ui`, `sans-serif`.                                              |
 | `font-mono` | `ui-monospace`, `'SF Mono'`, `'Cascadia Code'`, `'Menlo'`, `monospace`. |
 
-Inter Tight ships from `public/fonts` as a variable font (weights 100–900,
-roman and italic). `font-display: swap` so first paint uses the system fallback
-and upgrades without CLS. `tabular-nums` is applied globally on `<body>`;
-numeric-leaning inputs (e.g. `primitives/Input`) add `font-mono` as well.
+The sans stack is the platform UI font: San Francisco on Apple, Segoe UI on
+Windows, Cantarell/Roboto on Linux. No webfont is shipped — the browser uses
+whatever the OS hands it. This trades cross-OS visual consistency for native
+rendering quality (notably SF's optical sizing at 11–13 px). `tabular-nums` is
+applied globally on `<body>`; numeric-leaning inputs (e.g. `primitives/Input`)
+add `font-mono` as well.
 
 ## Spacing
 

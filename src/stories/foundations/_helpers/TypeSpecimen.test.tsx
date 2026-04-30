@@ -91,10 +91,10 @@ describe('TypeSpecimen', () => {
   })
 
   it('applies font-family when fontFamilyVar is provided', () => {
-    setVar('--font-sans', 'Inter Tight, sans-serif')
+    setVar('--font-sans', 'system-ui, sans-serif')
     render(<TypeSpecimen sizeVar="--text-base" label="text-base" fontFamilyVar="--font-sans" />)
     const sample = screen.getByTestId('specimen-sample')
-    expect(sample.style.fontFamily).toContain('Inter Tight')
+    expect(sample.style.fontFamily).toContain('system-ui')
   })
 
   it('applies font-weight when fontWeightVar is provided', () => {
