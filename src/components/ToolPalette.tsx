@@ -52,7 +52,7 @@ export function ToolPalette({
                 value={option.value}
                 aria-label={option.label}
                 className={cn(
-                  'text-muted-foreground size-9 rounded-md bg-transparent',
+                  'text-muted-foreground size-9 cursor-pointer rounded-md bg-transparent',
                   'hover:bg-accent hover:text-foreground',
                   'data-[state=on]:bg-primary-muted data-[state=on]:text-primary-subtle',
                   'active:scale-[0.97]',
