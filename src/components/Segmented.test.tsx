@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Segmented, type SegmentedOption } from '@/components/Segmented'
+import { getPillStyle } from '@/components/segmented-pill'
 
 const UNIT_OPTIONS: SegmentedOption[] = [
   { value: 'px', label: 'px' },
@@ -38,22 +39,21 @@ describe('Segmented', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('positions the pill at `left = activeIndex/count` and `width = 1/count`', () => {
-    const { rerender } = render(<Segmented options={UNIT_OPTIONS} value="px" onChange={noop} />)
+  it('insets the pill by the container padding so its rounded corners stay inside the rounded track', () => {
+    // The container has `p-0.5` (2px) horizontal padding. The pill must mirror
+    // that inset — `calc((100% - 0.25rem) * i / n + 0.125rem)` — so the active
+    // segment's pill aligns with the item content instead of running flush
+    // with the rounded outer edge (which clipped the pill's corners).
+    expect(getPillStyle(0, 3)).toEqual({
+      left: 'calc((100% - 0.25rem) * 0 / 3 + 0.125rem)',
+      width: 'calc((100% - 0.25rem) / 3)',
+    })
+    expect(getPillStyle(1, 3).left).toBe('calc((100% - 0.25rem) * 1 / 3 + 0.125rem)')
+    expect(getPillStyle(2, 3).left).toBe('calc((100% - 0.25rem) * 2 / 3 + 0.125rem)')
+  })
 
-    const count = UNIT_OPTIONS.length
-    const pct = (index: number) => `${((index / count) * 100).toString()}%`
-
-    expect(pill().style.left).toBe(pct(0))
-    expect(pill().style.width).toBe(pct(1))
-
-    rerender(<Segmented options={UNIT_OPTIONS} value="%" onChange={noop} />)
-    expect(pill().style.left).toBe(pct(1))
-    expect(pill().style.width).toBe(pct(1))
-
-    rerender(<Segmented options={UNIT_OPTIONS} value="em" onChange={noop} />)
-    expect(pill().style.left).toBe(pct(2))
-    expect(pill().style.width).toBe(pct(1))
+  it('clamps the pill to the first segment when the value is not in options', () => {
+    expect(getPillStyle(-1, 3).left).toBe('calc((100% - 0.25rem) * 0 / 3 + 0.125rem)')
   })
 
   it('applies the `duration-200 ease-out` transition on the pill', () => {
