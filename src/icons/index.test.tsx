@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { headerIcons, toolIcons } from '@/icons'
+import { headerIcons, toolIcons, utilityIcons } from '@/icons'
 
 function svg(container: HTMLElement) {
   const el = container.querySelector('svg')
@@ -79,6 +79,41 @@ describe('headerIcons catalog', () => {
   })
 })
 
+describe('utilityIcons catalog', () => {
+  it('contains exactly 2 entries', () => {
+    expect(utilityIcons).toHaveLength(2)
+  })
+
+  it('contains the expected utility names in order', () => {
+    const names = utilityIcons.map((i) => i.name)
+    expect(names).toEqual(['Eye', 'EyeOff'])
+  })
+
+  it.each(utilityIcons)('$name renders an SVG with strokeWidth 1.3', ({ component: C }) => {
+    const { container } = render(<C />)
+    const el = svg(container)
+    expect(el.getAttribute('stroke-width')).toBe('1.3')
+  })
+
+  it.each(utilityIcons)('$name forwards className to the SVG element', ({ component: C }) => {
+    const { container } = render(<C className="custom-class" />)
+    const el = svg(container)
+    expect(el.getAttribute('class')).toContain('custom-class')
+  })
+
+  it.each(utilityIcons)('$name allows strokeWidth override via props', ({ component: C }) => {
+    const { container } = render(<C strokeWidth={2} />)
+    const el = svg(container)
+    expect(el.getAttribute('stroke-width')).toBe('2')
+  })
+
+  it.each(utilityIcons)('$name renders at least one child SVG element', ({ component: C }) => {
+    const { container } = render(<C />)
+    const el = svg(container)
+    expect(el.childElementCount).toBeGreaterThanOrEqual(1)
+  })
+})
+
 describe('catalog arrays have unique names', () => {
   it('toolIcons names are unique', () => {
     const names = toolIcons.map((i) => i.name)
@@ -90,6 +125,11 @@ describe('catalog arrays have unique names', () => {
     expect(new Set(names).size).toBe(names.length)
   })
 
+  it('utilityIcons names are unique', () => {
+    const names = utilityIcons.map((i) => i.name)
+    expect(new Set(names).size).toBe(names.length)
+  })
+
   it('no name overlap between tool and header icons', () => {
     const toolNames = new Set<string>(toolIcons.map((i) => i.name))
     const headerNames = headerIcons.map((i) => i.name)
@@ -97,10 +137,19 @@ describe('catalog arrays have unique names', () => {
       expect(toolNames.has(name)).toBe(false)
     }
   })
+
+  it('no name overlap across all catalogs', () => {
+    const allNames = [
+      ...toolIcons.map((i) => i.name),
+      ...headerIcons.map((i) => i.name),
+      ...utilityIcons.map((i) => i.name),
+    ]
+    expect(new Set(allNames).size).toBe(allNames.length)
+  })
 })
 
 describe('all icons share the 14×14 viewBox from the Icon wrapper', () => {
-  const allIcons = [...toolIcons, ...headerIcons]
+  const allIcons = [...toolIcons, ...headerIcons, ...utilityIcons]
 
   it.each(allIcons)('$name has viewBox="0 0 14 14"', ({ component: C }) => {
     const { container } = render(<C />)

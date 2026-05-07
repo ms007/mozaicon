@@ -59,12 +59,17 @@ OKLCH → dark OKLCH. Copy-paste OKLCH values from this table; they match
 | brand-fg     | `--primary-foreground` | `primary-fg`   | `text-primary-foreground` | `oklch(1 0 0)`                   | `oklch(1 0 0)`                   |
 | brand-hover  | `--primary-hover`      | (DS extension) | `bg-primary-hover`        | `oklch(0.585 0.204 277.1)`       | `oklch(0.68 0.158 276.9)`        |
 | brand-muted  | `--primary-muted`      | (DS extension) | `bg-primary-muted`        | `oklch(0.525 0.211 275.4 / 12%)` | `oklch(0.585 0.204 277.1 / 15%)` |
+| brand-faint  | `--primary-faint`      | (DS extension) | `bg-primary-faint`        | `oklch(0.95 0.01 288.9 / 1)`     | `oklch(0.2 0.04 283.6)`          |
 | brand-subtle | `--primary-subtle`     | (DS extension) | `text-primary-subtle`     | `oklch(0.398 0.177 277.4)`       | `oklch(0.785 0.104 274.7)`       |
 
 Brand indigo is the single accent: active tool, selection, focus ring, slider
 thumb. The resting brand is `#4f52e0` on light and `#6366f1` (Indigo 500) on
 dark. `--primary-hover` always **lifts toward lighter** — `#6366f1` (Indigo 500)
 on light, `#818cf8` (Indigo 400) on dark. The raw hex sources differ per theme.
+
+Browser text selection (`::selection`) is wired to `--primary` /
+`--primary-foreground` in the base layer so marked text adopts the brand
+indigo in both themes.
 
 ### Status
 

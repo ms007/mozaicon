@@ -1,6 +1,8 @@
 import { Draw } from './Draw'
 import { Ellipse } from './Ellipse'
 import { Erase } from './Erase'
+import { Eye } from './Eye'
+import { EyeOff } from './EyeOff'
 import { Fill } from './Fill'
 import { Line } from './Line'
 import { Moon } from './Moon'
@@ -9,7 +11,7 @@ import { Redo } from './Redo'
 import { Sun } from './Sun'
 import { Undo } from './Undo'
 
-export { Draw, Ellipse, Erase, Fill, Line, Moon, Rect, Redo, Sun, Undo }
+export { Draw, Ellipse, Erase, Eye, EyeOff, Fill, Line, Moon, Rect, Redo, Sun, Undo }
 export { Icon } from './Icon'
 
 export const toolIcons = [
@@ -26,4 +28,9 @@ export const headerIcons = [
   { name: 'Redo', component: Redo },
   { name: 'Sun', component: Sun },
   { name: 'Moon', component: Moon },
+] as const
+
+export const utilityIcons = [
+  { name: 'Eye', component: Eye },
+  { name: 'EyeOff', component: EyeOff },
 ] as const

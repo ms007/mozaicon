@@ -52,6 +52,7 @@
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.585 0.204 277.1); /* #6366f1 · DS --accent-hover */
   --primary-muted: oklch(0.525 0.211 275.4 / 12%); /* DS --accent-muted (indigo @ 12%) */
+  --primary-faint: oklch(0.95 0.01 288.9 / 1); /* solid pale violet, lifts above primary-muted */
   --primary-subtle: oklch(0.398 0.177 277.4); /* #3730a3 · text on --primary-muted */
 
   /* Status colors — reserved per DS usage rules. */
@@ -122,6 +123,7 @@
   --primary-foreground: oklch(1 0 0);
   --primary-hover: oklch(0.68 0.158 276.9); /* #818cf8 · DS --accent-hover */
   --primary-muted: oklch(0.585 0.204 277.1 / 15%); /* DS --accent-muted (indigo @ 15%) */
+  --primary-faint: oklch(0.2 0.04 283.6); /* solid faint violet, lifts above primary-muted */
   --primary-subtle: oklch(0.785 0.104 274.7); /* #a5b4fc · DS --accent-text */
 
   --success: oklch(0.773 0.153 163.2); /* #34d399 · DS --success */
@@ -180,6 +182,7 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
   --color-primary-muted: var(--primary-muted);
+  --color-primary-faint: var(--primary-faint);
   --color-primary-subtle: var(--primary-subtle);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -253,6 +256,13 @@
 
   body {
     @apply bg-background text-foreground font-sans text-base tabular-nums antialiased;
+  }
+
+  /* Text selection adopts the brand indigo so light/dark themes stay
+   * consistent with --primary (active tool, selection, focus ring). */
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
   }
 }
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import { headerIcons, toolIcons } from '@/icons'
+import { headerIcons, toolIcons, utilityIcons } from '@/icons'
 
 function IconGrid({ icons }: { icons: readonly { name: string; component: React.FC }[] }) {
   return (
@@ -41,6 +41,15 @@ export const HeaderIcons: Story = {
   ),
 }
 
+export const UtilityIcons: Story = {
+  render: () => (
+    <div className="space-y-3">
+      <h3 className="text-sm font-medium">Utility Icons (stroke 1.3)</h3>
+      <IconGrid icons={utilityIcons} />
+    </div>
+  ),
+}
+
 export const AllIcons: Story = {
   render: () => (
     <div className="space-y-6">
@@ -51,6 +60,10 @@ export const AllIcons: Story = {
       <div className="space-y-3">
         <h3 className="text-sm font-medium">Header Icons (stroke 1.5)</h3>
         <IconGrid icons={headerIcons} />
+      </div>
+      <div className="space-y-3">
+        <h3 className="text-sm font-medium">Utility Icons (stroke 1.3)</h3>
+        <IconGrid icons={utilityIcons} />
       </div>
     </div>
   ),
