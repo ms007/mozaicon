@@ -29,6 +29,8 @@ export type DrawTool = {
   onPointerDown: (ctx: ToolCtx, event: ToolEvent) => void
   onPointerMove: (ctx: ToolCtx, event: ToolEvent) => void
   onPointerUp: (ctx: ToolCtx, event: ToolEvent) => void
+  onDeactivate?: (ctx: ToolCtx) => void
+  shouldHandlePointerMove?: (ctx: ToolCtx) => boolean
 }
 
 export type DrawToolMap = Partial<Record<string, DrawTool>>

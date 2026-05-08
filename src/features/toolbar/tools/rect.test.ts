@@ -241,3 +241,48 @@ describe('rectTool lifecycle', () => {
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
   })
 })
+
+describe('rectTool.onDeactivate', () => {
+  const { onDeactivate } = rectTool
+
+  it('clears draft and drag when a draft is active', () => {
+    expect(onDeactivate).toBeDefined()
+    const ctx = makeCtx()
+    rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    rectTool.onPointerMove(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    expect(ctx.store.get(draftShapeAtom)).not.toBeNull()
+    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+
+    onDeactivate?.(ctx)
+
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+    expect(ctx.store.get(activeDragAtom)).toBeNull()
+  })
+
+  it('is a no-op when no draft is active', () => {
+    const ctx = makeCtx()
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+    expect(ctx.store.get(activeDragAtom)).toBeNull()
+
+    onDeactivate?.(ctx)
+
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+    expect(ctx.store.get(activeDragAtom)).toBeNull()
+  })
+})
+
+describe('rectTool.shouldHandlePointerMove', () => {
+  const { shouldHandlePointerMove } = rectTool
+
+  it('returns true when a drag is active', () => {
+    expect(shouldHandlePointerMove).toBeDefined()
+    const ctx = makeCtx()
+    rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }))
+    expect(shouldHandlePointerMove?.(ctx)).toBe(true)
+  })
+
+  it('returns false when no drag is active', () => {
+    const ctx = makeCtx()
+    expect(shouldHandlePointerMove?.(ctx)).toBe(false)
+  })
+})

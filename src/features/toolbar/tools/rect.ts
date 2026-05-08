@@ -1,6 +1,11 @@
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { newId } from '@/lib/ids'
-import { activeDragAtom, DRAFT_SHAPE_ID, draftShapeAtom } from '@/store/atoms/draft'
+import {
+  activeDragAtom,
+  cancelDraftAtom,
+  DRAFT_SHAPE_ID,
+  draftShapeAtom,
+} from '@/store/atoms/draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { addShapeCommand } from '@/store/commands/addShape'
 
@@ -113,7 +118,14 @@ export const rectTool: DrawTool = {
     const id = newId()
     ctx.store.set(addShapeCommand, { id, ...geo, fill: DEFAULT_FILL })
     ctx.store.set(selectedIdsAtom, [id])
-    ctx.store.set(draftShapeAtom, null)
-    ctx.store.set(activeDragAtom, null)
+    ctx.store.set(cancelDraftAtom)
+  },
+
+  onDeactivate(ctx) {
+    ctx.store.set(cancelDraftAtom)
+  },
+
+  shouldHandlePointerMove(ctx) {
+    return !!ctx.store.get(activeDragAtom)
   },
 }
