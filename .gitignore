@@ -50,3 +50,6 @@ storybook-static/
 
 # Claude Code runtime artefacts
 .claude/scheduled_tasks.lock
+
+# Git
+clean-branches.sh
