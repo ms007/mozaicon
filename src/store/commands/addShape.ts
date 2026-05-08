@@ -4,12 +4,12 @@ import type { RectShape } from '@/types/shapes'
 import { createCommand } from './createCommand'
 
 export type AddRectPayload = Omit<RectShape, 'id' | 'type' | 'name' | 'visible' | 'locked'> &
-  Partial<Pick<RectShape, 'name' | 'visible' | 'locked'>>
+  Partial<Pick<RectShape, 'id' | 'name' | 'visible' | 'locked'>>
 
 export const addShapeCommand = createCommand<AddRectPayload>('Add shape', (doc, payload) => {
   const shape: RectShape = {
     ...payload,
-    id: newId(),
+    id: payload.id ?? newId(),
     type: 'rect',
     name: payload.name ?? 'Rect',
     visible: payload.visible ?? true,

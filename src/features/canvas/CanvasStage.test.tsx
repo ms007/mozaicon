@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { documentAtom } from '@/store/atoms/document'
+import { draftShapeAtom } from '@/store/atoms/draft'
+import { activeToolAtom } from '@/store/atoms/tool'
 import { renderWithStore } from '@/test/renderWithStore'
 import type { Document } from '@/types/shapes'
 
@@ -62,5 +64,35 @@ describe('CanvasStage', () => {
     })
 
     expect(container.querySelectorAll('rect')).toHaveLength(2)
+  })
+
+  it('applies crosshair cursor when a draw tool is active', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+      store.set(activeToolAtom, 'rect')
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg?.classList.contains('cursor-crosshair')).toBe(true)
+  })
+
+  it('renders draft shape when draftShapeAtom is set', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, { ...seededDoc, shapes: [] })
+      store.set(draftShapeAtom, {
+        type: 'rect',
+        id: '__draft__',
+        name: 'Rect',
+        visible: true,
+        locked: false,
+        x: 2,
+        y: 2,
+        width: 8,
+        height: 6,
+        fill: '#000',
+      })
+    })
+
+    expect(container.querySelectorAll('rect')).toHaveLength(1)
   })
 })

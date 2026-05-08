@@ -23,7 +23,7 @@ function makeStore(doc: Document = emptyDoc) {
 
 describe('toolbar bindings', () => {
   it('hint lookup returns "R" for the rect binding id', () => {
-    const hint = getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.add')
+    const hint = getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.activate')
     expect(hint).toBe('R')
   })
 
@@ -37,12 +37,12 @@ describe('toolbar bindings', () => {
     const bindings = createToolbarBindings(store)
 
     expect(bindings).toHaveLength(1)
-    expect(bindings[0].id).toBe('tool.rect.add')
+    expect(bindings[0].id).toBe('tool.rect.activate')
     expect(bindings[0].key).toBe('R')
     expect(bindings[0].hint).toBe('R')
   })
 
-  it('invoking the rect binding run adds a rect and sets activeTool', () => {
+  it('invoking the rect binding activates the rect tool but does not add a shape', () => {
     const store = makeStore()
     store.set(activeToolAtom, 'select')
     const bindings = createToolbarBindings(store)
@@ -50,8 +50,6 @@ describe('toolbar bindings', () => {
     bindings[0].run()
 
     expect(store.get(activeToolAtom)).toBe('rect')
-    const shapes = store.get(documentAtom).shapes
-    expect(shapes).toHaveLength(1)
-    expect(shapes[0]).toMatchObject({ type: 'rect' })
+    expect(store.get(documentAtom).shapes).toHaveLength(0)
   })
 })

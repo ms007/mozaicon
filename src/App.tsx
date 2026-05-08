@@ -2,6 +2,7 @@ import { useStore } from 'jotai'
 import { useMemo } from 'react'
 
 import { TooltipProvider } from '@/components/primitives/Tooltip'
+import { createCanvasBindings } from '@/features/canvas/bindings'
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { buildBindings } from '@/features/shortcuts/registry'
 import { useGlobalShortcuts } from '@/features/shortcuts/useGlobalShortcuts'
@@ -10,7 +11,10 @@ import { Toolbar } from '@/features/toolbar/Toolbar'
 
 export default function App() {
   const store = useStore()
-  const bindings = useMemo(() => buildBindings(createToolbarBindings(store)), [store])
+  const bindings = useMemo(
+    () => buildBindings([...createCanvasBindings(store), ...createToolbarBindings(store)]),
+    [store],
+  )
   useGlobalShortcuts(bindings)
 
   return (

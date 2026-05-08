@@ -9,13 +9,12 @@ type ToolbarBindingDef = Omit<ShortcutBinding, 'run'> & {
 
 const TOOLBAR_BINDING_DEFS: readonly ToolbarBindingDef[] = [
   {
-    id: 'tool.rect.add',
+    id: 'tool.rect.activate',
     key: 'R',
     label: 'Rectangle',
     hint: 'R',
     run: (actions) => {
       actions.handleChange('rect')
-      actions.handleItemClick('rect')
     },
   },
 ]

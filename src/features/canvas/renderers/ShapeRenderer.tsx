@@ -5,13 +5,23 @@ import type { Shape } from '@/types/shapes'
 
 import { RectRenderer } from './RectRenderer'
 
-type ShapeRendererProps = {
-  shapeAtom: PrimitiveAtom<Shape>
+type ShapeRendererProps =
+  | { shapeAtom: PrimitiveAtom<Shape>; shape?: never }
+  | { shape: Shape; shapeAtom?: never }
+
+export function ShapeRenderer(props: ShapeRendererProps) {
+  if (props.shapeAtom) {
+    return <AtomShapeRenderer shapeAtom={props.shapeAtom} />
+  }
+  return <ValueShapeRenderer shape={props.shape} />
 }
 
-export function ShapeRenderer({ shapeAtom }: ShapeRendererProps) {
+function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
+  return <ValueShapeRenderer shape={shape} />
+}
 
+function ValueShapeRenderer({ shape }: { shape: Shape }) {
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
   switch (shape.type) {
     case 'rect':

@@ -14,7 +14,7 @@ const tools: ToolOption[] = [
     value: 'rect',
     icon: <Rect />,
     label: 'Rectangle',
-    shortcut: getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.add'),
+    shortcut: getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.activate'),
   },
 ]
 
@@ -29,7 +29,6 @@ export function Toolbar() {
         options={tools}
         value={activeTool}
         onChange={actions.handleChange}
-        onItemClick={actions.handleItemClick}
         aria-label="Drawing tools"
       />
     </div>

@@ -58,38 +58,43 @@ afterEach(() => {
 })
 
 describe('useGlobalShortcuts', () => {
-  it('pressing R dispatches the rect action and updates atoms', () => {
+  it('pressing R activates the rect tool but does not add a shape', () => {
     const { store } = setup()
     store.set(activeToolAtom, 'select')
 
     fireKey('r')
 
     expect(store.get(activeToolAtom)).toBe('rect')
-    const shapes = store.get(documentAtom).shapes
-    expect(shapes).toHaveLength(1)
-    expect(shapes[0]).toMatchObject({ type: 'rect' })
+    expect(store.get(documentAtom).shapes).toHaveLength(0)
   })
 
   it('pressing R with Ctrl does not dispatch (browser reload)', () => {
     const { store } = setup()
+    store.set(activeToolAtom, 'select')
+
     fireKey('r', { ctrlKey: true })
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+
+    expect(store.get(activeToolAtom)).toBe('select')
   })
 
   it('pressing R with Meta does not dispatch', () => {
     const { store } = setup()
+    store.set(activeToolAtom, 'select')
+
     fireKey('r', { metaKey: true })
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+
+    expect(store.get(activeToolAtom)).toBe('select')
   })
 
   it('does not dispatch when target is an editable element', () => {
     const { store } = setup()
+    store.set(activeToolAtom, 'select')
 
     const input = document.createElement('input')
     document.body.appendChild(input)
     try {
       fireKey('r', { target: input })
-      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(activeToolAtom)).toBe('select')
     } finally {
       input.remove()
     }
@@ -97,8 +102,11 @@ describe('useGlobalShortcuts', () => {
 
   it('does not dispatch on event.repeat', () => {
     const { store } = setup()
+    store.set(activeToolAtom, 'select')
+
     fireKey('r', { repeat: true })
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+
+    expect(store.get(activeToolAtom)).toBe('select')
   })
 
   it('calls preventDefault on a matched binding', () => {
@@ -121,10 +129,12 @@ describe('useGlobalShortcuts', () => {
 
   it('removes the keydown listener on unmount', () => {
     const { store, unmount } = setup()
+    store.set(activeToolAtom, 'select')
     unmount()
 
     fireKey('r')
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+
+    expect(store.get(activeToolAtom)).toBe('select')
   })
 
   it('dispatches first-match-wins when multiple bindings share a prefix', () => {

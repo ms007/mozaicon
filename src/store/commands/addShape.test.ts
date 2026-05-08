@@ -75,6 +75,15 @@ describe('addShapeCommand', () => {
     expect(store.get(redoStackAtom)).toEqual([])
   })
 
+  it('uses the explicit id when provided', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, { id: 'my-id', x: 0, y: 0, width: 5, height: 5, fill: '#000' })
+
+    const shapes = store.get(documentAtom).shapes
+    expect(shapes[0].id).toBe('my-id')
+  })
+
   it('does not mutate the prior document reference', () => {
     const store = makeStore()
     const before = store.get(documentAtom)

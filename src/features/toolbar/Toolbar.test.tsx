@@ -21,25 +21,7 @@ function makeStore(doc: Document = emptyDoc) {
 }
 
 describe('Toolbar', () => {
-  it('clicking rect adds a rect to the document', () => {
-    const store = makeStore()
-    const actions = createToolbarActions(store)
-
-    actions.handleItemClick('rect')
-
-    const shapes = store.get(documentAtom).shapes
-    expect(shapes).toHaveLength(1)
-    expect(shapes[0]).toMatchObject({
-      type: 'rect',
-      x: 4,
-      y: 4,
-      width: 16,
-      height: 16,
-      fill: '#000',
-    })
-  })
-
-  it('clicking rect sets the active tool to rect', () => {
+  it('clicking rect activates the rect tool', () => {
     const store = makeStore()
     store.set(activeToolAtom, 'ellipse')
     const actions = createToolbarActions(store)
@@ -49,25 +31,23 @@ describe('Toolbar', () => {
     expect(store.get(activeToolAtom)).toBe('rect')
   })
 
-  it('clicking the already-active tool still adds a shape', () => {
+  it('clicking rect does not insert a shape', () => {
+    const store = makeStore()
+    const actions = createToolbarActions(store)
+
+    actions.handleChange('rect')
+
+    expect(store.get(documentAtom).shapes).toHaveLength(0)
+  })
+
+  it('re-clicking the already-active tool is a no-op', () => {
     const store = makeStore()
     store.set(activeToolAtom, 'rect')
     const actions = createToolbarActions(store)
 
-    actions.handleItemClick('rect')
-    actions.handleItemClick('rect')
+    actions.handleChange('rect')
 
-    const shapes = store.get(documentAtom).shapes
-    expect(shapes).toHaveLength(2)
-  })
-
-  it('clicking an unknown tool value does not add a shape', () => {
-    const store = makeStore()
-    const actions = createToolbarActions(store)
-
-    actions.handleItemClick('ellipse')
-    actions.handleItemClick('')
-
+    expect(store.get(activeToolAtom)).toBe('rect')
     expect(store.get(documentAtom).shapes).toHaveLength(0)
   })
 
