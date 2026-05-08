@@ -1,6 +1,6 @@
 import { claudeCustom } from './agent.ts'
 import { runOrchestrator } from './lib/index.ts'
-import { sandbox, sandboxHooks } from './sandbox.ts'
+import { buildSandboxHooks, sandbox } from './sandbox.ts'
 
 const seedIssue = Number(process.argv[2])
 if (!Number.isInteger(seedIssue) || seedIssue <= 0) {
@@ -11,7 +11,7 @@ if (!Number.isInteger(seedIssue) || seedIssue <= 0) {
 const result = await runOrchestrator({
   seedIssue,
   sandbox,
-  hooks: sandboxHooks,
+  hooks: buildSandboxHooks,
   logDir: '.sandcastle/logs',
   stages: {
     implement: {

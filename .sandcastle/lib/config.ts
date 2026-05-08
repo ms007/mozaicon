@@ -1,5 +1,13 @@
 import type { AgentProvider, PromptArgs, SandboxHooks, SandboxProvider } from "@ai-hero/sandcastle"
 
+/**
+ * Build sandbox hooks pinned to a specific base SHA. The orchestrator calls
+ * this once per stage invocation with the wave-correct base SHA so each
+ * sandbox can deterministically reset its worktree to the run-fixed baseRef
+ * — regardless of what the host HEAD is doing.
+ */
+export type SandboxHooksFactory = (baseSha: string) => SandboxHooks
+
 export interface StageConfig {
   readonly agent: AgentProvider
   readonly promptFile: string
@@ -10,7 +18,7 @@ export interface StageConfig {
 
 export interface ContainerStageConfig extends StageConfig {
   readonly sandbox?: SandboxProvider
-  readonly hooks?: SandboxHooks
+  readonly hooks?: SandboxHooks | SandboxHooksFactory
 }
 
 export type SandboxFactory = (runId: string) => SandboxProvider
@@ -18,7 +26,7 @@ export type SandboxFactory = (runId: string) => SandboxProvider
 export interface OrchestratorOptions {
   readonly seedIssue: number
   readonly sandbox: SandboxFactory
-  readonly hooks?: SandboxHooks
+  readonly hooks?: SandboxHooks | SandboxHooksFactory
   readonly stages: {
     readonly implement: ContainerStageConfig
     readonly review: StageConfig
@@ -39,7 +47,12 @@ export interface ResolvedStageConfig {
 
 export interface ResolvedContainerStageConfig extends ResolvedStageConfig {
   readonly sandbox: SandboxProvider
-  readonly hooks?: SandboxHooks
+  /**
+   * Always normalised to a factory at config-resolution time so callers don't
+   * have to branch on "static hooks vs. factory". `undefined` means no hooks
+   * were configured — callers must `spreadOptional` accordingly.
+   */
+  readonly hooksFactory?: SandboxHooksFactory
 }
 
 export interface ResolvedConfig {
@@ -104,18 +117,26 @@ function validateStage(
   }
 }
 
+const toHooksFactory = (
+  hooks: SandboxHooks | SandboxHooksFactory | undefined,
+): SandboxHooksFactory | undefined => {
+  if (hooks === undefined) return undefined
+  return typeof hooks === "function" ? hooks : () => hooks
+}
+
 function resolveContainerStage(
   name: string,
   config: ContainerStageConfig,
   globalSandbox: SandboxProvider,
-  globalHooks: SandboxHooks | undefined,
+  globalHooks: SandboxHooks | SandboxHooksFactory | undefined,
   workflowTokens: readonly string[],
 ): ResolvedContainerStageConfig {
   const base = validateStage(name, config, workflowTokens)
+  const hooksFactory = toHooksFactory(config.hooks ?? globalHooks)
   return {
     ...base,
     sandbox: config.sandbox ?? globalSandbox,
-    ...spreadOptional("hooks", config.hooks ?? globalHooks),
+    ...spreadOptional("hooksFactory", hooksFactory),
   }
 }
 
@@ -161,4 +182,4 @@ export function resolveConfig(
 }
 
 /** Test seam — internal helpers exposed for unit tests. Not a public API. */
-export const __testing = { validateStage, resolveContainerStage }
+export const __testing = { validateStage, resolveContainerStage, toHooksFactory }

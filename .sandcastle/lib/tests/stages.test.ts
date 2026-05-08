@@ -223,7 +223,7 @@ describe("buildMergerRunOptions", () => {
     assert.equal(opts.promptArgs?.BRANCH_LIST, "- sandcastle/issue-1\n- sandcastle/issue-2")
   })
 
-  it("omits hooks from RunOptions when config.hooks is absent", () => {
+  it("omits hooks from RunOptions when config.hooksFactory is absent", () => {
     const opts = buildMergerRunOptions({
       issues,
       baseRef,
@@ -235,9 +235,11 @@ describe("buildMergerRunOptions", () => {
     assert.equal("hooks" in opts, false)
   })
 
-  it("passes hooks when config.hooks is present", () => {
-    const hooks = { sandbox: { onSandboxReady: [{ command: "echo hi" }] } } as const
-    const config = { ...mergeConfig, hooks }
+  it("passes hooks built from baseRef.sha when config.hooksFactory is present", () => {
+    const hooksFactory = (sha: string) => ({
+      sandbox: { onSandboxReady: [{ command: `git reset --hard ${sha}` }] },
+    })
+    const config = { ...mergeConfig, hooksFactory }
     const opts = buildMergerRunOptions({
       issues,
       baseRef,
@@ -246,7 +248,37 @@ describe("buildMergerRunOptions", () => {
       logDir: undefined,
       runId,
     })
-    assert.deepEqual(opts.hooks, hooks)
+    assert.deepEqual(opts.hooks, hooksFactory(baseRef.sha))
+  })
+
+  it("rebuilds hooks per call so the merger's reset target tracks baseRef across waves", () => {
+    const hooksFactory = (sha: string) => ({
+      sandbox: { onSandboxReady: [{ command: `git reset --hard ${sha}` }] },
+    })
+    const config = { ...mergeConfig, hooksFactory }
+    const wave0Base = { sha: "0000000000000000000000000000000000000000", refName: "main" }
+    const wave1Base = { sha: "1111111111111111111111111111111111111111", refName: "main" }
+    const opts0 = buildMergerRunOptions({
+      issues,
+      baseRef: wave0Base,
+      mergeBranch,
+      config,
+      logDir: undefined,
+      runId,
+    })
+    const opts1 = buildMergerRunOptions({
+      issues,
+      baseRef: wave1Base,
+      mergeBranch,
+      config,
+      logDir: undefined,
+      runId,
+    })
+    assert.notDeepEqual(opts0.hooks, opts1.hooks)
+    const cmd0 = opts0.hooks?.sandbox?.onSandboxReady?.[0]?.command
+    const cmd1 = opts1.hooks?.sandbox?.onSandboxReady?.[0]?.command
+    assert.ok(cmd0?.endsWith(wave0Base.sha))
+    assert.ok(cmd1?.endsWith(wave1Base.sha))
   })
 
   it("places stage log under <logDir>/<runId>/ when logDir is set", () => {
@@ -417,7 +449,7 @@ describe("resolveConfig", () => {
     assert.equal(resolved.stages.merge.sandbox, fakeSandbox)
   })
 
-  it("per-stage hooks override the global hooks", () => {
+  it("per-stage hooks override the global hooks (normalised through hooksFactory)", () => {
     const globalHooks = { sandbox: { onSandboxReady: [{ command: "global" }] } } as const
     const stageHooks = { sandbox: { onSandboxReady: [{ command: "stage" }] } } as const
     const options = {
@@ -429,8 +461,27 @@ describe("resolveConfig", () => {
       },
     }
     const resolved = resolveConfig(options, defaults, testRunId)
-    assert.deepEqual(resolved.stages.implement.hooks, globalHooks)
-    assert.deepEqual(resolved.stages.merge.hooks, stageHooks)
+    // Both stages now expose factories; calling them with any base SHA must
+    // return the static hook set the user configured.
+    assert.deepEqual(resolved.stages.implement.hooksFactory?.("deadbeef"), globalHooks)
+    assert.deepEqual(resolved.stages.merge.hooksFactory?.("deadbeef"), stageHooks)
+  })
+
+  it("preserves a hook factory across resolveConfig instead of calling it eagerly", () => {
+    const calls: string[] = []
+    const factory = (sha: string) => {
+      calls.push(sha)
+      return { sandbox: { onSandboxReady: [{ command: `git reset --hard ${sha}` }] } }
+    }
+    const options = { ...baseOptions, hooks: factory }
+    const resolved = resolveConfig(options, defaults, testRunId)
+    // Factory must NOT have been invoked at config-resolution time —
+    // it has to wait until each wave/stage materialises hooks itself.
+    assert.equal(calls.length, 0)
+    const hooksA = resolved.stages.implement.hooksFactory?.("aaa")
+    const hooksB = resolved.stages.implement.hooksFactory?.("bbb")
+    assert.notDeepEqual(hooksA, hooksB)
+    assert.deepEqual(calls, ["aaa", "bbb"])
   })
 
   it("propagates user-provided tickCap and attemptCap", () => {
@@ -570,7 +621,7 @@ describe("resolveContainerStage", () => {
     assert.equal(result.sandbox, stageSandbox)
   })
 
-  it("per-stage hooks win over global hooks", () => {
+  it("per-stage hooks win over global hooks (factory returns the per-stage hooks)", () => {
     const globalHooks = { sandbox: { onSandboxReady: [{ command: "g" }] } } as const
     const stageHooks = { sandbox: { onSandboxReady: [{ command: "s" }] } } as const
     const result = resolveContainerStage(
@@ -580,10 +631,10 @@ describe("resolveContainerStage", () => {
       globalHooks,
       WORKFLOW_TOKENS.merge,
     )
-    assert.deepEqual(result.hooks, stageHooks)
+    assert.deepEqual(result.hooksFactory?.("deadbeef"), stageHooks)
   })
 
-  it("omits hooks when neither per-stage nor global is provided", () => {
+  it("omits hooksFactory when neither per-stage nor global is provided", () => {
     const result = resolveContainerStage(
       "implement",
       { agent: fakeAgent, promptFile: "f.md" },
@@ -591,7 +642,7 @@ describe("resolveContainerStage", () => {
       undefined,
       WORKFLOW_TOKENS.implement,
     )
-    assert.equal("hooks" in result, false)
+    assert.equal("hooksFactory" in result, false)
   })
 })
 

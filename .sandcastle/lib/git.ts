@@ -16,6 +16,11 @@ export type CasFFResult =
   | { readonly kind: "ok" }
   | { readonly kind: "moved"; readonly actualSha: string }
   | { readonly kind: "missing" }
+  | {
+      readonly kind: "non-fast-forward"
+      readonly expectedSha: string
+      readonly newSha: string
+    }
 
 export interface BranchCommit {
   readonly sha: string
@@ -143,12 +148,19 @@ export const resolveRef = (refName: string): ResolveRefResult => {
  * Atomic compare-and-set fast-forward of a branch ref.
  *
  * Advances `branch` from `expectedSha` to `newSha` only when the current tip
- * equals `expectedSha`. Uses `git update-ref` with the old-value check so the
- * operation is atomic.
+ * equals `expectedSha` AND `newSha` is a true fast-forward of `expectedSha`
+ * (i.e. `expectedSha` is an ancestor of `newSha`). Uses `git update-ref` with
+ * the old-value check for atomicity.
  *
- * Returns `{ kind: "ok" }` on success, `{ kind: "moved", actualSha }` when the
- * branch has been updated by someone else, or `{ kind: "missing" }` when the
- * branch does not exist.
+ * Returns:
+ * - `{ kind: "ok" }` on success
+ * - `{ kind: "moved", actualSha }` when the branch has been updated by someone else
+ * - `{ kind: "missing" }` when the branch does not exist
+ * - `{ kind: "non-fast-forward", expectedSha, newSha }` when `newSha` is not
+ *   a descendant of `expectedSha`. The branch is NOT updated in this case.
+ *   This guards against a previous wave's merge being silently clobbered when
+ *   the host HEAD switches mid-run and the next wave is built on the wrong
+ *   parent.
  */
 export const casFastForward = (
   branch: string,
@@ -156,13 +168,30 @@ export const casFastForward = (
   newSha: string,
 ): CasFFResult => {
   const ref = `refs/heads/${branch}`
-  // Single subprocess on the happy path: update-ref's old-value guard already
-  // checks that current == expectedSha atomically. Only re-read the ref to
-  // distinguish missing vs. moved when the guard rejects.
-  if (tryGit("update-ref", ref, newSha, expectedSha) !== null) return { kind: "ok" }
+  // Resolve current tip first so we can distinguish missing / moved / non-FF
+  // cleanly. update-ref's old-value guard would also catch the moved case,
+  // but it can't tell us about non-FF — and in the post-mortem bug the CAS
+  // value matches yet the new SHA is not a descendant of expected. Pay one
+  // extra subprocess on the happy path for that disambiguation.
   const actual = tryGit("rev-parse", "--verify", ref)
   if (actual === null) return { kind: "missing" }
-  return { kind: "moved", actualSha: actual }
+  if (actual !== expectedSha) return { kind: "moved", actualSha: actual }
+  // expectedSha === current tip. Now enforce the fast-forward invariant:
+  // newSha must be a descendant of expectedSha. A no-op (newSha === expected)
+  // is a trivial fast-forward and allowed.
+  if (
+    expectedSha !== newSha &&
+    tryGit("merge-base", "--is-ancestor", expectedSha, newSha) === null
+  ) {
+    return { kind: "non-fast-forward", expectedSha, newSha }
+  }
+  // update-ref's old-value check still atomically guards against a TOCTOU
+  // race between our rev-parse above and the actual update.
+  if (tryGit("update-ref", ref, newSha, expectedSha) !== null) return { kind: "ok" }
+  // Lost the race: someone moved the ref between our check and update-ref.
+  const after = tryGit("rev-parse", "--verify", ref)
+  if (after === null) return { kind: "missing" }
+  return { kind: "moved", actualSha: after }
 }
 
 /**

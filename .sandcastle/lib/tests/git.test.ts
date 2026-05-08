@@ -295,6 +295,67 @@ describe("git helpers (real subprocess)", () => {
         execFileSync("git", ["branch", "-D", "cas-noop"], { cwd: repo })
       }
     })
+
+    it("refuses a non-fast-forward update where expectedSha is not an ancestor of newSha", () => {
+      // Build two divergent histories: branch `cas-divA` and `cas-divB` share
+      // an ancestor (main) but neither is a descendant of the other. Pointing
+      // cas-divA at cas-divB's tip would NOT be a fast-forward — the FF guard
+      // must reject it without mutating the ref.
+      git("branch", "cas-divA", "main")
+      git("checkout", "-q", "cas-divA")
+      git("commit", "--allow-empty", "-m", "div-A-1")
+      const divATip = git("rev-parse", "cas-divA")
+      git("checkout", "-q", "main")
+
+      git("branch", "cas-divB", "main")
+      git("checkout", "-q", "cas-divB")
+      git("commit", "--allow-empty", "-m", "div-B-1")
+      const divBTip = git("rev-parse", "cas-divB")
+      git("checkout", "-q", "main")
+
+      try {
+        const result = casFastForward("cas-divA", divATip, divBTip)
+        assert.equal(result.kind, "non-fast-forward")
+        if (result.kind === "non-fast-forward") {
+          assert.equal(result.expectedSha, divATip)
+          assert.equal(result.newSha, divBTip)
+        }
+        // Branch must be untouched — this is the whole point of the guard.
+        assert.equal(git("rev-parse", "cas-divA"), divATip)
+      } finally {
+        execFileSync("git", ["branch", "-D", "cas-divA"], { cwd: repo })
+        execFileSync("git", ["branch", "-D", "cas-divB"], { cwd: repo })
+      }
+    })
+
+    it("non-fast-forward result is reported even when expectedSha matches the current tip", () => {
+      // A particularly nasty form of the post-mortem bug: the orchestrator's
+      // CAS old-value check (current == expected) passes, but the merger
+      // forked off the wrong parent so the new SHA is not a descendant. The
+      // FF guard must catch this *before* update-ref runs.
+      git("branch", "cas-nff", "main")
+      git("checkout", "-q", "cas-nff")
+      git("commit", "--allow-empty", "-m", "expected-tip")
+      const expectedSha = git("rev-parse", "cas-nff")
+      git("checkout", "-q", "main")
+
+      // Build a divergent history that does NOT include expectedSha.
+      git("branch", "cas-divergent", "main")
+      git("checkout", "-q", "cas-divergent")
+      git("commit", "--allow-empty", "-m", "divergent-tip")
+      const divergentSha = git("rev-parse", "cas-divergent")
+      git("checkout", "-q", "main")
+
+      try {
+        const result = casFastForward("cas-nff", expectedSha, divergentSha)
+        assert.equal(result.kind, "non-fast-forward")
+        // No mutation happened.
+        assert.equal(git("rev-parse", "cas-nff"), expectedSha)
+      } finally {
+        execFileSync("git", ["branch", "-D", "cas-nff"], { cwd: repo })
+        execFileSync("git", ["branch", "-D", "cas-divergent"], { cwd: repo })
+      }
+    })
   })
 
   describe("safeDeleteBranch", () => {

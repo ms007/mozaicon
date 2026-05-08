@@ -114,11 +114,18 @@ export async function runOrchestrator(options: OrchestratorOptions): Promise<Wor
   const restoreConsole = redirectConsoleToPane(pane)
   const pretty = openPrettyStdoutSink(pane, caps, prettyHeader)
 
-  const sandboxes = createSandboxCache(resolved)
+  // Shared, mutable wave-correct base ref. Updated by the merger as each
+  // wave lands; read by the sandbox cache (so newly-created sandboxes for
+  // later-wave issues reset to the post-prior-wave base), by the implementer
+  // (for BASE_SHA in its prompt args), and by the observe layer (for
+  // commits-ahead counts).
+  const mergerBaseRef: { current: BaseRef } = { current: baseRef }
+
+  const sandboxes = createSandboxCache(resolved, () => mergerBaseRef.current.sha)
 
   const deps: WorkflowDeps = {
-    observe: buildObserveDeps(baseRef),
-    actions: buildActionDeps(ctx, baseRef, resolved, sandboxes, pretty.onAgentStream),
+    observe: buildObserveDeps(() => mergerBaseRef.current),
+    actions: buildActionDeps(ctx, mergerBaseRef, resolved, sandboxes, pretty.onAgentStream),
     hooks: {
       onTick: (event) => {
         transcript.onTick(event)
@@ -152,15 +159,25 @@ const closeQuiet = async (pending: Promise<sandcastle.Sandbox>): Promise<void> =
   if (sandbox) await sandbox.close().catch(() => {})
 }
 
-function createSandboxCache(resolved: ResolvedConfig) {
-  const { sandbox, hooks } = resolved.stages.implement
+function createSandboxCache(
+  resolved: ResolvedConfig,
+  getBaseSha: () => string,
+  createSandbox: typeof sandcastle.createSandbox = sandcastle.createSandbox,
+) {
+  const { sandbox, hooksFactory } = resolved.stages.implement
   const open = new Map<number, Promise<sandcastle.Sandbox>>()
 
   return {
     get: (issue: IssueRef): Promise<sandcastle.Sandbox> => {
       const existing = open.get(issue.number)
       if (existing) return existing
-      const created = sandcastle.createSandbox({
+      // Materialise hooks lazily, per sandbox creation, against the
+      // wave-correct base SHA. An issue first picked up in wave 2 must
+      // reset to the post-wave-1 base — not the run-start base — so its
+      // implementer forks from wave 1's outcome rather than from a stale
+      // parent that would force the next merger to redo wave-1 work.
+      const hooks = hooksFactory?.(getBaseSha())
+      const created = createSandbox({
         sandbox,
         branch: issue.branch,
         ...spreadOptional('hooks', hooks),
@@ -246,9 +263,13 @@ function toIssueRef(issue: RelatedIssue): IssueRef {
   }
 }
 
-function buildObserveDeps(baseRef: BaseRef): ObserveDeps {
+function buildObserveDeps(getBaseRef: () => BaseRef): ObserveDeps {
   return {
-    getCommitsAhead: (branch) => countCommitsAhead(baseRef.sha, branch),
+    // Read the base SHA lazily so commits-ahead counts measure against the
+    // *current* wave's base, not the run-start base. After wave 1 lands,
+    // wave-2 issue branches fork off the new base; counting against the
+    // run-start base would inflate their commits by the contents of wave 1.
+    getCommitsAhead: (branch) => countCommitsAhead(getBaseRef().sha, branch),
     getMarkerComments: (issueNumber) => fetchMarkerCommentsSync(issueNumber),
   }
 }
@@ -302,6 +323,13 @@ export function commitMergerResultToBaseRef(
           `${baseRef.refName} no longer exists. ` +
             `Merger result preserved on ${mergeBranch} — finish the merge by hand.`,
         )
+      case 'non-fast-forward':
+        throw new Error(
+          `${baseRef.refName} cannot be advanced to ${shortSha(casResult.newSha)} — ` +
+            `it is not a descendant of ${shortSha(casResult.expectedSha)}. ` +
+            `This usually means a previous wave's merge was clobbered. ` +
+            `Merger result preserved on ${mergeBranch} — finish the merge by hand.`,
+        )
     }
   } finally {
     if (resolveRef(mergeBranch).kind === 'resolved') {
@@ -311,6 +339,35 @@ export function commitMergerResultToBaseRef(
         // Branch has unmerged commits — leave it in place.
       }
     }
+  }
+}
+
+/**
+ * Guard the wave-correct base ref before invoking the merger.
+ *
+ * If the host branch has been moved underneath us — e.g. the user ran
+ * `git checkout` on a different branch and then committed there, or a
+ * direct push to the base branch landed — we abort instead of letting
+ * the merger fork from a stale parent and silently clobber prior work.
+ *
+ * No-ops on detached HEAD: there's no branch to compare against.
+ */
+export function assertBaseRefStable(baseRef: BaseRef, waveIndex: number): void {
+  if (baseRef.refName === 'HEAD') return
+  const observed = resolveRef(baseRef.refName)
+  if (observed.kind !== 'resolved') {
+    throw new Error(
+      `Wave ${waveIndex + 1}: ${baseRef.refName} no longer exists ` +
+        `(expected ${shortSha(baseRef.sha)}). ` +
+        `Aborting before sandcastle overwrites your work.`,
+    )
+  }
+  if (observed.sha !== baseRef.sha) {
+    throw new Error(
+      `Wave ${waveIndex + 1}: ${baseRef.refName} moved underneath us ` +
+        `(expected ${shortSha(baseRef.sha)}, found ${shortSha(observed.sha)}). ` +
+        `Aborting before sandcastle overwrites your work.`,
+    )
   }
 }
 
@@ -346,14 +403,13 @@ export function commitWaveMergerResult(
 
 function buildActionDeps(
   ctx: ProjectContext,
-  baseRef: BaseRef,
+  mergerBaseRef: { current: BaseRef },
   resolved: ResolvedConfig,
   sandboxes: SandboxCache,
   agentStreamCallback?: (event: AgentStreamEvent) => void,
 ): ActionDeps {
   const { implement, review, merge } = resolved.stages
   const { logDir, runId } = resolved
-  let mergerBaseRef = baseRef
   let waveIndex = 0
 
   return {
@@ -367,7 +423,11 @@ function buildActionDeps(
       return await runImplementer({
         sandbox,
         issue,
-        baseRef,
+        // Wave-correct base, not the run-start base. After wave 1 lands,
+        // a wave-2 implementer must see (and fork its work from) wave 1's
+        // outcome — otherwise it builds on a stale parent and the next
+        // merger has to redo wave-1 work or conflict against it.
+        baseRef: mergerBaseRef.current,
         priorAttempts,
         config: implement,
         logDir,
@@ -391,7 +451,11 @@ function buildActionDeps(
     },
     runMerger: async (issues, priorAttempts) => {
       const currentWave = waveIndex
-      const currentBaseRef = mergerBaseRef
+      const currentBaseRef = mergerBaseRef.current
+      // Pre-wave invariant: bail loudly if the host branch was moved under
+      // us (host HEAD switch, direct commit on the base branch, etc.) so
+      // we never start a wave from a stale parent.
+      assertBaseRefStable(currentBaseRef, currentWave)
       const mergeBranch = tempMergerBranchName(resolved.seedIssue)
       await runMerger({
         issues,
@@ -404,7 +468,12 @@ function buildActionDeps(
         waveIndex: currentWave,
         ...(agentStreamCallback && { onAgentStreamEvent: agentStreamCallback }),
       })
-      mergerBaseRef = commitWaveMergerResult(currentBaseRef, mergeBranch, currentWave, console.log)
+      mergerBaseRef.current = commitWaveMergerResult(
+        currentBaseRef,
+        mergeBranch,
+        currentWave,
+        console.log,
+      )
       waveIndex++
       await Promise.all(issues.map((i) => sandboxes.release(i.number)))
     },
@@ -549,4 +618,10 @@ export function refreshHostWorktree(
 }
 
 /** Test seam — internal helpers exposed for unit tests. Not a public API. */
-export const __testing = { openTranscriptSink, buildInitialPhases }
+export const __testing = {
+  openTranscriptSink,
+  buildInitialPhases,
+  assertBaseRefStable,
+  createSandboxCache,
+  buildObserveDeps,
+}

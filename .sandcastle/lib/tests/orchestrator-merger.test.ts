@@ -13,7 +13,9 @@ import { join } from "node:path"
 import { after, before, describe, it } from "node:test"
 import type { BaseRef } from "../git.ts"
 import { resolveRef } from "../git.ts"
-import { commitMergerResultToBaseRef, commitWaveMergerResult } from "../orchestrator.ts"
+import { __testing, commitMergerResultToBaseRef, commitWaveMergerResult } from "../orchestrator.ts"
+
+const { assertBaseRefStable } = __testing
 
 describe("commitMergerResultToBaseRef (real git)", () => {
   let repo: string
@@ -193,6 +195,64 @@ describe("commitMergerResultToBaseRef (real git)", () => {
     // Clean up.
     git("branch", "-D", mergeBranch)
   })
+
+  it("non-fast-forward: helper throws naming both SHAs and preserves merger result", () => {
+    // Reproduces the post-mortem bug: the orchestrator's mergerBaseRef.sha
+    // matches the host branch tip (via the CAS old-value check), but the
+    // merger forked from a different parent so the merger tip is not a
+    // descendant of the base. The FF guard inside casFastForward must
+    // reject this before update-ref mutates main.
+    //
+    // Setup: capture a snapshot of main, then advance main to a divergent
+    // tip. Build the merge branch off the OLD snapshot — its commits are
+    // not descendants of the new main tip, so update-ref must NOT advance.
+    const oldMainSha = git("rev-parse", "main")
+    git("commit", "--allow-empty", "-m", "main advanced past oldMainSha")
+    const newMainSha = git("rev-parse", "main")
+
+    // Merge branch forks off the OLD snapshot — explicitly NOT a descendant
+    // of newMainSha.
+    const mergeBranch = "sandcastle/tmp-merge/non-ff"
+    git("checkout", "-q", "-b", mergeBranch, oldMainSha)
+    git("commit", "--allow-empty", "-m", "merger commit on wrong parent")
+    const mergerTip = git("rev-parse", "HEAD")
+    git("checkout", "-q", "main")
+
+    // Use newMainSha as the expected base SHA: matches main's current tip
+    // (CAS old-value check would succeed) but mergerTip is not a descendant
+    // of it. The FF guard must reject the update.
+    const baseRef: BaseRef = { sha: newMainSha, refName: "main" }
+    assert.throws(
+      () => commitMergerResultToBaseRef(baseRef, mergeBranch, () => {}),
+      (err: Error) => {
+        assert.ok(
+          err.message.includes("not a descendant"),
+          `Expected 'not a descendant', got: ${err.message}`,
+        )
+        assert.ok(
+          err.message.includes(mergerTip.slice(0, 7)),
+          `Expected merger tip short SHA, got: ${err.message}`,
+        )
+        assert.ok(
+          err.message.includes(newMainSha.slice(0, 7)),
+          `Expected expected short SHA, got: ${err.message}`,
+        )
+        assert.ok(
+          err.message.includes(mergeBranch),
+          `Expected merge branch name, got: ${err.message}`,
+        )
+        return true
+      },
+    )
+
+    // The whole point of the guard: main was NOT advanced.
+    assert.equal(git("rev-parse", "main"), newMainSha)
+    // Merger result preserved on the temp branch (has unmerged commits).
+    assert.equal(resolveRef(mergeBranch).kind, "resolved")
+
+    // Clean up.
+    git("branch", "-D", mergeBranch)
+  })
 })
 
 describe("commitWaveMergerResult (wave chain, real git)", () => {
@@ -368,5 +428,87 @@ describe("commitWaveMergerResult (wave chain, real git)", () => {
 
     // Clean up.
     git("branch", "-D", mergeBranch1)
+  })
+})
+
+describe("assertBaseRefStable", () => {
+  let repo: string
+  let originalCwd: string
+  const git = (...a: string[]) => execFileSync("git", a, { cwd: repo, encoding: "utf8" }).trim()
+
+  before(() => {
+    originalCwd = process.cwd()
+    repo = mkdtempSync(join(tmpdir(), "sandcastle-invariant-test-"))
+    process.chdir(repo)
+    git("init", "-b", "main", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    git("commit", "--allow-empty", "-m", "initial")
+  })
+
+  after(() => {
+    process.chdir(originalCwd)
+    rmSync(repo, { recursive: true, force: true })
+  })
+
+  it("returns silently when baseRef matches the current branch tip", () => {
+    const sha = git("rev-parse", "main")
+    const baseRef: BaseRef = { sha, refName: "main" }
+    assert.doesNotThrow(() => assertBaseRefStable(baseRef, 0))
+  })
+
+  it("returns silently on detached HEAD (no branch to compare against)", () => {
+    const sha = git("rev-parse", "main")
+    const baseRef: BaseRef = { sha, refName: "HEAD" }
+    assert.doesNotThrow(() => assertBaseRefStable(baseRef, 0))
+  })
+
+  it("throws with wave-numbered message when the host branch advanced underneath the run", () => {
+    const baseSha = git("rev-parse", "main")
+    // Simulate the host moving forward (e.g. user committed on main directly,
+    // or a wave landed and then someone pushed something else).
+    git("commit", "--allow-empty", "-m", "concurrent commit on main")
+    const newSha = git("rev-parse", "main")
+
+    const baseRef: BaseRef = { sha: baseSha, refName: "main" }
+    assert.throws(
+      () => assertBaseRefStable(baseRef, 1),
+      (err: Error) => {
+        assert.ok(err.message.includes("Wave 2"), `Expected 'Wave 2', got: ${err.message}`)
+        assert.ok(
+          err.message.includes("moved underneath"),
+          `Expected 'moved underneath', got: ${err.message}`,
+        )
+        assert.ok(
+          err.message.includes(baseSha.slice(0, 7)),
+          `Expected expected short SHA, got: ${err.message}`,
+        )
+        assert.ok(
+          err.message.includes(newSha.slice(0, 7)),
+          `Expected found short SHA, got: ${err.message}`,
+        )
+        return true
+      },
+    )
+  })
+
+  it("throws when the host branch was deleted underneath the run", () => {
+    // Create a separate branch we can safely delete.
+    git("branch", "ephemeral", "main")
+    const ephemeralSha = git("rev-parse", "ephemeral")
+    git("branch", "-D", "ephemeral")
+
+    const baseRef: BaseRef = { sha: ephemeralSha, refName: "ephemeral" }
+    assert.throws(
+      () => assertBaseRefStable(baseRef, 0),
+      (err: Error) => {
+        assert.ok(err.message.includes("Wave 1"), `Expected 'Wave 1', got: ${err.message}`)
+        assert.ok(
+          err.message.includes("no longer exists"),
+          `Expected 'no longer exists', got: ${err.message}`,
+        )
+        return true
+      },
+    )
   })
 })

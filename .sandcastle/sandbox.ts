@@ -17,8 +17,21 @@ export const sandbox: SandboxFactory = (runId) =>
     }),
   })
 
-export const sandboxHooks: SandboxHooks = {
+/**
+ * Build sandbox hooks pinned to a specific base SHA.
+ *
+ * The first onSandboxReady command force-resets the worktree to `baseSha`
+ * regardless of what @ai-hero/sandcastle's branch-strategy did or what the
+ * host HEAD is currently pointing at. This is what makes the orchestrator
+ * resilient against the user `git checkout`-ing a different branch on the
+ * host while a multi-wave run is in progress: each wave's sandbox starts
+ * from the run-fixed baseRef, not from the live host HEAD.
+ */
+export const buildSandboxHooks = (baseSha: string): SandboxHooks => ({
   sandbox: {
-    onSandboxReady: [{ command: "pnpm install --prefer-offline" }],
+    onSandboxReady: [
+      { command: `git reset --hard ${baseSha}` },
+      { command: "pnpm install --prefer-offline" },
+    ],
   },
-}
+})

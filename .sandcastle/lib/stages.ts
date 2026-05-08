@@ -150,7 +150,10 @@ const buildMergerRunOptions = ({
   onAgentStreamEvent,
 }: MergerParams): RunOptions => ({
   sandbox: config.sandbox,
-  ...spreadOptional("hooks", config.hooks),
+  // Hooks are built per-call against the wave-correct base SHA. This makes
+  // each wave's sandbox deterministically reset to baseRef.sha before
+  // running, regardless of where the host HEAD has wandered to.
+  ...spreadOptional("hooks", config.hooksFactory?.(baseRef.sha)),
   name: "Merger",
   agent: config.agent,
   promptFile: config.promptFile,
