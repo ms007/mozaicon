@@ -37,6 +37,7 @@ import {
   actionIssueAndStage,
   runWorkflow,
 } from './manager/index.ts'
+import { redirectConsoleToPane } from './console-interceptor.ts'
 import { createMultiplexingRenderer } from './multiplexing-renderer.ts'
 import { resolveOutputCapabilities } from './palette.ts'
 import { type RunHeader, openPrettyStdoutSink } from './pretty-stdout-sink.ts'
@@ -110,6 +111,7 @@ export async function runOrchestrator(options: OrchestratorOptions): Promise<Wor
     attemptCap: resolved.attemptCap,
   }
   const pane = renderer.openPane(runId, `Run ${runId}`)
+  const restoreConsole = redirectConsoleToPane(pane)
   const pretty = openPrettyStdoutSink(pane, caps, prettyHeader)
 
   const sandboxes = createSandboxCache(resolved)
@@ -138,6 +140,7 @@ export async function runOrchestrator(options: OrchestratorOptions): Promise<Wor
     throw err
   } finally {
     pretty.close(result, error)
+    restoreConsole()
     await Promise.allSettled([sandboxes.disposeAll(), transcript.close(result, error)])
   }
 }
