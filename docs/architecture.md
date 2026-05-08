@@ -162,6 +162,18 @@ export const canUndoAtom = atom((get) => get(undoStackAtom).length > 0)
 export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0)
 ```
 
+## State Categories: Document vs UI
+
+Atoms in the store fall into two categories with different mutation rules:
+
+**Document state** (`documentAtom`): the SVG being edited. Mutations must go through commands so they're undoable. `HistoryEntry` snapshots `documentAtom` only.
+
+**UI state** (`selectedIdsAtom`, `activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
+
+Consequence: if undo removes a shape whose id is still in `selectedIdsAtom`, the selection holds a stale id. Derived atoms that consume selection must filter stale references against `shapeByIdAtom`. `selectedShapesAtom` already does this.
+
+If a piece of UI state ever needs to participate in undo/redo, promote it: move its mutation into a command and extend `HistoryEntry`. Don't add per-atom selective snapshots.
+
 ## Command Pattern
 
 Commands are **write-only atoms**. They:
@@ -337,7 +349,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 
 - **Never read `documentAtom` in the canvas render path.** Always go through `shapeAtomsAtom` or derived atoms.
 - **Avoid `produce` in derived atoms** — they should be pure reads.
-- **Pointer events on the canvas** use `requestAnimationFrame` to batch drag updates into one command dispatch per frame.
+- **Pointer-driven mutation commands** (e.g. dragging an existing shape to move it) batch via `requestAnimationFrame` so a single command dispatches per frame. Transient UI-atom updates during a drag (e.g. `draftShapeAtom` while _Drag-to-Draw_ is in progress) are not commands and don't need their own rAF loop — React batches the re-render.
 - **SVGO is expensive** — run it in a Web Worker if export feels slow (> 100ms).
 
 ## Where to Start Reading the Code

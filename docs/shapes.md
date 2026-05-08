@@ -200,7 +200,7 @@ case 'polygon':
 
 ### 8. (Optional) Drawing Tool
 
-`src/features/toolbar/tools/PolygonTool.ts` — handles pointer events to let users draw polygons click-by-click. Register in `src/features/toolbar/tools/index.ts`.
+If the shape is user-drawable, add a tool in `src/features/toolbar/tools/<name>.ts` and register it in `src/features/toolbar/tools/index.ts`. See [Drawing Tools](#drawing-tools) below for the `DrawTool` interface, the Drag-to-Draw lifecycle, and the conventions for threshold, modifiers, and draft rendering.
 
 ### 9. Tests
 
@@ -218,6 +218,118 @@ pnpm check
 ```
 
 If anything's missing, TypeScript or the tests will flag it. **Don't suppress errors with `as any` or `@ts-ignore`** — they're the safety net.
+
+## Drawing Tools
+
+Tools live in `src/features/toolbar/tools/<name>.ts` and produce new shapes on the canvas. The first one to land is `rect` (Drag-to-Draw with click-fallback). Future tools (circle, line, ellipse, pen, polygon) plug into the same registry.
+
+### The `DrawTool` interface
+
+```ts
+type DrawTool = {
+  id: string // 'rect'
+  cursor: string // 'crosshair' for shape tools
+  onPointerDown(ctx: ToolCtx, event: ToolEvent): void
+  onPointerMove(ctx: ToolCtx, event: ToolEvent): void
+  onPointerUp(ctx: ToolCtx, event: ToolEvent): void
+}
+
+type ToolEvent = {
+  point: { x: number; y: number } // viewBox units, unrounded
+  modifiers: { shift: boolean; alt: boolean; meta: boolean; ctrl: boolean }
+  pointerId: number
+  buttons: number
+}
+
+type ToolCtx = {
+  store: JotaiStore // read atoms, dispatch commands
+}
+```
+
+`CanvasStage` collects pointer events, converts to viewBox coordinates via `svg.getScreenCTM().inverse()`, looks up the active tool by `activeToolAtom`, and delegates. Tools never see DOM coordinates or refs.
+
+### Drag-to-Draw lifecycle
+
+The reference flow for `rect` (and any shape with rectangular bounds):
+
+1. **`onPointerDown`** — write `activeDragAtom = { toolId, pointerId, start, modifiersAtStart }`. No draft yet, no command. `CanvasStage` calls `setPointerCapture` so the rest of the gesture lands on the SVG even when the cursor leaves the element.
+2. **`onPointerMove`** —
+   - Ignore events whose `pointerId` doesn't match `activeDrag.pointerId` (multi-pointer guard).
+   - Compute the screen-space distance between down-point and current point against a **3-pixel threshold**.
+   - Below threshold: do nothing.
+   - At/above threshold: call the tool's `geometryFromDrag(start, point, modifiers)` and set `draftShapeAtom` to the resulting shape.
+3. **`onPointerUp`** —
+   - Below threshold → **Click-Fallback**: dispatch `addShapeCommand` with default geometry, anchor at the down-point as the top-left corner.
+   - At/above threshold → dispatch `addShapeCommand` with the final draft geometry, clamped to a minimum of 1×1 viewBox unit per axis.
+   - The tool generates the shape `id` (so it can select afterwards), passes it in the command payload, then writes `selectedIdsAtom = [id]` directly (selection is UI state — see _State Categories_ in `architecture.md`).
+   - Reset `draftShapeAtom = null` and `activeDragAtom = null`.
+
+### Cancel triggers
+
+A drag aborts (`draftShapeAtom = null`, `activeDragAtom = null`, no command, tool stays active) on:
+
+- `pointercancel` (system interruption, touch cancel) — handler on `<svg>`.
+- Escape — registered in the central shortcut system, not as a local listener.
+- Active-tool change — an effect atom subscribed to `activeToolAtom`.
+
+Right-click during an active drag preventDefaults the context menu but does **not** cancel. Drags only start on the primary button.
+
+### Modifiers
+
+Drag-to-Draw tools observe modifiers on every `pointermove`:
+
+- **Shift** — constrain proportions (rect → square, line → 0/45/90).
+- **Alt** — anchor at the center: down-point becomes the center, drag distance is the half-extent on each axis.
+- **Shift + Alt** — combine (square from center).
+
+Modifiers are re-evaluated each move; toggling mid-drag updates the draft live. Click-fallback ignores modifiers.
+
+### `geometryFromDrag`
+
+Each tool exports a pure `geometryFromDrag(start, end, modifiers)` that maps the drag vector to its shape-specific geometry, including normalization of negative drags. Test it like any `lib/` function — pure, no DOM, no atoms.
+
+For rect:
+
+```ts
+export function geometryFromDrag(
+  start: Vec2,
+  end: Vec2,
+  modifiers: Modifiers,
+): { x: number; y: number; width: number; height: number } {
+  let dx = end.x - start.x
+  let dy = end.y - start.y
+
+  if (modifiers.shift) {
+    const size = Math.max(Math.abs(dx), Math.abs(dy))
+    dx = Math.sign(dx || 1) * size
+    dy = Math.sign(dy || 1) * size
+  }
+
+  if (modifiers.alt) {
+    return {
+      x: start.x - Math.abs(dx),
+      y: start.y - Math.abs(dy),
+      width: Math.max(1, 2 * Math.abs(dx)),
+      height: Math.max(1, 2 * Math.abs(dy)),
+    }
+  }
+
+  return {
+    x: Math.min(start.x, start.x + dx),
+    y: Math.min(start.y, start.y + dy),
+    width: Math.max(1, Math.abs(dx)),
+    height: Math.max(1, Math.abs(dy)),
+  }
+}
+```
+
+### Draft rendering
+
+`<DraftLayer>` in `src/features/canvas/` reads `draftShapeAtom` and renders it via the same `ShapeRenderer` switch as committed shapes — identical fill, stroke, everything. The draft is rendered **after** the document shapes so it sits on top in z-order. WYSIWYG: the user sees exactly what `pointerup` will commit.
+
+### Tools that aren't drag-based
+
+Pen / polygon / multi-click tools share the same registry, the same `ctx`, the same atoms — they just don't update `draftShapeAtom` on move. They use only `onPointerDown` and finish on Escape/Enter. Their per-tool in-progress state goes into a tool-local atom alongside `draftShapeAtom`.
 
 ## Exhaustiveness
 

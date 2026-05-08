@@ -28,7 +28,7 @@ Implement the new shape type following every step in `docs/shapes.md`:
 5. Hit test in `src/lib/svg/hitTest.ts`
 6. Export serializer in `src/features/export/serializers/`
 7. Properties editor in `src/features/properties/editors/`
-8. Drawing tool in `src/features/toolbar/tools/` (only if the shape is user-drawable — ask me if unsure)
+8. Drawing tool in `src/features/toolbar/tools/<name>.ts` (only if user-drawable — ask me if unsure). See `docs/shapes.md` § Drawing Tools for the `DrawTool` interface, lifecycle, threshold, modifiers, and draft rendering.
 9. Tests for: schema validation, bbox correctness, translate invariants, export round-trip
 
 ## Rules
