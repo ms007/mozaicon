@@ -1,23 +1,27 @@
 import { newId } from '@/lib/ids'
-import type { RectShape } from '@/types/shapes'
+import type { Shape } from '@/types/shapes'
 
 import { createCommand } from './createCommand'
 
-export type AddRectPayload = Omit<RectShape, 'id' | 'type' | 'name' | 'visible' | 'locked'> &
-  Partial<Pick<RectShape, 'id' | 'name' | 'visible' | 'locked'>>
+// Exhaustive: adding a shape type without an entry here fails type-check.
+const DEFAULT_SHAPE_NAMES: Record<Shape['type'], string> = {
+  rect: 'Rect',
+}
 
-export const addShapeCommand = createCommand<AddRectPayload>('Add shape', (doc, payload) => {
-  const shape: RectShape = {
+export type AddShapePayload = Omit<Shape, 'id' | 'name' | 'visible' | 'locked'> &
+  Partial<Pick<Shape, 'id' | 'name' | 'visible' | 'locked'>>
+
+export function materializeShape(payload: AddShapePayload): Shape {
+  return {
     ...payload,
     id: payload.id ?? newId(),
-    type: 'rect',
-    name: payload.name ?? 'Rect',
+    name: payload.name ?? DEFAULT_SHAPE_NAMES[payload.type],
     visible: payload.visible ?? true,
     locked: payload.locked ?? false,
   }
+}
 
-  return {
-    ...doc,
-    shapes: [...doc.shapes, shape],
-  }
-})
+export const addShapeCommand = createCommand<AddShapePayload>('Add shape', (doc, payload) => ({
+  ...doc,
+  shapes: [...doc.shapes, materializeShape(payload)],
+}))

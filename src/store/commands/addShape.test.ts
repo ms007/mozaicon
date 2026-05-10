@@ -24,7 +24,7 @@ describe('addShapeCommand', () => {
   it('appends a RectShape to the document', () => {
     const store = makeStore()
 
-    store.set(addShapeCommand, { x: 4, y: 4, width: 16, height: 16, fill: '#000' })
+    store.set(addShapeCommand, { type: 'rect', x: 4, y: 4, width: 16, height: 16, fill: '#000' })
 
     const shapes = store.get(documentAtom).shapes
     expect(shapes).toHaveLength(1)
@@ -46,8 +46,8 @@ describe('addShapeCommand', () => {
   it('assigns a unique id to each dispatched shape', () => {
     const store = makeStore()
 
-    store.set(addShapeCommand, { x: 0, y: 0, width: 1, height: 1 })
-    store.set(addShapeCommand, { x: 0, y: 0, width: 1, height: 1 })
+    store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
+    store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
     const [a, b] = store.get(documentAtom).shapes
     expect(a.id).not.toBe(b.id)
@@ -56,7 +56,7 @@ describe('addShapeCommand', () => {
   it('pushes exactly one entry to the undo stack with the expected label', () => {
     const store = makeStore()
 
-    store.set(addShapeCommand, { x: 4, y: 4, width: 16, height: 16, fill: '#000' })
+    store.set(addShapeCommand, { type: 'rect', x: 4, y: 4, width: 16, height: 16, fill: '#000' })
 
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
@@ -67,10 +67,9 @@ describe('addShapeCommand', () => {
 
   it('clears the redo stack on dispatch', () => {
     const store = makeStore()
-    // simulate a prior redo-available state
     store.set(redoStackAtom, [{ label: 'stale', before: emptyDoc, after: emptyDoc }])
 
-    store.set(addShapeCommand, { x: 0, y: 0, width: 1, height: 1 })
+    store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
     expect(store.get(redoStackAtom)).toEqual([])
   })
@@ -78,7 +77,15 @@ describe('addShapeCommand', () => {
   it('uses the explicit id when provided', () => {
     const store = makeStore()
 
-    store.set(addShapeCommand, { id: 'my-id', x: 0, y: 0, width: 5, height: 5, fill: '#000' })
+    store.set(addShapeCommand, {
+      type: 'rect',
+      id: 'my-id',
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
+      fill: '#000',
+    })
 
     const shapes = store.get(documentAtom).shapes
     expect(shapes[0].id).toBe('my-id')
@@ -88,10 +95,77 @@ describe('addShapeCommand', () => {
     const store = makeStore()
     const before = store.get(documentAtom)
 
-    store.set(addShapeCommand, { x: 0, y: 0, width: 1, height: 1 })
+    store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
     const after = store.get(documentAtom)
     expect(after).not.toBe(before)
     expect(before.shapes).toHaveLength(0)
+  })
+
+  it('uses the type-keyed default name', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
+
+    expect(store.get(documentAtom).shapes[0].name).toBe('Rect')
+  })
+
+  it('allows overriding the default name', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, {
+      type: 'rect',
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      name: 'My Custom Rect',
+    })
+
+    expect(store.get(documentAtom).shapes[0].name).toBe('My Custom Rect')
+  })
+
+  it('appends after existing shapes without replacing them', () => {
+    const store = makeStore({
+      ...emptyDoc,
+      shapes: [
+        {
+          id: 'existing',
+          type: 'rect',
+          name: 'Old',
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 10,
+          visible: true,
+          locked: false,
+        },
+      ],
+    })
+
+    store.set(addShapeCommand, { type: 'rect', x: 1, y: 1, width: 2, height: 2 })
+
+    const shapes = store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(2)
+    expect(shapes[0].id).toBe('existing')
+    expect(shapes[1].type).toBe('rect')
+  })
+
+  it('allows overriding visible and locked defaults', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, {
+      type: 'rect',
+      x: 0,
+      y: 0,
+      width: 2,
+      height: 2,
+      visible: false,
+      locked: true,
+    })
+
+    const shape = store.get(documentAtom).shapes[0]
+    expect(shape.visible).toBe(false)
+    expect(shape.locked).toBe(true)
   })
 })

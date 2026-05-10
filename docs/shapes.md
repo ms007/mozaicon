@@ -200,7 +200,7 @@ case 'polygon':
 
 ### 8. (Optional) Drawing Tool
 
-If the shape is user-drawable, add a tool in `src/features/toolbar/tools/<name>.ts` and register it in `src/features/toolbar/tools/index.ts`. See [Drawing Tools](#drawing-tools) below for the `DrawTool` interface, the Drag-to-Draw lifecycle, and the conventions for threshold, modifiers, and draft rendering.
+If the shape is user-drawable, add a tool in `src/features/toolbar/tools/<name>.ts` and register it in `src/features/toolbar/tools/index.ts`. For drag-to-draw shapes, use the `createDragTool` factory (see [Drag-Tool Factory](#drag-tool-factory) below) — you only supply geometry math and a shape builder. See [Drawing Tools](#drawing-tools) for the full `DrawTool` interface and conventions.
 
 ### 9. Tests
 
@@ -222,6 +222,19 @@ If anything's missing, TypeScript or the tests will flag it. **Don't suppress er
 ## Drawing Tools
 
 Tools live in `src/features/toolbar/tools/<name>.ts` and produce new shapes on the canvas. The first one to land is `rect` (Drag-to-Draw with click-fallback). Future tools (circle, line, ellipse, pen, polygon) plug into the same registry.
+
+### Drag-Tool Factory
+
+Any tool whose interaction model is "press → drag → release to commit a shape" should use the **`createDragTool`** factory in `src/features/toolbar/tools/createDragTool.ts`. The factory owns the entire drag-to-draw state machine — pointer tracking, click-vs-drag threshold, draft shape updates, commit, selection, and cleanup — so new tools only provide a `DragToolConfig` with:
+
+- **`toolId`** — unique tool identifier (e.g. `'rect'`, `'ellipse'`)
+- **`cursorClass`** — CSS cursor class applied while the tool is active
+- **`geometryFromDrag`** — pure function mapping `(start, end, modifiers)` to shape geometry
+- **`clickFallbackGeometry`** — default geometry for a click (no drag)
+- **`geometryEquals`** — equality check used to skip no-op draft updates
+- **`buildShape`** — converts geometry + style defaults into a shape payload
+
+See `src/features/toolbar/tools/rect.ts` for a reference consumer. The factory's test suite (`createDragTool.test.ts`) documents the full lifecycle contract; the sections below describe the lifecycle concepts in detail.
 
 ### The `DrawTool` interface
 

@@ -6,6 +6,7 @@ import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
+import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import type { Document } from '@/types/shapes'
 
 import { geometryFromDrag, rectTool } from './rect'
@@ -239,6 +240,44 @@ describe('rectTool lifecycle', () => {
     // drag is still active, no shape committed
     expect(ctx.store.get(activeDragAtom)).not.toBeNull()
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+  })
+
+  it('uses default styles when styleDefaults is not overridden', () => {
+    const ctx = makeCtx()
+
+    rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
+
+    const shape = ctx.store.get(documentAtom).shapes[0]
+    expect(shape.fill).toBe('#000')
+    expect(shape.stroke).toBe('none')
+    expect(shape.strokeWidth).toBe(1)
+  })
+
+  it('applies styleDefaults to committed shape', () => {
+    const ctx = makeCtx()
+    ctx.store.set(styleDefaultsAtom, { fill: '#ff0000', stroke: '#00ff00', strokeWidth: 3 })
+
+    rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
+
+    const shape = ctx.store.get(documentAtom).shapes[0]
+    expect(shape.fill).toBe('#ff0000')
+    expect(shape.stroke).toBe('#00ff00')
+    expect(shape.strokeWidth).toBe(3)
+  })
+
+  it('applies styleDefaults to draft shape during drag', () => {
+    const ctx = makeCtx()
+    ctx.store.set(styleDefaultsAtom, { fill: '#abc', stroke: '#def', strokeWidth: 2 })
+
+    rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    rectTool.onPointerMove(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
+
+    const draft = ctx.store.get(draftShapeAtom)
+    expect(draft?.fill).toBe('#abc')
+    expect(draft?.stroke).toBe('#def')
+    expect(draft?.strokeWidth).toBe(2)
   })
 })
 
