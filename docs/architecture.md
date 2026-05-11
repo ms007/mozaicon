@@ -162,6 +162,24 @@ export const canUndoAtom = atom((get) => get(undoStackAtom).length > 0)
 export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0)
 ```
 
+### Per-Shape Atoms (`atomFamily`)
+
+When a UI surface (e.g. a single shape's property editor) cares about one shape but nothing else, subscribing to `documentAtom` or `shapesAtom` re-renders on every unrelated change. Use `atomFamily` to get one atom per shape id:
+
+```ts
+import { atom } from 'jotai'
+import { atomFamily } from 'jotai/utils'
+import { shapeByIdAtom } from './document'
+
+export const shapeAtom = atomFamily((id: string) => atom((get) => get(shapeByIdAtom).get(id)))
+```
+
+`shapeAtom('abc')` returns a stable atom per id, so two editors looking at the same shape share a subscription.
+
+**Lifecycle.** `atomFamily` caches per key. When a shape is deleted, the entry stays in the cache until you evict it — call `shapeAtom.remove(id)` from the same command that removes the shape, otherwise the family leaks.
+
+Not yet used in the codebase (as of this writing) — `splitAtom` covers canvas rendering. Reach for `atomFamily` when you need keyed lookup outside the canvas list.
+
 ## State Categories: Document vs UI
 
 Atoms in the store fall into two categories with different mutation rules:
@@ -206,6 +224,15 @@ export function createCommand<Payload>(
   })
 }
 ```
+
+**Testing rule.** Every command must cover both of these. The canonical pattern lives in `src/store/commands/createCommand.test.ts`:
+
+1. **Happy path** — dispatch with a valid payload, assert `documentAtom` changed and a `HistoryEntry` with the right `label` was pushed.
+2. **No-op invariant** — pick the variant that fits the command:
+   - If `apply()` can return the same `Document` reference for some payload (e.g. moving a missing id), dispatch that and assert the undo stack stays empty.
+   - If `apply()` structurally always returns a new reference (e.g. `addShape` appending with a fresh ULID), prove the invariant that makes that the case — e.g. two dispatches yield shapes with distinct ids (see `addShape.test.ts`).
+
+Redo-stack clearing is guaranteed by `createCommand` itself; individual command tests may repeat it as belt-and-suspenders but it isn't required.
 
 ### Example Command: Move Shape (`src/store/commands/moveShape.ts`)
 

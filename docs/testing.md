@@ -174,19 +174,28 @@ Use `@testing-library/react` with a Jotai `Provider` wrapping tests.
 `src/test/renderWithStore.tsx`:
 
 ```tsx
+import { render, type RenderResult } from '@testing-library/react'
 import { Provider, createStore } from 'jotai'
-import { render } from '@testing-library/react'
+import type { ReactElement } from 'react'
+
+export type TestStore = ReturnType<typeof createStore>
+
+export interface RenderWithStoreResult extends RenderResult {
+  store: TestStore
+}
 
 export function renderWithStore(
-  ui: React.ReactElement,
-  initialState?: (store: ReturnType<typeof createStore>) => void,
-) {
+  ui: ReactElement,
+  seed?: (store: TestStore) => void,
+): RenderWithStoreResult {
   const store = createStore()
-  initialState?.(store)
+  seed?.(store)
   const utils = render(<Provider store={store}>{ui}</Provider>)
   return { ...utils, store }
 }
 ```
+
+A `renderHookWithStore` companion (same signature, wraps `renderHook`) lives next to it for hook tests.
 
 ### Example: Properties Editor
 
@@ -260,16 +269,6 @@ describe('serializeDocument', () => {
   })
 })
 ```
-
-### Updating Golden Files
-
-When output intentionally changes:
-
-```bash
-pnpm test:update-fixtures
-```
-
-This script regenerates all fixtures. **Always review the diff before committing** — an unexpected change in a fixture is usually a regression.
 
 ### What to Cover in Export Tests
 
@@ -381,7 +380,6 @@ Only assert exact equality when the math is integer (explicit input values, no t
 ```bash
 pnpm test              # Vitest watch mode
 pnpm test run          # Single run (CI-style)
-pnpm test:coverage     # With coverage report
 pnpm test:e2e          # Playwright headless
 pnpm test:e2e --headed # Watch it happen
 pnpm test:e2e --ui     # Playwright UI mode
@@ -393,8 +391,6 @@ pnpm test:e2e --ui     # Playwright UI mode
 - **Commands**: 90%+ — every command should have at least a "happy path" and a "no-op" test.
 - **Components**: 70%+ — don't chase 100%, test the logic not the markup.
 - **E2E**: coverage isn't meaningful here; aim for "every critical user journey has at least one test".
-
-We don't enforce thresholds in CI, but we track them in `coverage/` reports. If coverage drops meaningfully in a PR, that's a review flag.
 
 ## Anti-Patterns
 
@@ -410,6 +406,7 @@ We don't enforce thresholds in CI, but we track them in `coverage/` reports. If 
 
 1. `tsc --noEmit` (types)
 2. `eslint` (lint)
-3. `vitest run` (unit + component)
+3. `prettier --check` (formatting)
+4. `vitest run --project unit` (unit + component)
 
 E2E runs separately via `pnpm test:e2e` in a parallel CI job with a built dev server. See `.github/workflows/ci.yml`.

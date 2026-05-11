@@ -20,7 +20,7 @@ Every shape must support these operations:
 | ------------- | ---------------------------------- | -------- |
 | Schema        | `src/types/shapes.ts`              | Yes      |
 | Render        | `src/features/canvas/renderers/`   | Yes      |
-| Bounding box  | `src/lib/svg/bbox.ts`              | Yes      |
+| Bounding box  | `src/lib/svg/bbox/`                | Yes      |
 | Translate     | `src/lib/svg/transform.ts`         | Yes      |
 | Serialize     | `src/features/export/serializers/` | Yes      |
 | Properties UI | `src/features/properties/editors/` | Yes      |
@@ -103,7 +103,7 @@ switch (shape.type) {
 
 ### 3. Bounding Box
 
-`src/lib/svg/bbox.ts`:
+`src/lib/svg/bbox/bboxOf.ts`:
 
 ```ts
 export function bboxOf(shape: Shape): Rect {
@@ -353,8 +353,8 @@ We use an `assertNever` helper in every shape switch:
 
 ```ts
 // src/lib/util/assertNever.ts
-export function assertNever(x: never): never {
-  throw new Error(`Unhandled shape type: ${JSON.stringify(x)}`)
+export function assertNever(value: never): never {
+  throw new Error(`Unhandled discriminated union member: ${JSON.stringify(value)}`)
 }
 ```
 
