@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest'
 import type { Document } from '@/types/shapes'
 
 import { documentAtom } from './document'
-import { hasSelectionAtom, selectedIdsAtom, selectedShapesAtom } from './selection'
+import {
+  hasSelectionAtom,
+  selectedIdsAtom,
+  selectedShapesAtom,
+  selectionBboxAtom,
+} from './selection'
 
 const testDoc: Document = {
   id: 'doc-test',
@@ -120,5 +125,64 @@ describe('hasSelectionAtom', () => {
     const store = makeStore()
     store.set(selectedIdsAtom, ['r1'])
     expect(store.get(hasSelectionAtom)).toBe(true)
+  })
+})
+
+describe('selectionBboxAtom', () => {
+  it('returns null when the selection is empty', () => {
+    const store = makeStore()
+    expect(store.get(selectionBboxAtom)).toBeNull()
+  })
+
+  it('returns null when all selected ids are stale', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['gone1', 'gone2'])
+    expect(store.get(selectionBboxAtom)).toBeNull()
+  })
+
+  it('returns the bbox of a single selected shape', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    expect(store.get(selectionBboxAtom)).toEqual({ x: 0, y: 0, width: 10, height: 10 })
+  })
+
+  it('returns the union bbox of multiple selected shapes', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1', 'r2'])
+    expect(store.get(selectionBboxAtom)).toEqual({ x: 0, y: 0, width: 15, height: 15 })
+  })
+
+  it('ignores stale ids in a mixed selection', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1', 'deleted-id'])
+    expect(store.get(selectionBboxAtom)).toEqual({ x: 0, y: 0, width: 10, height: 10 })
+  })
+
+  it('keeps the bbox reference stable when a non-geometry field of a selected shape changes', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    const before = store.get(selectionBboxAtom)
+
+    store.set(documentAtom, (draft) => {
+      const r1 = draft.shapes.find((s) => s.id === 'r1')
+      if (r1) r1.name = 'Renamed'
+    })
+
+    expect(store.get(selectionBboxAtom)).toBe(before)
+  })
+
+  it('returns a new bbox when a selected shape actually moves', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    const before = store.get(selectionBboxAtom)
+
+    store.set(documentAtom, (draft) => {
+      const r1 = draft.shapes.find((s) => s.id === 'r1')
+      if (r1?.type === 'rect') r1.x = 100
+    })
+
+    const after = store.get(selectionBboxAtom)
+    expect(after).not.toBe(before)
+    expect(after).toEqual({ x: 100, y: 0, width: 10, height: 10 })
   })
 })

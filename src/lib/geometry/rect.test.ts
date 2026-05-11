@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Rect } from './rect'
-import { unionRects } from './rect'
+import { rectEqual, unionRects } from './rect'
 
 describe('unionRects', () => {
   it('returns null for empty input', () => {
@@ -61,5 +61,31 @@ describe('unionRects', () => {
     const result = unionRects([r])
     expect(result).not.toBe(r)
     expect(result).toEqual(r)
+  })
+})
+
+describe('rectEqual', () => {
+  it('treats two nulls as equal', () => {
+    expect(rectEqual(null, null)).toBe(true)
+  })
+
+  it('treats null and a rect as not equal', () => {
+    const r: Rect = { x: 0, y: 0, width: 1, height: 1 }
+    expect(rectEqual(null, r)).toBe(false)
+    expect(rectEqual(r, null)).toBe(false)
+  })
+
+  it('treats rects with identical fields as equal', () => {
+    const a: Rect = { x: 1, y: 2, width: 3, height: 4 }
+    const b: Rect = { x: 1, y: 2, width: 3, height: 4 }
+    expect(rectEqual(a, b)).toBe(true)
+  })
+
+  it('treats rects differing in any field as not equal', () => {
+    const base: Rect = { x: 1, y: 2, width: 3, height: 4 }
+    expect(rectEqual(base, { ...base, x: 9 })).toBe(false)
+    expect(rectEqual(base, { ...base, y: 9 })).toBe(false)
+    expect(rectEqual(base, { ...base, width: 9 })).toBe(false)
+    expect(rectEqual(base, { ...base, height: 9 })).toBe(false)
   })
 })

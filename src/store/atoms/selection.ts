@@ -1,4 +1,8 @@
 import { atom } from 'jotai'
+import { selectAtom } from 'jotai/utils'
+
+import { rectEqual } from '@/lib/geometry/rect'
+import { bboxOfMany } from '@/lib/svg/bbox'
 
 import { shapeAtom } from './document'
 
@@ -10,3 +14,5 @@ export const selectedShapesAtom = atom((get) => {
 })
 
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
+
+export const selectionBboxAtom = selectAtom(selectedShapesAtom, bboxOfMany, rectEqual)

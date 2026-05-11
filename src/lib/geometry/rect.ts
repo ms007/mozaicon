@@ -17,3 +17,9 @@ export function unionRects(rects: readonly Rect[]): Rect | null {
 
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
+
+export function rectEqual(a: Rect | null, b: Rect | null): boolean {
+  if (a === b) return true
+  if (a === null || b === null) return false
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+}

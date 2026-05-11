@@ -1,11 +1,9 @@
 import { useAtomValue } from 'jotai'
 
-import { bboxOfMany } from '@/lib/svg/bbox'
-import { selectedShapesAtom } from '@/store/atoms/selection'
+import { selectionBboxAtom } from '@/store/atoms/selection'
 
 export function SelectionOverlay() {
-  const shapes = useAtomValue(selectedShapesAtom)
-  const bbox = bboxOfMany(shapes)
+  const bbox = useAtomValue(selectionBboxAtom)
 
   if (!bbox) return null
 

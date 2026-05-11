@@ -35,7 +35,7 @@ describe('SelectionOverlay', () => {
     expect(container.querySelectorAll('rect')).toHaveLength(0)
   })
 
-  it('renders a single shape bbox with the expected SVG attributes', () => {
+  it('renders a rect matching the selection bbox with the expected SVG attributes', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
       store.set(selectedIdsAtom, ['r1'])
@@ -54,7 +54,7 @@ describe('SelectionOverlay', () => {
     expect(rect?.getAttribute('pointer-events')).toBe('none')
   })
 
-  it('renders a single rect covering the union bbox of multiple selected shapes', () => {
+  it('renders the union bbox when multiple shapes are selected', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
       store.set(selectedIdsAtom, ['r1', 'r2'])
