@@ -98,16 +98,11 @@ Commit 1: <subject>
   Message:
     Add ellipse shape type
 
-    Extends the shape union and wires the renderer.
-    Drawing tool and property editor are deferred.
-
 Commit 2: <subject>
   Files:
     - docs/shapes.md  (modified)
   Message:
     Document ellipse shape in shapes.md
-
-⚠️  .env.local excluded (secret guard)
 ```
 
 Options: **Proceed** / **Cancel**.
@@ -129,9 +124,9 @@ On hook failure during `git commit`: stop, report, do not retry, do not amend.
 
 - **Imperative mood** in the subject: `add`, `fix`, `remove`, `handle` — never `added` / `adds` / `adding`
 - **Sentence case**, no period at end, start with lowercase
-- **Subject ≤ 72 characters**
+- **Subject ≤ 80 characters**
 - **No prefix** — no `feat:` / `fix:` / `chore:`, no scope parens. The codebase does not use Conventional Commits.
-- **Body only when it adds information** the diff doesn't reveal — the _why_, not the _what_. Wrap at ~72 chars.
+- **No Body. Only one line commit message.
 - **Always English**, regardless of the language of `$ARGUMENTS`, the user's prompt, or the code comments.
 - **No footer boilerplate.** No "Generated with Claude Code", no Co-Authored-By, no emoji.
 
@@ -139,9 +134,6 @@ Good examples:
 
 ```
 handle rotation when computing ellipse bounding box
-
-the rotation matrix was applied after the min/max reduction,
-causing off-by-one pixels for angles > 45°.
 ```
 
 ```
