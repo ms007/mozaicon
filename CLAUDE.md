@@ -158,4 +158,3 @@ A change is done when:
 
 - [ ] `pnpm check` passes (covers tsc + eslint + prettier + vitest)
 - [ ] New logic has tests at the appropriate layer
-- [ ] Commit message follows Conventional Commits (`feat:`, `fix:`, `refactor:`, …)
