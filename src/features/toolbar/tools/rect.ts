@@ -1,3 +1,4 @@
+import type { Rect } from '@/lib/geometry/rect'
 import type { Vec2 } from '@/lib/geometry/vec2'
 
 import { createDragTool } from './createDragTool'
@@ -5,9 +6,7 @@ import type { Modifiers } from './registry'
 
 const DEFAULT_SIZE = 4
 
-type RectGeometry = { x: number; y: number; width: number; height: number }
-
-export function geometryFromDrag(start: Vec2, end: Vec2, modifiers: Modifiers): RectGeometry {
+export function geometryFromDrag(start: Vec2, end: Vec2, modifiers: Modifiers): Rect {
   let dx = end.x - start.x
   let dy = end.y - start.y
 
@@ -34,7 +33,7 @@ export function geometryFromDrag(start: Vec2, end: Vec2, modifiers: Modifiers): 
   }
 }
 
-export const rectTool = createDragTool<RectGeometry>({
+export const rectTool = createDragTool<Rect>({
   toolId: 'rect',
   cursorClass: 'cursor-crosshair',
   geometryFromDrag,
