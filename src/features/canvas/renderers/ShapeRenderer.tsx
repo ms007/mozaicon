@@ -1,6 +1,6 @@
 import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
-import { assertNever } from '@/lib/assertNever'
+import { assertNever } from '@/lib/util/assertNever'
 import type { Shape } from '@/types/shapes'
 
 import { RectRenderer } from './RectRenderer'

@@ -182,7 +182,7 @@ Commands are **write-only atoms**. They:
 2. Push a `HistoryEntry` onto the undo stack
 3. Clear the redo stack
 
-### Command Template (`src/store/commands/_template.ts`)
+### Command Template (`src/store/commands/createCommand.ts`)
 
 ```ts
 import { atom } from 'jotai'
@@ -211,7 +211,7 @@ export function createCommand<Payload>(
 
 ```ts
 import { produce } from 'immer'
-import { createCommand } from './_template'
+import { createCommand } from './createCommand'
 
 export const moveShapeCommand = createCommand<{
   id: string
@@ -358,6 +358,6 @@ If you're new to the codebase, read files in this order:
 
 1. `src/types/shapes.ts` — the data model
 2. `src/store/atoms/document.ts` — the root state
-3. `src/store/commands/_template.ts` — the command pattern
-4. `src/features/canvas/Canvas.tsx` — how rendering subscribes to atoms
+3. `src/store/commands/createCommand.ts` — the command pattern
+4. `src/features/canvas/CanvasStage.tsx` — how rendering subscribes to atoms
 5. `src/features/export/serialize.ts` — how state becomes SVG

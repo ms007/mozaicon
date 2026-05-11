@@ -241,14 +241,17 @@ See `src/features/toolbar/tools/rect.ts` for a reference consumer. The factory's
 ```ts
 type DrawTool = {
   id: string // 'rect'
-  cursor: string // 'crosshair' for shape tools
+  cursorClass: string // Tailwind cursor utility, e.g. 'cursor-crosshair'
   onPointerDown(ctx: ToolCtx, event: ToolEvent): void
   onPointerMove(ctx: ToolCtx, event: ToolEvent): void
   onPointerUp(ctx: ToolCtx, event: ToolEvent): void
+  onDeactivate?(ctx: ToolCtx): void
+  shouldHandlePointerMove?(ctx: ToolCtx): boolean
 }
 
 type ToolEvent = {
-  point: { x: number; y: number } // viewBox units, unrounded
+  point: Vec2 // viewBox units, unrounded
+  screenPoint: Vec2 // raw client coordinates, used for the drag threshold
   modifiers: { shift: boolean; alt: boolean; meta: boolean; ctrl: boolean }
   pointerId: number
   buttons: number
