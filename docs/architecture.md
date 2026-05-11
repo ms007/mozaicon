@@ -118,26 +118,30 @@ export const shapeAtomsAtom = splitAtom(
   ),
 )
 
-// Lookup by id (derived, memoized by Jotai)
-export const shapeByIdAtom = atom((get) => {
-  const shapes = get(shapesAtom)
-  return new Map(shapes.map((s) => [s.id, s]))
-})
+// Per-shape lookup. atomWithImmer keeps unchanged shapes referentially
+// stable, so .find() returns the same reference when other shapes mutate.
+// Jotai's Object.is check then suppresses notification to subscribers of
+// unaffected ids — which is what makes selectedShapesAtom cheap below.
+export const shapeAtom = atomFamily((id: string) =>
+  atom((get) => get(shapesAtom).find((s) => s.id === id)),
+)
 ```
+
+`atomFamily` comes from `jotai-family` (the `jotai/utils` export is deprecated and slated for removal in Jotai v3).
 
 ### Selection Atom (`src/store/atoms/selection.ts`)
 
 ```ts
 import { atom } from 'jotai'
-import { shapeByIdAtom } from './document'
+import { shapeAtom } from './document'
 
 export const selectedIdsAtom = atom<string[]>([])
 
-// Derived: the actual selected Shape objects
+// Derived: the actual selected Shape objects. Subscribes only to the
+// per-id atoms — mutating an unrelated shape doesn't re-run this.
 export const selectedShapesAtom = atom((get) => {
   const ids = get(selectedIdsAtom)
-  const byId = get(shapeByIdAtom)
-  return ids.map((id) => byId.get(id)).filter(Boolean)
+  return ids.map((id) => get(shapeAtom(id))).filter((s) => s !== undefined)
 })
 
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
@@ -164,21 +168,11 @@ export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0)
 
 ### Per-Shape Atoms (`atomFamily`)
 
-When a UI surface (e.g. a single shape's property editor) cares about one shape but nothing else, subscribing to `documentAtom` or `shapesAtom` re-renders on every unrelated change. Use `atomFamily` to get one atom per shape id:
-
-```ts
-import { atom } from 'jotai'
-import { atomFamily } from 'jotai/utils'
-import { shapeByIdAtom } from './document'
-
-export const shapeAtom = atomFamily((id: string) => atom((get) => get(shapeByIdAtom).get(id)))
-```
-
-`shapeAtom('abc')` returns a stable atom per id, so two editors looking at the same shape share a subscription.
+When a UI surface (e.g. a single shape's property editor) cares about one shape but nothing else, subscribing to `documentAtom` or `shapesAtom` re-renders on every unrelated change. `shapeAtom` (defined in `document.ts` above) gives you one stable atom per shape id — two editors looking at the same shape share a subscription.
 
 **Lifecycle.** `atomFamily` caches per key. When a shape is deleted, the entry stays in the cache until you evict it — call `shapeAtom.remove(id)` from the same command that removes the shape, otherwise the family leaks.
 
-Not yet used in the codebase (as of this writing) — `splitAtom` covers canvas rendering. Reach for `atomFamily` when you need keyed lookup outside the canvas list.
+`shapeAtom` powers `selectedShapesAtom`; reach for it directly when you need keyed lookup outside the canvas list (e.g. a property panel bound to a single shape). The canvas list itself uses `splitAtom` (`shapeAtomsAtom`).
 
 ## State Categories: Document vs UI
 

@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { splitAtom } from 'jotai/utils'
+import { atomFamily } from 'jotai-family'
 import { atomWithImmer } from 'jotai-immer'
 
 import { DEFAULT_VIEWBOX, type Document, type Shape } from '@/types/shapes'
@@ -22,4 +23,9 @@ export const shapesAtom = atom(
 
 export const shapeAtomsAtom = splitAtom(shapesAtom)
 
-export const shapeByIdAtom = atom((get) => new Map(get(shapesAtom).map((s) => [s.id, s])))
+// Immer keeps unchanged shapes referentially stable, so .find() returns the
+// same reference when other shapes mutate — Jotai's Object.is check then
+// suppresses notification to subscribers of unaffected ids.
+export const shapeAtom = atomFamily((id: string) =>
+  atom((get) => get(shapesAtom).find((s) => s.id === id)),
+)

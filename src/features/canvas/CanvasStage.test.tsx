@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { renderWithStore } from '@/test/renderWithStore'
 import type { Document } from '@/types/shapes'
@@ -94,5 +95,14 @@ describe('CanvasStage', () => {
     })
 
     expect(container.querySelectorAll('rect')).toHaveLength(1)
+  })
+
+  it('mounts SelectionOverlay when a shape is selected', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+      store.set(selectedIdsAtom, ['r1'])
+    })
+
+    expect(container.querySelector('rect[vector-effect="non-scaling-stroke"]')).not.toBeNull()
   })
 })

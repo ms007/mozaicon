@@ -3,6 +3,7 @@ import { selectAtom } from 'jotai/utils'
 
 import { DraftLayer } from '@/features/canvas/DraftLayer'
 import { ShapeRenderer } from '@/features/canvas/renderers/ShapeRenderer'
+import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { useToolPointerBridge } from '@/features/canvas/useToolPointerBridge'
 import { useToolLifecycle } from '@/features/toolbar/useToolLifecycle'
 import { cn } from '@/lib/utils'
@@ -31,10 +32,11 @@ export function CanvasStage() {
       className={cn('border-border bg-background block border', tool?.cursorClass)}
       {...handlers}
     >
-      {shapeAtoms.map((shapeAtom) => (
-        <ShapeRenderer key={String(shapeAtom)} shapeAtom={shapeAtom} />
+      {shapeAtoms.map((atom) => (
+        <ShapeRenderer key={String(atom)} shapeAtom={atom} />
       ))}
       <DraftLayer />
+      <SelectionOverlay />
     </svg>
   )
 }

@@ -79,6 +79,35 @@ describe('selectedShapesAtom', () => {
     store.set(selectedIdsAtom, ['gone1', 'gone2'])
     expect(store.get(selectedShapesAtom)).toEqual([])
   })
+
+  it('keeps array reference stable when an unrelated shape mutates', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    const before = store.get(selectedShapesAtom)
+
+    // Mutate r2 (not selected) — selectedShapesAtom must not re-evaluate.
+    store.set(documentAtom, (draft) => {
+      const r2 = draft.shapes.find((s) => s.id === 'r2')
+      if (r2) r2.name = 'Renamed'
+    })
+
+    expect(store.get(selectedShapesAtom)).toBe(before)
+  })
+
+  it('returns a new array when a selected shape mutates', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    const before = store.get(selectedShapesAtom)
+
+    store.set(documentAtom, (draft) => {
+      const r1 = draft.shapes.find((s) => s.id === 'r1')
+      if (r1) r1.name = 'Renamed'
+    })
+
+    const after = store.get(selectedShapesAtom)
+    expect(after).not.toBe(before)
+    expect(after[0]).toMatchObject({ id: 'r1', name: 'Renamed' })
+  })
 })
 
 describe('hasSelectionAtom', () => {
