@@ -17,9 +17,9 @@ export const RectShape = ShapeBase.extend({
   type: z.literal('rect'),
   x: z.number(),
   y: z.number(),
-  width: z.number(),
-  height: z.number(),
-  rx: z.number().optional(),
+  width: z.number().nonnegative(),
+  height: z.number().nonnegative(),
+  rx: z.number().nonnegative().optional(),
 })
 
 export const Shape = z.discriminatedUnion('type', [RectShape])

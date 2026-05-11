@@ -47,6 +47,26 @@ describe('RectShape schema', () => {
     const bad = { ...validRect, type: 'circle' }
     expect(RectShape.safeParse(bad).success).toBe(false)
   })
+
+  it('rejects negative width', () => {
+    const bad = { ...validRect, width: -1 }
+    expect(RectShape.safeParse(bad).success).toBe(false)
+  })
+
+  it('rejects negative height', () => {
+    const bad = { ...validRect, height: -5 }
+    expect(RectShape.safeParse(bad).success).toBe(false)
+  })
+
+  it('rejects negative rx', () => {
+    const bad = { ...validRect, rx: -0.5 }
+    expect(RectShape.safeParse(bad).success).toBe(false)
+  })
+
+  it('accepts zero width and height (degenerate point)', () => {
+    const point = { ...validRect, width: 0, height: 0 }
+    expect(RectShape.safeParse(point).success).toBe(true)
+  })
 })
 
 describe('Shape discriminated union', () => {
