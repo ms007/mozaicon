@@ -126,7 +126,7 @@ On hook failure during `git commit`: stop, report, do not retry, do not amend.
 - **Sentence case**, no period at end, start with lowercase
 - **Subject ≤ 80 characters**
 - **No prefix** — no `feat:` / `fix:` / `chore:`, no scope parens. The codebase does not use Conventional Commits.
-- **No Body. Only one line commit message.
+- **No body.** Only one line commit message.
 - **Always English**, regardless of the language of `$ARGUMENTS`, the user's prompt, or the code comments.
 - **No footer boilerplate.** No "Generated with Claude Code", no Co-Authored-By, no emoji.
 
