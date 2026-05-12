@@ -157,13 +157,17 @@ export type HistoryEntry = {
   label: string // e.g. "Move shape", "Change fill"
   before: Document
   after: Document
+  selectionBefore: string[]
+  selectionAfter: string[]
 }
 
 export const undoStackAtom = atom<HistoryEntry[]>([])
 export const redoStackAtom = atom<HistoryEntry[]>([])
 
-export const canUndoAtom = atom((get) => get(undoStackAtom).length > 0)
-export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0)
+// Both flags fold in the gesture check: while an Active Gesture runs, history
+// is frozen and the toolbar's undo/redo buttons grey out automatically.
+export const canUndoAtom = atom((get) => get(undoStackAtom).length > 0 && !get(isGestureActiveAtom))
+export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0 && !get(isGestureActiveAtom))
 ```
 
 ### Per-Shape Atoms (`atomFamily`)
@@ -172,19 +176,23 @@ When a UI surface (e.g. a single shape's property editor) cares about one shape 
 
 **Lifecycle.** `atomFamily` caches per key. When a shape is deleted, the entry stays in the cache until you evict it — call `shapeAtom.remove(id)` from the same command that removes the shape, otherwise the family leaks.
 
+**Undo after delete reuses the id, not the atom.** Once the delete command has called `shapeAtom.remove(id)`, an undo that restores the same shape creates a _new_ atom on the next read. The canvas list (`splitAtom`) keys on atom identity, so the corresponding `ShapeRenderer` unmounts and remounts. The convention that makes this safe: **`ShapeRenderer` and any per-shape canvas component stays stateless.** If a future renderer needs local state (entrance animation, inline-edit cursor, hover-driven affordance), park that state in a separate id-keyed atom — not in React component state.
+
 `shapeAtom` powers `selectedShapesAtom`; reach for it directly when you need keyed lookup outside the canvas list (e.g. a property panel bound to a single shape). The canvas list itself uses `splitAtom` (`shapeAtomsAtom`).
 
 ## State Categories: Document vs UI
 
 Atoms in the store fall into two categories with different mutation rules:
 
-**Document state** (`documentAtom`): the SVG being edited. Mutations must go through commands so they're undoable. `HistoryEntry` snapshots `documentAtom` only.
+**Document state** (`documentAtom`): the SVG being edited. Mutations must go through commands so they're undoable.
 
-**UI state** (`selectedIdsAtom`, `activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
+**UI state** (`activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, `resizeDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
-Consequence: if undo removes a shape whose id is still in `selectedIdsAtom`, the selection holds a stale id. Derived atoms that consume selection must filter stale references against `shapeByIdAtom`. `selectedShapesAtom` already does this.
+**Selection is the one exception.** `selectedIdsAtom` is UI state by lifecycle (transient, written directly by interactions), but the selection set _at the moment of a mutation_ is part of the semantic context of that mutation — "Move these three shapes", "Delete this one". A `HistoryEntry` therefore snapshots both `documentAtom` and `selectedIdsAtom`, and undo/redo restore both together. This is the only UI atom in the snapshot; any future need to undo other UI state should be questioned, not generalised.
 
-If a piece of UI state ever needs to participate in undo/redo, promote it: move its mutation into a command and extend `HistoryEntry`. Don't add per-atom selective snapshots.
+Consumers of selection still filter stale ids against the per-shape atoms as defense-in-depth (`selectedShapesAtom` already does this), but the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
+
+If a piece of UI state ever needs to participate in undo/redo, the bar is high: justify it against the principle that history's job is to roll back the _document_, not the workspace.
 
 ## Command Pattern
 
@@ -302,6 +310,14 @@ export const redoCommand = atom(null, (get, set) => {
 })
 ```
 
+Both meta-commands also restore selection (`set(selectedIdsAtom, entry.selectionBefore)` on undo, `entry.selectionAfter` on redo) — omitted above for brevity.
+
+**History is frozen during an Active Gesture.** Both `undoCommand` and `redoCommand` no-op while a drag/resize is in flight (`get(isGestureActiveAtom)` is true). The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
+
+History stacks are unbounded. Memory cost is bounded in practice by Immer's structural sharing — `before` and `after` reuse every unmodified shape sub-tree — and by the small size of typical icon documents. If long sessions become an observed problem, revisit with data rather than a preemptive cap.
+
+The `label` field on `HistoryEntry` is currently consumed only by tests and dev tooling. When it surfaces in UI later (tooltip on the undo button, history panel, post-undo toast), labels will need an i18n migration — they are hardcoded English strings today.
+
 ## Rendering the Canvas
 
 The canvas uses `splitAtom` so each shape subscribes only to itself:
@@ -355,6 +371,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 - **Dexie** (IndexedDB) stores projects keyed by document id.
 - Auto-save is a Jotai effect atom that debounces writes on `documentAtom` changes (1s debounce).
 - On app load, the last-opened document hydrates `documentAtom` via Zod validation — if the schema fails, we fall back to a blank document and log a warning.
+- **Auto-save reacts to undo/redo like any other mutation.** `undoCommand` writes `documentAtom`, the debounce fires, the rewound state is persisted. Reload after an undo brings back the undone state; the history stacks themselves are session-local and start empty on reload. This means: undo survives reload, redo does not.
 
 ## Testing Strategy Per Layer
 

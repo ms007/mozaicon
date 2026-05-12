@@ -21,3 +21,9 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 **Resize Anchor** — The point diametrically opposite the _Resize Handle_ being dragged. During a resize gesture the anchor stays fixed while the dragged handle and adjacent edges move to follow the pointer. For corner handles the anchor is the opposite corner; for edge handles it is the opposite edge midpoint.
 
 **Resize Draft** — Transient per-shape geometry (`Record<id, Rect> | null`) held in `resizeDraftAtom` during a resize gesture. `ShapeRenderer` reads draft entries with fallback to the document, so the gesture renders live without committing to the document. On `pointerup` the draft clears and a single undoable `resizeShapeCommand` commits the final geometry.
+
+## History
+
+**History Entry** — A record on the undo/redo stack capturing one command's effect. Fields: `label` (debug-only English string), `before` and `after` `Document` snapshots, plus `selectionBefore` and `selectionAfter` (`string[]`). Selection is the one UI atom included in the snapshot because the selected set is part of the semantic context of every mutation. Defined in `src/store/atoms/history.ts`.
+
+**Active Gesture** — A pointer-driven interaction in progress (drag-to-draw, drag-to-move, resize), signalled by a non-null draft atom (`draftShapeAtom`, `resizeDraftAtom`, …) and surfaced via `isGestureActiveAtom`. While an _Active Gesture_ runs, history is frozen: `undoCommand` and `redoCommand` no-op and `canUndoAtom` / `canRedoAtom` report false, so the toolbar's undo/redo buttons grey out. The pending change isn't a `HistoryEntry` yet — it commits on `pointerup`. To cancel a gesture, use Escape (separate mechanism).
