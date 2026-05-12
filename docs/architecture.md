@@ -370,6 +370,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 
 - **Never read `documentAtom` in the canvas render path.** Always go through `shapeAtomsAtom` or derived atoms.
 - **Avoid `produce` in derived atoms** — they should be pure reads.
+- **Draft-then-commit for gestures.** Interactive gestures (resize, move) write a transient draft atom (`resizeDraftAtom`, `draftShapeAtom`) on every pointer move — these are UI state, not commands. A single undoable command fires on `pointerup`. Per-frame commands are **not** the rule; they would flood the undo stack and thrash document snapshots.
 - **Pointer-driven mutation commands** (e.g. dragging an existing shape to move it) batch via `requestAnimationFrame` so a single command dispatches per frame. Transient UI-atom updates during a drag (e.g. `draftShapeAtom` while _Drag-to-Draw_ is in progress) are not commands and don't need their own rAF loop — React batches the re-render.
 - **SVGO is expensive** — run it in a Web Worker if export feels slow (> 100ms).
 

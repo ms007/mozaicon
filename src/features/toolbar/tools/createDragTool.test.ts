@@ -338,6 +338,61 @@ describe('createDragTool', () => {
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
   })
 
+  // --- Empty-canvas click clears selection instead of click-fallback ---
+
+  it('clears selection on sub-threshold release when selection is non-empty', () => {
+    const ctx = makeCtx()
+    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+
+    tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
+    tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
+
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([])
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+  })
+
+  it('fires click-fallback on sub-threshold release when selection is empty', () => {
+    const ctx = makeCtx()
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([])
+
+    tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
+    tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
+
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(1)
+    expect(ctx.store.get(documentAtom).shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5 })
+  })
+
+  it('still triggers drag-to-draw when selection exists and drag exceeds threshold', () => {
+    const ctx = makeCtx()
+    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+
+    const shapes = ctx.store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0]).toMatchObject({ type: 'rect', x: 2, y: 2, width: 8, height: 6 })
+  })
+
+  it('drag-back-to-start with selection clears selection instead of click-fallback', () => {
+    const ctx = makeCtx()
+    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    expect(ctx.store.get(draftShapeAtom)).not.toBeNull()
+
+    tool.onPointerUp(ctx, ev({ x: 2.1, y: 2.1 }, { x: 101, y: 100 }))
+
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([])
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+    expect(ctx.store.get(activeDragAtom)).toBeNull()
+  })
+
   // --- Drag-back-to-start uses click-fallback ---
 
   it('uses click-fallback when drag returns near start before release', () => {

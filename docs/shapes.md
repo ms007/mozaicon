@@ -22,6 +22,7 @@ Every shape must support these operations:
 | Render        | `src/features/canvas/renderers/`   | Yes      |
 | Bounding box  | `src/lib/svg/bbox/`                | Yes      |
 | Translate     | `src/lib/svg/transform.ts`         | Yes      |
+| Scale         | `src/lib/geometry/scale.ts`        | Yes      |
 | Serialize     | `src/features/export/serializers/` | Yes      |
 | Properties UI | `src/features/properties/editors/` | Yes      |
 | Drawing tool  | `src/features/toolbar/tools/`      | Optional |

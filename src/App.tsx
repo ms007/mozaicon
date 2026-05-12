@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { TooltipProvider } from '@/components/primitives/Tooltip'
 import { createCanvasBindings } from '@/features/canvas/bindings'
 import { CanvasStage } from '@/features/canvas/CanvasStage'
+import { createHistoryBindings } from '@/features/history/bindings'
 import { buildBindings } from '@/features/shortcuts/registry'
 import { useGlobalShortcuts } from '@/features/shortcuts/useGlobalShortcuts'
 import { createToolbarBindings } from '@/features/toolbar/bindings'
@@ -12,7 +13,12 @@ import { Toolbar } from '@/features/toolbar/Toolbar'
 export default function App() {
   const store = useStore()
   const bindings = useMemo(
-    () => buildBindings([...createCanvasBindings(store), ...createToolbarBindings(store)]),
+    () =>
+      buildBindings([
+        ...createCanvasBindings(store),
+        ...createToolbarBindings(store),
+        ...createHistoryBindings(store),
+      ]),
     [store],
   )
   useGlobalShortcuts(bindings)

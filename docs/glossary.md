@@ -14,4 +14,10 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 
 **Bbox** — The smallest _Rect_ enclosing a shape's rendered geometry. Computed by `bboxOf(shape)` in `src/lib/svg/bbox/`. Excludes stroke width and transforms — those are presentation concerns, not geometry. Group bbox is the union of child bboxes (planned).
 
-**Selection bbox** — The union of the _Bbox_ of every currently selected shape, or `null` when the selection is empty. Computed by `bboxOfMany(shapes)`. Rendered by `SelectionOverlay` and is the anchor for future selection-bound visuals (resize handles, dimension labels, snap guides).
+**Selection bbox** — The union of the _Bbox_ of every currently selected shape, or `null` when the selection is empty. Computed by `bboxOfMany(shapes)`. Rendered by `SelectionOverlay` and is the anchor for selection-bound visuals (_Resize Handles_, dimension labels, snap guides).
+
+**Resize Handle** — One of 8 visible circles rendered around the _Selection bbox_: 4 at corners, 4 at edge midpoints. Each handle has a transparent hit-area sibling with double the visual radius. Visual radius is `4 / viewBoxScale` so handles stay the same screen size at every zoom level. Rendered by the `ResizeHandles` component inside `SelectionOverlay`. No gesture wired yet — visual affordance only.
+
+**Resize Anchor** — The point diametrically opposite the _Resize Handle_ being dragged. During a resize gesture the anchor stays fixed while the dragged handle and adjacent edges move to follow the pointer. For corner handles the anchor is the opposite corner; for edge handles it is the opposite edge midpoint.
+
+**Resize Draft** — Transient per-shape geometry (`Record<id, Rect> | null`) held in `resizeDraftAtom` during a resize gesture. `ShapeRenderer` reads draft entries with fallback to the document, so the gesture renders live without committing to the document. On `pointerup` the draft clears and a single undoable `resizeShapeCommand` commits the final geometry.

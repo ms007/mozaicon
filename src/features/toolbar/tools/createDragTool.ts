@@ -69,6 +69,14 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
       if (event.pointerId !== drag.pointerId) return
 
       const dist = screenDistance(drag.startScreen, event.screenPoint)
+
+      if (dist < DRAG_THRESHOLD_PX && ctx.store.get(selectedIdsAtom).length > 0) {
+        ctx.store.set(selectedIdsAtom, [])
+        ctx.store.set(cancelDraftAtom)
+        lastGeometry = null
+        return
+      }
+
       const geo: G =
         dist < DRAG_THRESHOLD_PX
           ? config.clickFallbackGeometry(drag.startViewBox)

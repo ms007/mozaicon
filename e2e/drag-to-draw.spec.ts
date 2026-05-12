@@ -1,12 +1,6 @@
-import { expect, type Locator, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-const CANVAS_SELECTOR = 'svg[aria-label="Icon canvas"]'
-
-async function getBox(locator: Locator) {
-  const box = await locator.boundingBox()
-  if (!box) throw new Error('Canvas bounding box is null')
-  return box
-}
+import { CANVAS_SELECTOR, getBox, SHAPE_RECT_SELECTOR } from './helpers'
 
 test.describe('Drag-to-Draw rect tool', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,7 +17,7 @@ test.describe('Drag-to-Draw rect tool', () => {
     await page.mouse.move(box.x + 300, box.y + 250, { steps: 5 })
     await page.mouse.up()
 
-    const rects = canvas.locator('rect')
+    const rects = canvas.locator(SHAPE_RECT_SELECTOR)
     await expect(rects).toHaveCount(1)
   })
 
@@ -33,7 +27,7 @@ test.describe('Drag-to-Draw rect tool', () => {
 
     await page.mouse.click(box.x + 200, box.y + 200)
 
-    const rects = canvas.locator('rect')
+    const rects = canvas.locator(SHAPE_RECT_SELECTOR)
     await expect(rects).toHaveCount(1)
   })
 
@@ -48,7 +42,7 @@ test.describe('Drag-to-Draw rect tool', () => {
     await page.mouse.up()
     await page.keyboard.up('Shift')
 
-    const rect = canvas.locator('rect')
+    const rect = canvas.locator(SHAPE_RECT_SELECTOR)
     await expect(rect).toHaveCount(1)
     const width = await rect.getAttribute('width')
     const height = await rect.getAttribute('height')
@@ -66,7 +60,7 @@ test.describe('Drag-to-Draw rect tool', () => {
     await page.mouse.up()
     await page.keyboard.up('Alt')
 
-    const rect = canvas.locator('rect')
+    const rect = canvas.locator(SHAPE_RECT_SELECTOR)
     await expect(rect).toHaveCount(1)
   })
 
@@ -80,7 +74,7 @@ test.describe('Drag-to-Draw rect tool', () => {
     await page.keyboard.press('Escape')
     await page.mouse.up()
 
-    const rects = canvas.locator('rect')
+    const rects = canvas.locator(SHAPE_RECT_SELECTOR)
     await expect(rects).toHaveCount(0)
   })
 })

@@ -1,6 +1,8 @@
 import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
+import { useClickToSelect } from '@/features/canvas/useClickToSelect'
 import { assertNever } from '@/lib/util/assertNever'
+import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
 import { RectRenderer } from './RectRenderer'
@@ -18,7 +20,16 @@ export function ShapeRenderer(props: ShapeRendererProps) {
 
 function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
-  return <ValueShapeRenderer shape={shape} />
+  const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
+  const { onPointerDown } = useClickToSelect(shape.id)
+
+  const rendered = draftGeo ? { ...shape, ...draftGeo } : shape
+
+  return (
+    <g onPointerDown={onPointerDown}>
+      <ValueShapeRenderer shape={rendered} />
+    </g>
+  )
 }
 
 function ValueShapeRenderer({ shape }: { shape: Shape }) {

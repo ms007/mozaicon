@@ -7,9 +7,8 @@ import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { useToolPointerBridge } from '@/features/canvas/useToolPointerBridge'
 import { useToolLifecycle } from '@/features/toolbar/useToolLifecycle'
 import { cn } from '@/lib/utils'
+import { CANVAS_SIZE } from '@/store/atoms/canvas'
 import { documentAtom, shapeAtomsAtom } from '@/store/atoms/document'
-
-const CANVAS_SIZE = 512
 
 // Pre-join so the stage only re-renders on actual viewBox changes; strings
 // compare by value, sidestepping the fresh-array-per-immer-update trap.
@@ -36,7 +35,7 @@ export function CanvasStage() {
         <ShapeRenderer key={String(atom)} shapeAtom={atom} />
       ))}
       <DraftLayer />
-      <SelectionOverlay />
+      <SelectionOverlay svgRef={svgRef} />
     </svg>
   )
 }

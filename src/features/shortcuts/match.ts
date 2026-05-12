@@ -7,7 +7,22 @@ export interface BindingSpec {
 
 const EDITABLE_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT'])
 
-const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+// Chrome freezes `navigator.platform` to "Win32" in some contexts (e.g. headless
+// Playwright on macOS), so we consult `userAgentData.platform` first and only
+// fall back to the legacy fields. See https://wicg.github.io/ua-client-hints/.
+function detectIsMac(): boolean {
+  if (typeof navigator === 'undefined') return false
+  const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+  if (uaData?.platform) return /mac/i.test(uaData.platform)
+  if (/Mac|iPhone|iPad|iPod/.test(navigator.platform)) return true
+  return navigator.userAgent.includes('Mac OS X')
+}
+
+const IS_MAC = detectIsMac()
+
+// Display label for the "mod" modifier — "Cmd" on macOS, "Ctrl" elsewhere —
+// surfaced via binding `hint` strings (e.g. tooltips).
+export const MOD_KEY_LABEL = IS_MAC ? 'Cmd' : 'Ctrl'
 
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false

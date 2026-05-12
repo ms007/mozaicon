@@ -1,23 +1,28 @@
 import { useAtomValue } from 'jotai'
 
-import { selectionBboxAtom } from '@/store/atoms/selection'
+import { ResizeHandles } from '@/features/canvas/ResizeHandles'
+import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
 
-export function SelectionOverlay() {
-  const bbox = useAtomValue(selectionBboxAtom)
+export function SelectionOverlay({ svgRef }: { svgRef: React.RefObject<SVGSVGElement | null> }) {
+  const bbox = useAtomValue(displayedSelectionBboxAtom)
 
   if (!bbox) return null
 
   return (
-    <rect
-      x={bbox.x}
-      y={bbox.y}
-      width={bbox.width}
-      height={bbox.height}
-      className="stroke-primary"
-      fill="none"
-      strokeWidth={2}
-      vectorEffect="non-scaling-stroke"
-      pointerEvents="none"
-    />
+    <g>
+      <rect
+        data-testid="selection-overlay"
+        x={bbox.x}
+        y={bbox.y}
+        width={bbox.width}
+        height={bbox.height}
+        className="stroke-primary"
+        fill="none"
+        strokeWidth={2}
+        vectorEffect="non-scaling-stroke"
+        pointerEvents="none"
+      />
+      <ResizeHandles svgRef={svgRef} />
+    </g>
   )
 }
