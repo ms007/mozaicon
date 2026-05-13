@@ -695,6 +695,7 @@ describe("pretty-stdout-sink", () => {
               itemId: null,
               branch: "sandcastle/issue-100",
             },
+            children: [],
           },
         },
       }

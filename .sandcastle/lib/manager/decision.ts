@@ -88,7 +88,11 @@ function decidePrd(obs: Observation): Decision {
   ) {
     return {
       tag: "act",
-      action: { tag: "finalizePrd", issue: obs.seed.issue },
+      action: {
+        tag: "finalizePrd",
+        issue: obs.seed.issue,
+        children: obs.children.map((c) => c.issue),
+      },
     }
   }
 

@@ -296,16 +296,34 @@ describe('execute', () => {
 
   it('finalizePrd calls moveStatus + closeIssue + unblockDependents', async () => {
     const { deps, log } = fakeActionDeps()
-    const action: Action = { tag: 'finalizePrd', issue: issue(10) }
+    const action: Action = { tag: 'finalizePrd', issue: issue(10), children: [] }
     const next = await execute(action, emptyState, deps)
     assert.equal(next.state.phases.get(10), 'done')
     assert.equal(next.stageOutcome, undefined)
     assert.deepEqual(log, ['moveStatus(item-10, Done)', 'closeIssue(10)', 'unblockDependents(10)'])
   })
 
+  it('finalizePrd closes each child issue after the PRD', async () => {
+    const { deps, log } = fakeActionDeps()
+    const action: Action = {
+      tag: 'finalizePrd',
+      issue: issue(10),
+      children: [issue(11), issue(12)],
+    }
+    const next = await execute(action, emptyState, deps)
+    assert.equal(next.state.phases.get(10), 'done')
+    assert.deepEqual(log, [
+      'moveStatus(item-10, Done)',
+      'closeIssue(10)',
+      'closeIssue(11)',
+      'closeIssue(12)',
+      'unblockDependents(10)',
+    ])
+  })
+
   it('finalizePrd skips moveStatus when itemId is null', async () => {
     const { deps, log } = fakeActionDeps()
-    const action: Action = { tag: 'finalizePrd', issue: issue(10, null) }
+    const action: Action = { tag: 'finalizePrd', issue: issue(10, null), children: [] }
     const next = await execute(action, emptyState, deps)
     assert.equal(next.state.phases.get(10), 'done')
     assert.deepEqual(log, ['closeIssue(10)', 'unblockDependents(10)'])

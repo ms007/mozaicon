@@ -94,7 +94,10 @@ export async function execute(
     }
     case 'finalizePrd': {
       await moveStatusIfTracked(deps, action.issue, 'Done')
-      await deps.closeIssue(action.issue.number)
+      await Promise.all([
+        deps.closeIssue(action.issue.number),
+        ...action.children.map((child) => deps.closeIssue(child.number)),
+      ])
       await deps.unblockDependents(action.issue.number)
       return { state: updatePhase(state, action.issue.number, 'done') }
     }

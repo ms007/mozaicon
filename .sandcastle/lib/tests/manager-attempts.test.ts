@@ -197,6 +197,7 @@ describe("actionIssueAndStage", () => {
     const result = actionIssueAndStage({
       tag: "finalizePrd",
       issue: issue(10),
+      children: [],
     })
     assert.deepEqual(result, { issue: issue(10), stage: "finalizePrd" })
   })
