@@ -71,17 +71,13 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
         const dist = screenDistance(drag.startScreen, event.screenPoint)
         const isClick = dist < DRAG_THRESHOLD_PX
 
-        if (isClick && ctx.store.get(selectedIdsAtom).length > 0) {
-          ctx.store.set(selectedIdsAtom, [])
-        } else {
-          const geo: G = isClick
-            ? config.clickFallbackGeometry(drag.startViewBox)
-            : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
-          const id = newId()
-          const styles = ctx.store.get(styleDefaultsAtom)
-          ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
-          ctx.store.set(selectedIdsAtom, [id])
-        }
+        const geo: G = isClick
+          ? config.clickFallbackGeometry(drag.startViewBox)
+          : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
+        const id = newId()
+        const styles = ctx.store.get(styleDefaultsAtom)
+        ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
+        ctx.store.set(selectedIdsAtom, [id])
 
         ctx.store.set(cancelDraftAtom)
         lastGeometry = null

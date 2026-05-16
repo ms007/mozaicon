@@ -282,17 +282,23 @@ describe('createDragTool', () => {
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
   })
 
-  // --- Empty-canvas click clears selection instead of click-fallback ---
+  // --- Click-fallback fires regardless of selection state ---
+  // Rationale: activating a draw tool signals intent to draw. A sub-threshold
+  // click should always produce the click-fallback shape. Selection-clearing
+  // on background click is handled by useToolPointerBridge when no tool is
+  // active.
 
-  it('clears selection on sub-threshold release when selection is non-empty', () => {
+  it('fires click-fallback on sub-threshold release even when selection is non-empty', () => {
     const ctx = makeCtx()
     ctx.store.set(selectedIdsAtom, ['existing-shape'])
 
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    expect(ctx.store.get(selectedIdsAtom)).toEqual([])
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    const shapes = ctx.store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5, width: 2, height: 2 })
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
     expect(ctx.store.get(activeDragAtom)).toBeNull()
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
   })
@@ -321,7 +327,7 @@ describe('createDragTool', () => {
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 2, y: 2, width: 8, height: 6 })
   })
 
-  it('drag-back-to-start with selection clears selection instead of click-fallback', () => {
+  it('drag-back-to-start with selection uses click-fallback', () => {
     const ctx = makeCtx()
     ctx.store.set(selectedIdsAtom, ['existing-shape'])
 
@@ -331,8 +337,10 @@ describe('createDragTool', () => {
 
     tool.onPointerUp(ctx, ev({ x: 2.1, y: 2.1 }, { x: 101, y: 100 }))
 
-    expect(ctx.store.get(selectedIdsAtom)).toEqual([])
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    const shapes = ctx.store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0]).toMatchObject({ width: 2, height: 2 })
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
     expect(ctx.store.get(activeDragAtom)).toBeNull()
   })
