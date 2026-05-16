@@ -1,12 +1,11 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { getHint } from '@/features/shortcuts/registry'
 import { documentAtom } from '@/store/atoms/document'
 import { activeToolAtom } from '@/store/atoms/tool'
 import type { Document } from '@/types/shapes'
 
-import { createToolbarBindings, TOOLBAR_SHORTCUT_META } from './bindings'
+import { createToolbarBindings } from './bindings'
 
 const emptyDoc: Document = {
   id: 'doc-test',
@@ -22,16 +21,6 @@ function makeStore(doc: Document = emptyDoc) {
 }
 
 describe('toolbar bindings', () => {
-  it('hint lookup returns "R" for the rect binding id', () => {
-    const hint = getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.activate')
-    expect(hint).toBe('R')
-  })
-
-  it('hint lookup returns undefined for an unknown id', () => {
-    const hint = getHint(TOOLBAR_SHORTCUT_META, 'tool.unknown')
-    expect(hint).toBeUndefined()
-  })
-
   it('produces exactly one binding for the rect action', () => {
     const store = makeStore()
     const bindings = createToolbarBindings(store)

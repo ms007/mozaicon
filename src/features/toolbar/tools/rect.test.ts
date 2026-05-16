@@ -1,5 +1,5 @@
 import { createStore } from 'jotai'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { documentAtom } from '@/store/atoms/document'
@@ -119,7 +119,7 @@ const emptyDoc: Document = {
 function makeCtx(): ToolCtx {
   const store = createStore()
   store.set(documentAtom, emptyDoc)
-  return { store }
+  return { store, completeTool: vi.fn() }
 }
 
 function event(point: Vec2, screenPoint: Vec2, overrides: Partial<ToolEvent> = {}): ToolEvent {

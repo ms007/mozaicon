@@ -13,7 +13,7 @@ export type ToolOption = {
 
 export type ToolPaletteProps = {
   options: ToolOption[]
-  value: string
+  value: string | null
   onChange: (value: string) => void
   onItemClick?: (value: string) => void
   'aria-label'?: string
@@ -31,7 +31,7 @@ export function ToolPalette({
   return (
     <ToggleGroup
       type="single"
-      value={value}
+      value={value ?? ''}
       onValueChange={(next) => {
         if (next) onChange(next)
       }}

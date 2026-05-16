@@ -14,6 +14,11 @@ function setup(initialTool = 'rect') {
 }
 
 describe('useToolLifecycle', () => {
+  it('returns undefined when no tool is active (null)', () => {
+    const { result } = renderHookWithStore(useToolLifecycle)
+    expect(result.current).toBeUndefined()
+  })
+
   it('returns the active draw tool', () => {
     const { result } = setup('rect')
     expect(result.current?.id).toBe('rect')

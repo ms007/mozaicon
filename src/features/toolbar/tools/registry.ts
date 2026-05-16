@@ -19,8 +19,11 @@ export type ToolEvent = {
 
 export type JotaiStore = ReturnType<typeof createStore>
 
+export type ToolMode = 'oneShot' | 'sticky'
+
 export type ToolCtx = {
   store: JotaiStore
+  completeTool: () => void
 }
 
 export type DrawTool = {

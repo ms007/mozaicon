@@ -65,33 +65,27 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
 
     onPointerUp(ctx, event) {
       const drag = ctx.store.get(activeDragAtom)
-      if (!drag) return
-      if (event.pointerId !== drag.pointerId) return
+      if (drag && event.pointerId !== drag.pointerId) return
 
-      const dist = screenDistance(drag.startScreen, event.screenPoint)
+      if (drag) {
+        const dist = screenDistance(drag.startScreen, event.screenPoint)
+        const isClick = dist < DRAG_THRESHOLD_PX
 
-      if (dist < DRAG_THRESHOLD_PX && ctx.store.get(selectedIdsAtom).length > 0) {
-        ctx.store.set(selectedIdsAtom, [])
+        if (isClick && ctx.store.get(selectedIdsAtom).length > 0) {
+          ctx.store.set(selectedIdsAtom, [])
+        } else {
+          const geo: G = isClick
+            ? config.clickFallbackGeometry(drag.startViewBox)
+            : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
+          const id = newId()
+          const styles = ctx.store.get(styleDefaultsAtom)
+          ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
+          ctx.store.set(selectedIdsAtom, [id])
+        }
+
         ctx.store.set(cancelDraftAtom)
         lastGeometry = null
-        return
       }
-
-      const geo: G =
-        dist < DRAG_THRESHOLD_PX
-          ? config.clickFallbackGeometry(drag.startViewBox)
-          : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
-
-      const id = newId()
-      const styles = ctx.store.get(styleDefaultsAtom)
-      const shapeData = config.buildShape(geo, styles)
-      ctx.store.set(addShapeCommand, {
-        ...shapeData,
-        id,
-      })
-      ctx.store.set(selectedIdsAtom, [id])
-      ctx.store.set(cancelDraftAtom)
-      lastGeometry = null
     },
 
     onDeactivate(ctx) {

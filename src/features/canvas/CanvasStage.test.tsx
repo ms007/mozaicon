@@ -67,6 +67,15 @@ describe('CanvasStage', () => {
     expect(container.querySelectorAll('rect')).toHaveLength(2)
   })
 
+  it('applies no tool cursor when no tool is active', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg?.classList.contains('cursor-crosshair')).toBe(false)
+  })
+
   it('applies crosshair cursor when a draw tool is active', () => {
     const { container } = renderWithStore(<CanvasStage />, (store) => {
       store.set(documentAtom, seededDoc)

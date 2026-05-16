@@ -1,75 +1,19 @@
-import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import type { Vec2 } from '@/lib/geometry/vec2'
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
-import type { Document } from '@/types/shapes'
 
+import type { DragToolConfig } from './createDragTool'
 import { createDragTool } from './createDragTool'
-import type { Modifiers, ToolCtx, ToolEvent } from './registry'
+import { baseBoxConfig, type BoxGeometry, ev, makeCtx } from './dragToolHarness'
+import type { Modifiers } from './registry'
 
-// --- Stub shape config: uses a trivial "box" geometry ---
-
-type BoxGeometry = { x: number; y: number; w: number; h: number }
-
-const stubConfig = {
+const stubConfig: DragToolConfig<BoxGeometry> = {
+  ...baseBoxConfig,
   toolId: 'stub-box',
-  cursorClass: 'cursor-test',
-  geometryFromDrag: (start: Vec2, end: Vec2): BoxGeometry => ({
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    w: Math.abs(end.x - start.x) || 1,
-    h: Math.abs(end.y - start.y) || 1,
-  }),
-  clickFallbackGeometry: (point: Vec2): BoxGeometry => ({
-    x: point.x,
-    y: point.y,
-    w: 2,
-    h: 2,
-  }),
-  geometryEquals: (a: BoxGeometry, b: BoxGeometry): boolean =>
-    a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h,
-  buildShape: (
-    geo: BoxGeometry,
-    styles: { fill: string; stroke: string; strokeWidth: number },
-  ) => ({
-    type: 'rect' as const,
-    ...styles,
-    x: geo.x,
-    y: geo.y,
-    width: geo.w,
-    height: geo.h,
-  }),
-}
-
-const NO_MODIFIERS: Modifiers = { shift: false, alt: false, meta: false, ctrl: false }
-
-const emptyDoc: Document = {
-  id: 'doc-test',
-  name: 'Test',
-  viewBox: [0, 0, 24, 24],
-  shapes: [],
-}
-
-function makeCtx(): ToolCtx {
-  const store = createStore()
-  store.set(documentAtom, emptyDoc)
-  return { store }
-}
-
-function ev(point: Vec2, screenPoint: Vec2, overrides: Partial<ToolEvent> = {}): ToolEvent {
-  return {
-    point,
-    screenPoint,
-    modifiers: NO_MODIFIERS,
-    pointerId: 1,
-    buttons: 1,
-    ...overrides,
-  }
 }
 
 describe('createDragTool', () => {
@@ -420,7 +364,7 @@ describe('createDragTool', () => {
       ...stubConfig,
       geometryFromDrag: (start, end, modifiers) => {
         receivedModifiers = modifiers
-        return stubConfig.geometryFromDrag(start, end)
+        return baseBoxConfig.geometryFromDrag(start, end, modifiers)
       },
     })
     const ctx = makeCtx()
@@ -441,7 +385,7 @@ describe('createDragTool', () => {
       ...stubConfig,
       geometryFromDrag: (start, end, modifiers) => {
         receivedModifiers = modifiers
-        return stubConfig.geometryFromDrag(start, end)
+        return baseBoxConfig.geometryFromDrag(start, end, modifiers)
       },
     })
     const ctx = makeCtx()

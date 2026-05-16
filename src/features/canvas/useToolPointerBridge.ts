@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import type { DrawTool, ToolCtx, ToolEvent } from '@/features/toolbar/tools/registry'
 import { screenToViewBox } from '@/lib/svg/screenToViewBox'
 import { cancelDraftAtom } from '@/store/atoms/draft'
+import { activeToolAtom } from '@/store/atoms/tool'
 
 function makeToolEvent(svg: SVGSVGElement, e: React.PointerEvent): ToolEvent {
   const point = screenToViewBox(svg, e.clientX, e.clientY)
@@ -36,7 +37,15 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
   const store = useStore()
   const cancelDraft = useSetAtom(cancelDraftAtom)
   const svgRef = useRef<SVGSVGElement>(null)
-  const ctx = useMemo<ToolCtx>(() => ({ store }), [store])
+  const ctx = useMemo<ToolCtx>(
+    () => ({
+      store,
+      completeTool: () => {
+        store.set(activeToolAtom, null)
+      },
+    }),
+    [store],
+  )
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
@@ -65,14 +74,15 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
 
   const handlePointerUp = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!tool) return
       const svg = svgRef.current
-      if (!svg) return
-
+      // Release capture unconditionally — if a prior Escape cleared the tool
+      // mid-drag, the SVG would otherwise keep capture until the pointer
+      // leaves the document.
       try {
+        if (!tool || !svg) return
         tool.onPointerUp(ctx, makeToolEvent(svg, e))
       } finally {
-        if (svg.hasPointerCapture(e.pointerId)) {
+        if (svg?.hasPointerCapture(e.pointerId)) {
           svg.releasePointerCapture(e.pointerId)
         }
       }

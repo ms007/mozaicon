@@ -1,22 +1,11 @@
 import { useAtomValue, useStore } from 'jotai'
 import { useMemo } from 'react'
 
-import { type ToolOption, ToolPalette } from '@/components/ToolPalette'
-import { getHint } from '@/features/shortcuts/registry'
-import { Rect } from '@/icons'
+import { ToolPalette } from '@/components/ToolPalette'
 import { activeToolAtom } from '@/store/atoms/tool'
 
 import { createToolbarActions } from './actions'
-import { TOOLBAR_SHORTCUT_META } from './bindings'
-
-const tools: ToolOption[] = [
-  {
-    value: 'rect',
-    icon: <Rect />,
-    label: 'Rectangle',
-    shortcut: getHint(TOOLBAR_SHORTCUT_META, 'tool.rect.activate'),
-  },
-]
+import { TOOL_OPTIONS } from './registry'
 
 export function Toolbar() {
   const store = useStore()
@@ -26,7 +15,7 @@ export function Toolbar() {
   return (
     <div className="absolute top-1/2 left-3 z-10 -translate-y-1/2">
       <ToolPalette
-        options={tools}
+        options={TOOL_OPTIONS}
         value={activeTool}
         onChange={actions.handleChange}
         aria-label="Drawing tools"

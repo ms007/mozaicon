@@ -83,6 +83,14 @@ describe('ToolPalette', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
+  it('marks all items off when value is null', () => {
+    renderPalette({ value: null })
+
+    for (const option of TOOL_OPTIONS) {
+      expect(screen.getByRole('radio', { name: option.label })).toHaveAttribute('data-state', 'off')
+    }
+  })
+
   it('marks all items off when value matches no option', () => {
     renderPalette({ value: 'nonexistent' })
 

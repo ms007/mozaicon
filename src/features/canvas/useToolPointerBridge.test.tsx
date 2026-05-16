@@ -155,10 +155,19 @@ describe('useToolPointerBridge', () => {
     }).not.toThrow()
   })
 
-  it('pointerup is a no-op when tool is undefined', () => {
+  it('pointerup releases pointer capture even when tool is undefined', () => {
     const { result, releaseCapture } = setup(undefined)
 
-    result.current.handlers.onPointerUp(makePointerEvent())
+    result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 42 }))
+
+    expect(releaseCapture).toHaveBeenCalledWith(42)
+  })
+
+  it('pointerup does not release pointer capture when capture is not held', () => {
+    const { result, releaseCapture, hasCapture } = setup(undefined)
+    hasCapture.mockReturnValue(false)
+
+    result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 42 }))
 
     expect(releaseCapture).not.toHaveBeenCalled()
   })

@@ -1,21 +1,23 @@
 import { useAtomValue, useStore } from 'jotai'
 import { useEffect } from 'react'
 
-import { drawTools } from '@/features/toolbar/tools'
 import type { DrawTool } from '@/features/toolbar/tools/registry'
 import { activeToolAtom } from '@/store/atoms/tool'
+
+import { DRAW_TOOL_MAP } from './registry'
+
+const noop = () => {
+  // onDeactivate ctx never invokes completeTool; this satisfies the shared ToolCtx shape.
+}
 
 export function useToolLifecycle(): DrawTool | undefined {
   const activeTool = useAtomValue(activeToolAtom)
   const store = useStore()
-  const tool = drawTools[activeTool]
+  const tool = activeTool ? DRAW_TOOL_MAP[activeTool] : undefined
 
-  // Cleanup runs with the previous closure when `tool` changes, and again on
-  // unmount — covering both "switch away mid-draft" and "tear down the canvas
-  // mid-draft" without a manual ref dance.
   useEffect(() => {
     return () => {
-      tool?.onDeactivate?.({ store })
+      tool?.onDeactivate?.({ store, completeTool: noop })
     }
   }, [tool, store])
 

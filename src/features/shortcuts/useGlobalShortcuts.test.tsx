@@ -4,9 +4,11 @@ import { type PropsWithChildren } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
+import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { activeToolAtom } from '@/store/atoms/tool'
-import type { Document } from '@/types/shapes'
+import type { Document, RectShape } from '@/types/shapes'
 
+import { createCanvasBindings } from '../canvas/bindings'
 import { createToolbarBindings } from '../toolbar/bindings'
 import type { ShortcutBinding } from './registry'
 import { buildBindings } from './registry'
@@ -42,7 +44,8 @@ function fireKey(key: string, opts: Partial<KeyboardEventInit> & { target?: Even
 
 function setup(bindings?: ShortcutBinding[]) {
   const store = makeStore()
-  const resolved = bindings ?? buildBindings(createToolbarBindings(store))
+  const resolved =
+    bindings ?? buildBindings([...createCanvasBindings(store), ...createToolbarBindings(store)])
   const wrapper = ({ children }: PropsWithChildren) => <Provider store={store}>{children}</Provider>
   const { unmount } = renderHook(
     () => {
@@ -149,5 +152,55 @@ describe('useGlobalShortcuts', () => {
     fireKey('x')
     expect(first).toHaveBeenCalledOnce()
     expect(second).not.toHaveBeenCalled()
+  })
+
+  it('pressing Escape clears the active tool', () => {
+    const { store } = setup()
+    store.set(activeToolAtom, 'rect')
+
+    fireKey('Escape')
+
+    expect(store.get(activeToolAtom)).toBeNull()
+  })
+
+  it('pressing Escape mid-drag cancels the draft and clears the tool', () => {
+    const draft: RectShape = {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Rect',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
+      fill: '#000',
+    }
+    const { store } = setup()
+    store.set(activeToolAtom, 'rect')
+    store.set(draftShapeAtom, draft)
+    store.set(activeDragAtom, {
+      toolId: 'rect',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+
+    fireKey('Escape')
+
+    expect(store.get(draftShapeAtom)).toBeNull()
+    expect(store.get(activeDragAtom)).toBeNull()
+    expect(store.get(activeToolAtom)).toBeNull()
+  })
+
+  it('pressing R after Escape re-activates the rect tool', () => {
+    const { store } = setup()
+    store.set(activeToolAtom, 'rect')
+
+    fireKey('Escape')
+    expect(store.get(activeToolAtom)).toBeNull()
+
+    fireKey('r')
+    expect(store.get(activeToolAtom)).toBe('rect')
   })
 })

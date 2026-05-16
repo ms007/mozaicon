@@ -48,7 +48,7 @@ export const EllipseActive: Story = {
 }
 
 function InteractiveToolPalette() {
-  const [value, setValue] = useState('rect')
+  const [value, setValue] = useState<string | null>('rect')
   return (
     <ToolPalette options={twoTools} value={value} onChange={setValue} aria-label="Drawing tools" />
   )
