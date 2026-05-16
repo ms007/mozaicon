@@ -86,7 +86,7 @@ describe('CanvasStage', () => {
     expect(svg?.classList.contains('cursor-crosshair')).toBe(true)
   })
 
-  it('renders draft shape when draftShapeAtom is set', () => {
+  it('renders draft shape and selection overlay bbox when draftShapeAtom is set', () => {
     const { container } = renderWithStore(<CanvasStage />, (store) => {
       store.set(documentAtom, { ...seededDoc, shapes: [] })
       store.set(draftShapeAtom, {
@@ -103,7 +103,8 @@ describe('CanvasStage', () => {
       })
     })
 
-    expect(container.querySelectorAll('rect')).toHaveLength(1)
+    expect(container.querySelectorAll('rect')).toHaveLength(2)
+    expect(container.querySelector('[data-testid="selection-overlay"]')).not.toBeNull()
   })
 
   it('mounts SelectionOverlay when a shape is selected', () => {

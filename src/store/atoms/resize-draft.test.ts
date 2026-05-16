@@ -2,7 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
+import { makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
 
 import { displayedSelectionBboxAtom, resizeDraftAtom } from './resize-draft'
@@ -99,6 +101,53 @@ describe('displayedSelectionBboxAtom', () => {
   it('returns null when nothing is selected and no draft is set', () => {
     const store = makeStore()
     expect(store.get(displayedSelectionBboxAtom)).toBeNull()
+  })
+
+  it('tracks the draw-draft shape bbox while a drag-to-draw is in flight', () => {
+    const store = makeStore()
+    store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 5, y: 6, width: 7, height: 8 }))
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 5,
+      y: 6,
+      width: 7,
+      height: 8,
+    })
+  })
+
+  it('prefers the resize draft over the draw draft when both are set', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 20, height: 20 } })
+    store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 100, y: 100, width: 1, height: 1 }))
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 0,
+      y: 0,
+      width: 20,
+      height: 20,
+    })
+  })
+
+  it('falls back to the committed bbox after the draw draft is cleared', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+    store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 50, y: 50, width: 4, height: 4 }))
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 50,
+      y: 50,
+      width: 4,
+      height: 4,
+    })
+
+    store.set(draftShapeAtom, null)
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 2,
+      y: 2,
+      width: 4,
+      height: 4,
+    })
   })
 
   it('preserves referential identity when consecutive drafts yield the same union rect', () => {

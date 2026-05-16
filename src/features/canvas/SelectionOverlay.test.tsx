@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { CANVAS_SIZE } from '@/store/atoms/canvas'
 import { documentAtom } from '@/store/atoms/document'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeRect } from '@/test/fixtures/shapes'
 import { renderWithStore, type TestStore } from '@/test/renderWithStore'
@@ -72,6 +73,21 @@ describe('SelectionOverlay', () => {
     expect(rect.getAttribute('y')).toBe('4')
     expect(rect.getAttribute('width')).toBe('12')
     expect(rect.getAttribute('height')).toBe('12')
+  })
+
+  it('tracks the draft shape bbox during drag-to-draw, with resize handles visible', () => {
+    const { container } = renderOverlay((store) => {
+      store.set(documentAtom, testDoc)
+      store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 3, y: 5, width: 9, height: 7 }))
+    })
+
+    const overlay = container.querySelector('[data-testid="selection-overlay"]')
+    expect(overlay?.getAttribute('x')).toBe('3')
+    expect(overlay?.getAttribute('y')).toBe('5')
+    expect(overlay?.getAttribute('width')).toBe('9')
+    expect(overlay?.getAttribute('height')).toBe('7')
+
+    expect(container.querySelectorAll('[data-handle]')).toHaveLength(8)
   })
 })
 
