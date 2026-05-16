@@ -147,6 +147,10 @@ export const selectedShapesAtom = atom((get) => {
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 ```
 
+**Writes go through Selection-Commands**, never `set(selectedIdsAtom, ...)` from a component. `selectShapesCommand` (replace), `toggleSelectionCommand` (additive shift+click), and `clearSelectionCommand` (Escape / background click) each push one `HistoryEntry`. They enforce two invariants on every write: IDs are deduplicated, and the array is sorted by document z-order (position in `documentAtom.shapes`). The stale-id filter inside `selectedShapesAtom` stays as defense-in-depth — the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
+
+If a future surface needs "which shape did the user click first" (e.g. an Align anchor), that's its own atom — don't smuggle the meaning into list position.
+
 ### History Atom (`src/store/atoms/history.ts`)
 
 ```ts
@@ -188,51 +192,82 @@ Atoms in the store fall into two categories with different mutation rules:
 
 **UI state** (`activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, `resizeDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
-**Selection is the one exception.** `selectedIdsAtom` is UI state by lifecycle (transient, written directly by interactions), but the selection set _at the moment of a mutation_ is part of the semantic context of that mutation — "Move these three shapes", "Delete this one". A `HistoryEntry` therefore snapshots both `documentAtom` and `selectedIdsAtom`, and undo/redo restore both together. This is the only UI atom in the snapshot; any future need to undo other UI state should be questioned, not generalised.
+**Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the document. Selection therefore lives on the _same_ history stack as the document and is written exclusively through Commands, never via direct `set` from a component. A `HistoryEntry` snapshots both axes (`before`/`after` for the document, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the document axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
 Consumers of selection still filter stale ids against the per-shape atoms as defense-in-depth (`selectedShapesAtom` already does this), but the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
-If a piece of UI state ever needs to participate in undo/redo, the bar is high: justify it against the principle that history's job is to roll back the _document_, not the workspace.
+If any other UI atom ever wants in on undo/redo, the bar is high: justify it against the principle that history's job is to roll back the _document_ and the _semantic context that drove each mutation_, nothing else.
 
 ## Command Pattern
 
 Commands are **write-only atoms**. They:
 
-1. Compute the new document state
+1. Compute the new document state and/or the new selection
 2. Push a `HistoryEntry` onto the undo stack
 3. Clear the redo stack
+
+Three flavours fall out of one primitive: **document-only** commands (e.g. `moveShapeCommand`), **selection-only** commands (e.g. `clearSelectionCommand`), and **combined** commands (e.g. `addShapeCommand`, which creates a shape _and_ selects it as one atomic step).
 
 ### Command Template (`src/store/commands/createCommand.ts`)
 
 ```ts
 import { atom } from 'jotai'
 import { documentAtom } from '../atoms/document'
+import { selectedIdsAtom } from '../atoms/selection'
+import { isGestureActiveAtom } from '../atoms/draft'
 import { undoStackAtom, redoStackAtom } from '../atoms/history'
+import { normalizeSelection } from '../atoms/selection' // dedup + z-order sort + drop stale
 import type { Document } from '@/types/shapes'
 
-// Helper: wrap a mutation so it becomes undoable
+export type CommandResult = {
+  document?: Document // omit to leave the document untouched
+  selection?: string[] // omit to leave the selection untouched
+}
+
 export function createCommand<Payload>(
   label: string,
-  apply: (doc: Document, payload: Payload) => Document,
+  apply: (doc: Document, payload: Payload, selection: string[]) => CommandResult,
 ) {
   return atom(null, (get, set, payload: Payload) => {
-    const before = get(documentAtom)
-    const after = apply(before, payload)
-    if (after === before) return // no-op guard
+    if (get(isGestureActiveAtom)) return // freeze: gesture in flight
 
-    set(documentAtom, after)
-    set(undoStackAtom, (s) => [...s, { label, before, after }])
+    const before = get(documentAtom)
+    const selectionBefore = get(selectedIdsAtom)
+    const result = apply(before, payload, selectionBefore)
+
+    const after = result.document ?? before
+    const selectionAfter = result.selection
+      ? normalizeSelection(result.selection, after)
+      : selectionBefore
+
+    const docChanged = after !== before
+    const selChanged = !arrayShallowEqual(selectionAfter, selectionBefore)
+    if (!docChanged && !selChanged) return // no-op on both axes
+
+    if (docChanged) set(documentAtom, after)
+    if (selChanged) set(selectedIdsAtom, selectionAfter)
+    set(undoStackAtom, (s) => [
+      ...s,
+      { label, before, after, selectionBefore, selectionAfter },
+    ])
     set(redoStackAtom, [])
   })
 }
 ```
 
+Three things this primitive owns and no caller has to think about:
+
+- **Gesture freeze.** A dispatch during an _Active Gesture_ no-ops, regardless of flavour.
+- **Selection normalisation.** Dedup + z-order sort + stale-id drop happens at the write boundary. Commands return any list; what lands in `selectedIdsAtom` is canonical.
+- **No-op guard on both axes.** An idempotent selection write (same set, same order after normalisation) doesn't push history any more than a no-op document mutation does.
+
 **Testing rule.** Every command must cover both of these. The canonical pattern lives in `src/store/commands/createCommand.test.ts`:
 
-1. **Happy path** — dispatch with a valid payload, assert `documentAtom` changed and a `HistoryEntry` with the right `label` was pushed.
+1. **Happy path** — dispatch with a valid payload, assert the axis (or axes) it claims to touch actually changed, assert one `HistoryEntry` with the right `label` was pushed, and assert the snapshot's `before`/`after` and `selectionBefore`/`selectionAfter` are consistent with what the command did.
 2. **No-op invariant** — pick the variant that fits the command:
-   - If `apply()` can return the same `Document` reference for some payload (e.g. moving a missing id), dispatch that and assert the undo stack stays empty.
-   - If `apply()` structurally always returns a new reference (e.g. `addShape` appending with a fresh ULID), prove the invariant that makes that the case — e.g. two dispatches yield shapes with distinct ids (see `addShape.test.ts`).
+   - Document-only commands: if `apply()` can return `{ document: before }` for some payload (e.g. moving a missing id), dispatch that and assert the undo stack stays empty. If `apply()` structurally always changes the document (e.g. `addShape` appending with a fresh ULID), prove the invariant that makes that the case — e.g. two dispatches yield shapes with distinct ids.
+   - Selection-only commands: dispatch with the same selection that's already active (after normalisation) and assert the undo stack stays empty.
+   - Combined commands: cover both — e.g. `addShape` always pushes (new id ⇒ document and selection both change); `deleteShape` of a missing id is a full no-op.
 
 Redo-stack clearing is guaranteed by `createCommand` itself; individual command tests may repeat it as belt-and-suspenders but it isn't required.
 
@@ -312,7 +347,7 @@ export const redoCommand = atom(null, (get, set) => {
 
 Both meta-commands also restore selection (`set(selectedIdsAtom, entry.selectionBefore)` on undo, `entry.selectionAfter` on redo) — omitted above for brevity.
 
-**History is frozen during an Active Gesture.** Both `undoCommand` and `redoCommand` no-op while a drag/resize is in flight (`get(isGestureActiveAtom)` is true). The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
+**History is frozen during an Active Gesture.** _All_ commands no-op while a drag/resize is in flight (`get(isGestureActiveAtom)` is true) — document, selection, and combined alike — and `undoCommand`/`redoCommand` are frozen along with them. The freeze lives in `createCommand` itself, not only in the meta-commands, so a stray background event (layers-panel click, `Cmd+A`, programmatic selection) can't yank state out from under the gesture. The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
 
 History stacks are unbounded. Memory cost is bounded in practice by Immer's structural sharing — `before` and `after` reuse every unmodified shape sub-tree — and by the small size of typical icon documents. If long sessions become an observed problem, revisit with data rather than a preemptive cap.
 
