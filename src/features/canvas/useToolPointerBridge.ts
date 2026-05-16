@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import type { DrawTool, ToolCtx, ToolEvent } from '@/features/toolbar/tools/registry'
 import { screenToViewBox } from '@/lib/svg/screenToViewBox'
 import { cancelDraftAtom } from '@/store/atoms/draft'
+import { clearSelectionAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 
 function makeToolEvent(svg: SVGSVGElement, e: React.PointerEvent): ToolEvent {
@@ -49,15 +50,21 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!tool) return
       if (e.button !== 0) return
       const svg = svgRef.current
       if (!svg) return
 
+      // Shape and resize-handle pointerdown handlers stopPropagation, so
+      // reaching the SVG here means a true background click.
+      if (!tool) {
+        store.set(clearSelectionAtom)
+        return
+      }
+
       svg.setPointerCapture(e.pointerId)
       tool.onPointerDown(ctx, makeToolEvent(svg, e))
     },
-    [tool, ctx],
+    [tool, ctx, store],
   )
 
   const handlePointerMove = useCallback(

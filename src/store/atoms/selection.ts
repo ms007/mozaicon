@@ -16,3 +16,9 @@ export const selectedShapesAtom = atom((get) => {
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 
 export const selectionBboxAtom = selectAtom(selectedShapesAtom, bboxOfMany, rectEqual)
+
+export const clearSelectionAtom = atom(null, (get, set) => {
+  if (get(hasSelectionAtom)) {
+    set(selectedIdsAtom, [])
+  }
+})

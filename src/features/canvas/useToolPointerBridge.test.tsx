@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DrawTool } from '@/features/toolbar/tools/registry'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import { renderHookWithStore } from '@/test/renderWithStore'
 
 import { useToolPointerBridge } from './useToolPointerBridge'
@@ -145,6 +146,43 @@ describe('useToolPointerBridge', () => {
     result.current.handlers.onPointerDown(makePointerEvent())
 
     expect(setCapture).not.toHaveBeenCalled()
+  })
+
+  it('pointerdown on canvas background clears the selection when no tool is active', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1', 's2'])
+
+    result.current.handlers.onPointerDown(makePointerEvent())
+
+    expect(store.get(selectedIdsAtom)).toEqual([])
+  })
+
+  it('pointerdown on canvas background is a no-op when selection is already empty', () => {
+    const { result, store } = setup(undefined)
+
+    result.current.handlers.onPointerDown(makePointerEvent())
+
+    expect(store.get(selectedIdsAtom)).toEqual([])
+  })
+
+  it('pointerdown with non-primary button does not clear the selection', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1'])
+
+    result.current.handlers.onPointerDown(makePointerEvent({ button: 2 }))
+
+    expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+  })
+
+  it('pointerdown with active tool does not auto-clear the selection', () => {
+    const tool = makeTool()
+    const { result, store } = setup(tool)
+    store.set(selectedIdsAtom, ['s1'])
+
+    result.current.handlers.onPointerDown(makePointerEvent())
+
+    expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+    expect(tool.onPointerDown).toHaveBeenCalled()
   })
 
   it('pointermove is a no-op when tool is undefined', () => {

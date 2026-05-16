@@ -2,6 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import type { RectShape } from '@/types/shapes'
 
@@ -68,5 +69,34 @@ describe('canvas Escape binding', () => {
     expect(store.get(activeToolAtom)).toBeNull()
     expect(store.get(draftShapeAtom)).toBeNull()
     expect(store.get(activeDragAtom)).toBeNull()
+  })
+
+  it('clears the selection when shapes are selected', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['s1', 's2'])
+
+    findEscapeBinding(store).run()
+
+    expect(store.get(selectedIdsAtom)).toEqual([])
+  })
+
+  it('clears tool, draft and selection together', () => {
+    const store = makeStore()
+    store.set(activeToolAtom, 'rect')
+    store.set(draftShapeAtom, draftRect)
+    store.set(activeDragAtom, {
+      toolId: 'rect',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+    store.set(selectedIdsAtom, ['s1'])
+
+    findEscapeBinding(store).run()
+
+    expect(store.get(activeToolAtom)).toBeNull()
+    expect(store.get(draftShapeAtom)).toBeNull()
+    expect(store.get(activeDragAtom)).toBeNull()
+    expect(store.get(selectedIdsAtom)).toEqual([])
   })
 })

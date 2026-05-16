@@ -5,6 +5,7 @@ import type { Document } from '@/types/shapes'
 
 import { documentAtom } from './document'
 import {
+  clearSelectionAtom,
   hasSelectionAtom,
   selectedIdsAtom,
   selectedShapesAtom,
@@ -125,6 +126,22 @@ describe('hasSelectionAtom', () => {
     const store = makeStore()
     store.set(selectedIdsAtom, ['r1'])
     expect(store.get(hasSelectionAtom)).toBe(true)
+  })
+})
+
+describe('clearSelectionAtom', () => {
+  it('empties the selection when ids are set', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(clearSelectionAtom)
+    expect(store.get(selectedIdsAtom)).toEqual([])
+  })
+
+  it('does not replace the array reference when already empty', () => {
+    const store = makeStore()
+    const before = store.get(selectedIdsAtom)
+    store.set(clearSelectionAtom)
+    expect(store.get(selectedIdsAtom)).toBe(before)
   })
 })
 
