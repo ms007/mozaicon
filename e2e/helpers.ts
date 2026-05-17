@@ -13,6 +13,12 @@ export async function getBox(locator: Locator) {
   return box
 }
 
+// The rect tool is one-shot and the active tool defaults to null, so any test
+// that needs to draw must arm the tool first.
+export async function activateRectTool(page: Page) {
+  await page.keyboard.press('r')
+}
+
 export async function drawRect(
   page: Page,
   box: { x: number; y: number },
@@ -21,6 +27,7 @@ export async function drawRect(
   x2: number,
   y2: number,
 ) {
+  await activateRectTool(page)
   await page.mouse.move(box.x + x1, box.y + y1)
   await page.mouse.down()
   await page.mouse.move(box.x + x2, box.y + y2, { steps: 5 })

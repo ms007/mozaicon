@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
 
-import { CANVAS_SELECTOR, getBox, SHAPE_RECT_SELECTOR } from './helpers'
+import { activateRectTool, CANVAS_SELECTOR, getBox, SHAPE_RECT_SELECTOR } from './helpers'
 
 test.describe('Drag-to-Draw rect tool', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await expect(page.locator(CANVAS_SELECTOR)).toBeVisible()
+    await activateRectTool(page)
   })
 
   test('basic drag creates a rectangle', async ({ page }) => {

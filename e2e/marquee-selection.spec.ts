@@ -119,7 +119,7 @@ test.describe('Marquee selection (drag-to-select)', () => {
     const bothWidth = Number(await overlay.getAttribute('width'))
 
     // Undo
-    await page.keyboard.press('Meta+z')
+    await page.keyboard.press('Control+z')
     await expect(overlay).toHaveCount(1)
     const afterUndoWidth = Number(await overlay.getAttribute('width'))
 
