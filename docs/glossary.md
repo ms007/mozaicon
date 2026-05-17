@@ -6,7 +6,9 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 
 **Drag-to-Draw** — The gesture of creating a new shape on the canvas by pressing the pointer down, dragging, and releasing. Start and end point determine the shape's geometry (e.g. opposite corners of a rect). Distinct from _Drag-to-Move_ (translating an existing shape) and _Drag-to-Select_ (marquee selection).
 
-**Click-Fallback** — In a _Drag-to-Draw_ tool, the result of a pointer down/up that does not exceed the drag threshold (3 screen pixels). Inserts a default-size shape at the click position with the click point as the top-left corner, instead of a zero-size shape from the drag.
+**Drag-to-Select** — The marquee gesture started by a pointerdown on the canvas background while no draw tool is active. Crossing `DRAG_THRESHOLD_PX` (3 screen pixels) promotes the pending interaction into a marquee; sub-threshold pointerup is the _Click-Fallback_ instead. Hit-test is _Bbox_ intersection against the marquee rect, restricted to _Selectable Shapes_. Without Shift the gesture replaces the selection on `pointerup`; with Shift held at pointerdown it commits the symmetric difference against the _Base Selection_ snapshot (the modifier is captured once and stays fixed for the gesture's duration). Distinct from _Drag-to-Draw_ (creates a shape) and _Drag-to-Move_ (translates a shape).
+
+**Click-Fallback** — In a _Drag-to-Draw_ tool, the result of a pointer down/up that does not exceed the drag threshold (3 screen pixels). Inserts a default-size shape at the click position with the click point as the top-left corner, instead of a zero-size shape from the drag. For _Drag-to-Select_, the same sub-threshold pointerup dispatches `clearSelectionCommand` when Shift is not held, and is a no-op when Shift is held.
 
 ## Geometry
 
@@ -25,6 +27,10 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 ## Selection
 
 **Selection** — The set of currently selected shapes, identified by IDs in `selectedIdsAtom`. Semantically a set: IDs are unique and ordered by document z-order (their position in `documentAtom.shapes`), not by click sequence. Session-local — not persisted by export or save. Written exclusively through _Selection-Commands_ and _Combined Commands_ so each effective change becomes one _History Entry_. Distinct from _Selection bbox_, which is the geometric envelope of the selected shapes.
+
+**Selectable Shape** — A shape that qualifies as a candidate for user-driven selection: `shape.visible && !shape.locked`. Both _Drag-to-Select_ and click-to-select consult this predicate so the two paths can't diverge — hidden shapes don't render and shouldn't be ghost-selectable, locked shapes are explicitly protected from manipulation. Programmatic selection (e.g. an `addShapeCommand` selecting the freshly created shape) bypasses the predicate.
+
+**Marquee Draft** — Transient marquee state held in `marqueeDraftAtom` during a _Drag-to-Select_ gesture: `{ pointerId, startScreen, startViewBox, current, additive, baseSelection? }`. A derived `previewSelectedIdsAtom` reads it to compute the hypothetical selection (replace with marquee hits when `additive` is false, symmetric difference against `baseSelection` when true). `SelectionOverlay` and _Resize Handles_ are suppressed while the draft is non-null, and `MarqueeOverlay` renders the rect. `selectedIdsAtom` stays untouched for the gesture's duration; on `pointerup` a single `selectShapesCommand` commits the final set — one _History Entry_. Escape and pointercancel clear the draft, leaving `selectedIdsAtom` at its pre-gesture value. Mirrors the _Resize Draft_ pattern; `isGestureActiveAtom` folds in `marqueeDraftAtom` alongside `activeDragAtom` and `resizeDraftAtom`.
 
 **Selection-Command** — A command whose `apply()` returns a new `selection` but no `document`, e.g. `selectShapesCommand` (replace), `toggleSelectionCommand` (additive), `clearSelectionCommand`. Pushes a _History Entry_ in which the document axis is untouched (`before === after`). Distinct from a _Combined Command_ that touches both axes.
 
