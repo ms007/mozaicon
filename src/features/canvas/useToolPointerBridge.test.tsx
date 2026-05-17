@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { DrawTool } from '@/features/toolbar/tools/registry'
 import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
+import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
@@ -150,47 +151,51 @@ describe('useToolPointerBridge', () => {
     expect(tool.onPointerDown).not.toHaveBeenCalled()
   })
 
-  it('pointerdown is a no-op when tool is undefined', () => {
+  it('pointerdown arms marquee and captures pointer when tool is undefined', () => {
     const { result, setCapture } = setup(undefined)
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.handlers.onPointerDown(makePointerEvent({ pointerId: 7 }))
 
-    expect(setCapture).not.toHaveBeenCalled()
+    expect(setCapture).toHaveBeenCalledWith(7)
   })
 
-  it('pointerdown on canvas background clears the selection when no tool is active', () => {
+  it('sub-threshold pointerup on canvas background clears the selection when no tool is active', () => {
     const { result, store } = setup(undefined)
     store.set(selectedIdsAtom, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
     expect(store.get(selectedIdsAtom)).toEqual([])
   })
 
-  it('pointerdown on canvas background is a no-op when selection is already empty', () => {
+  it('sub-threshold pointerup on canvas background is a no-op when selection is already empty', () => {
     const { result, store } = setup(undefined)
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
     expect(store.get(selectedIdsAtom)).toEqual([])
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
-  it('background pointerdown pushes a history entry when selection is non-empty', () => {
+  it('sub-threshold pointerup pushes a history entry when selection is non-empty', () => {
     const { result, store } = setup(undefined)
     store.set(selectedIdsAtom, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
     expect(store.get(undoStackAtom)).toHaveLength(1)
     expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
   })
 
-  it('Cmd+Z after background pointerdown restores previous selection', () => {
+  it('Cmd+Z after sub-threshold pointerup restores previous selection', () => {
     const { result, store } = setup(undefined)
     store.set(selectedIdsAtom, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
     expect(store.get(selectedIdsAtom)).toEqual([])
 
     store.set(undoCommand)
@@ -217,12 +222,61 @@ describe('useToolPointerBridge', () => {
     expect(tool.onPointerDown).toHaveBeenCalled()
   })
 
-  it('pointermove is a no-op when tool is undefined', () => {
+  it('pointermove updates marqueeDraftAtom.current during active marquee', () => {
+    const { result, store } = setup(undefined)
+
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }))
+    result.current.handlers.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }))
+
+    const draft = store.get(marqueeDraftAtom)
+    expect(draft?.current).toEqual({ x: 15, y: 15 })
+  })
+
+  it('pointermove is a no-op when tool is undefined and no marquee is active', () => {
     const { result } = setup(undefined)
 
     expect(() => {
       result.current.handlers.onPointerMove(makePointerEvent())
     }).not.toThrow()
+  })
+
+  it('past-threshold pointerup commits selection via selectShapesCommand', () => {
+    const { result, store } = setup(undefined)
+
+    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }))
+    result.current.handlers.onPointerMove(makePointerEvent({ clientX: 12, clientY: 12 }))
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 12, clientY: 12 }))
+
+    expect(store.get(marqueeDraftAtom)).toBe(null)
+    expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
+    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(undoStackAtom)[0].label).toBe('Select shapes')
+  })
+
+  it('Shift+pointerdown arms additive marquee with baseSelection', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1'])
+
+    result.current.handlers.onPointerDown(
+      makePointerEvent({ clientX: 0, clientY: 0, shiftKey: true }),
+    )
+
+    const draft = store.get(marqueeDraftAtom)
+    expect(draft?.additive).toBe(true)
+    expect(draft?.baseSelection).toEqual(['s1'])
+  })
+
+  it('sub-threshold Shift+pointerup preserves selection (no command dispatched)', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1'])
+
+    result.current.handlers.onPointerDown(
+      makePointerEvent({ clientX: 100, clientY: 100, shiftKey: true }),
+    )
+    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+
+    expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('pointerup releases pointer capture even when tool is undefined', () => {

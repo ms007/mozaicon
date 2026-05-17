@@ -1,4 +1,15 @@
+import type { Vec2 } from './vec2'
+
 export type Rect = { x: number; y: number; width: number; height: number }
+
+export function rectFromPoints(a: Vec2, b: Vec2): Rect {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(b.x - a.x),
+    height: Math.abs(b.y - a.y),
+  }
+}
 
 export function unionRects(rects: readonly Rect[]): Rect | null {
   if (rects.length === 0) return null

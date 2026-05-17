@@ -2,10 +2,17 @@ import { useSetAtom, useStore } from 'jotai'
 import { useCallback, useMemo, useRef } from 'react'
 
 import type { DrawTool, ToolCtx, ToolEvent } from '@/features/toolbar/tools/registry'
+import { DRAG_THRESHOLD_PX, screenDistance } from '@/lib/geometry/distance'
 import { screenToViewBox } from '@/lib/svg/screenToViewBox'
 import { cancelDraftAtom } from '@/store/atoms/draft'
+import {
+  type MarqueeDraft,
+  marqueeDraftAtom,
+  previewSelectedIdsAtom,
+} from '@/store/atoms/marquee-draft'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
-import { clearSelectionCommand } from '@/store/commands/selectionCommands'
+import { clearSelectionCommand, selectShapesCommand } from '@/store/commands/selectionCommands'
 
 function makeToolEvent(svg: SVGSVGElement, e: React.PointerEvent): ToolEvent {
   const point = screenToViewBox(svg, e.clientX, e.clientY)
@@ -57,7 +64,17 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
       // Shape and resize-handle pointerdown handlers stopPropagation, so
       // reaching the SVG here means a true background click.
       if (!tool) {
-        store.set(clearSelectionCommand, undefined)
+        const vb = screenToViewBox(svg, e.clientX, e.clientY)
+        const draft: MarqueeDraft = {
+          pointerId: e.pointerId,
+          startScreen: { x: e.clientX, y: e.clientY },
+          startViewBox: vb,
+          current: vb,
+          additive: e.shiftKey,
+          baseSelection: e.shiftKey ? store.get(selectedIdsAtom) : [],
+        }
+        store.set(marqueeDraftAtom, draft)
+        svg.setPointerCapture(e.pointerId)
         return
       }
 
@@ -69,14 +86,23 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!tool) return
+      if (!tool) {
+        const draft = store.get(marqueeDraftAtom)
+        if (!draft) return
+        const svg = svgRef.current
+        if (!svg) return
+        const vb = screenToViewBox(svg, e.clientX, e.clientY)
+        if (vb.x === draft.current.x && vb.y === draft.current.y) return
+        store.set(marqueeDraftAtom, { ...draft, current: vb })
+        return
+      }
       // Skip the work (CTM inverse + allocations) when the tool says it's idle.
       if (tool.shouldHandlePointerMove && !tool.shouldHandlePointerMove(ctx)) return
       const svg = svgRef.current
       if (!svg) return
       tool.onPointerMove(ctx, makeToolEvent(svg, e))
     },
-    [tool, ctx],
+    [tool, ctx, store],
   )
 
   const handlePointerUp = useCallback(
@@ -86,7 +112,23 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
       // mid-drag, the SVG would otherwise keep capture until the pointer
       // leaves the document.
       try {
-        if (!tool || !svg) return
+        if (!svg) return
+        if (!tool) {
+          const draft = store.get(marqueeDraftAtom)
+          if (!draft) return
+          const dist = screenDistance(draft.startScreen, { x: e.clientX, y: e.clientY })
+          if (dist < DRAG_THRESHOLD_PX) {
+            store.set(marqueeDraftAtom, null)
+            if (!draft.additive) {
+              store.set(clearSelectionCommand, undefined)
+            }
+          } else {
+            const ids = store.get(previewSelectedIdsAtom)
+            store.set(marqueeDraftAtom, null)
+            store.set(selectShapesCommand, ids)
+          }
+          return
+        }
         tool.onPointerUp(ctx, makeToolEvent(svg, e))
       } finally {
         if (svg?.hasPointerCapture(e.pointerId)) {
@@ -94,7 +136,7 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
         }
       }
     },
-    [tool, ctx],
+    [tool, ctx, store],
   )
 
   const handlePointerCancel = useCallback(

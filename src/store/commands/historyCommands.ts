@@ -1,7 +1,7 @@
 import { atom } from 'jotai'
 
 import { documentAtom } from '@/store/atoms/document'
-import { isGestureActiveAtom } from '@/store/atoms/draft'
+import { isGestureActiveAtom } from '@/store/atoms/gesture'
 import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 

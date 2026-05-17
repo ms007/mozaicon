@@ -2,6 +2,7 @@ import type { createStore } from 'jotai'
 
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
 import { activeDragAtom, cancelDraftAtom } from '@/store/atoms/draft'
+import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { clearSelectionCommand } from '@/store/commands/selectionCommands'
 
@@ -13,6 +14,11 @@ export function createCanvasBindings(store: ReturnType<typeof createStore>): Sho
       label: 'Cancel / deselect',
       hint: 'Esc',
       run: () => {
+        const marquee = store.get(marqueeDraftAtom)
+        if (marquee) {
+          store.set(marqueeDraftAtom, null)
+          return
+        }
         const drag = store.get(activeDragAtom)
         if (drag) {
           store.set(cancelDraftAtom)

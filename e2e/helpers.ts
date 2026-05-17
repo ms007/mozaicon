@@ -4,7 +4,8 @@ export const CANVAS_SELECTOR = 'svg[aria-label="Icon canvas"]'
 
 // Selects only shape rects, excluding the SelectionOverlay's bbox rect — which
 // shares the `<rect>` tag but carries `data-testid="selection-overlay"`.
-export const SHAPE_RECT_SELECTOR = 'rect:not([data-testid="selection-overlay"])'
+export const SHAPE_RECT_SELECTOR =
+  'rect:not([data-testid="selection-overlay"]):not([data-testid="marquee-overlay"])'
 
 export async function getBox(locator: Locator) {
   const box = await locator.boundingBox()

@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 import { selectAtom } from 'jotai/utils'
 
 import { DraftLayer } from '@/features/canvas/DraftLayer'
+import { MarqueeOverlay } from '@/features/canvas/MarqueeOverlay'
 import { ShapeRenderer } from '@/features/canvas/renderers/ShapeRenderer'
 import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { useToolPointerBridge } from '@/features/canvas/useToolPointerBridge'
@@ -36,6 +37,7 @@ export function CanvasStage() {
       ))}
       <DraftLayer />
       <SelectionOverlay svgRef={svgRef} />
+      <MarqueeOverlay />
     </svg>
   )
 }

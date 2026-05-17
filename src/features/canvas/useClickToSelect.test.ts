@@ -14,6 +14,8 @@ const testDoc = makeDoc([
   makeRect({ id: 's1', name: 'S1', width: 5, height: 5 }),
   makeRect({ id: 's2', name: 'S2', x: 5, y: 5, width: 5, height: 5 }),
   makeRect({ id: 'other', name: 'Other', x: 10, y: 10, width: 5, height: 5 }),
+  makeRect({ id: 'locked', name: 'Locked', locked: true }),
+  makeRect({ id: 'hidden', name: 'Hidden', visible: false }),
 ])
 
 function pointerEvent(overrides: Partial<React.PointerEvent> = {}) {
@@ -148,6 +150,29 @@ describe('useClickToSelect', () => {
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     expect(store.get(undoStackAtom)).toHaveLength(0)
+  })
+
+  it.each([
+    { id: 'locked', shiftKey: false, why: 'locked shape' },
+    { id: 'locked', shiftKey: true, why: 'shift+locked shape' },
+    { id: 'hidden', shiftKey: false, why: 'hidden shape' },
+    { id: 'hidden', shiftKey: true, why: 'shift+hidden shape' },
+    { id: 'gone', shiftKey: false, why: 'missing shape' },
+  ])('clicking $why leaves selection unchanged', ({ id, shiftKey }) => {
+    const { result, store } = renderHookWithStore(
+      () => useClickToSelect(id),
+      (s) => {
+        s.set(documentAtom, testDoc)
+        s.set(selectedIdsAtom, ['s1'])
+      },
+    )
+
+    const { event } = pointerEvent({ shiftKey })
+    act(() => {
+      result.current.onPointerDown(event)
+    })
+
+    expect(store.get(selectedIdsAtom)).toEqual(['s1'])
   })
 
   it('click A then click B produces two history entries; undo restores A', () => {

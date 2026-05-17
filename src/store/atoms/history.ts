@@ -2,7 +2,7 @@ import { atom } from 'jotai'
 
 import type { Document } from '@/types/shapes'
 
-import { isGestureActiveAtom } from './draft'
+import { isGestureActiveAtom } from './gesture'
 
 export type HistoryEntry = {
   label: string
