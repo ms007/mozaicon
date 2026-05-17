@@ -6,6 +6,7 @@ const meta = {
   title: 'Primitives/Input',
   component: Input,
   parameters: { layout: 'centered' },
+  args: { 'aria-label': 'Demo input' },
   decorators: [(Story) => <div className="w-64">{Story()}</div>],
 } satisfies Meta<typeof Input>
 

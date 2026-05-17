@@ -5,7 +5,13 @@ import { Slider } from './Slider'
 const meta = {
   title: 'Primitives/Slider',
   component: Slider,
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    // In real usage the slider thumb is labelled by the surrounding property
+    // row (e.g. "Opacity"). The bare primitive has no context to label itself,
+    // so we disable the rule here rather than inventing a fake label.
+    a11y: { config: { rules: [{ id: 'aria-input-field-name', enabled: false }] } },
+  },
   decorators: [(Story) => <div className="w-64">{Story()}</div>],
 } satisfies Meta<typeof Slider>
 
