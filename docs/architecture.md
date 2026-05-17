@@ -268,51 +268,61 @@ Three things this primitive owns and no caller has to think about:
 
 Redo-stack clearing is guaranteed by `createCommand` itself; individual command tests may repeat it as belt-and-suspenders but it isn't required.
 
-### Example Command: Move Shape (`src/store/commands/moveShape.ts`)
+### Example Command: Move Selection (`src/store/commands/moveSelection.ts`)
 
 ```ts
 import { produce } from 'immer'
+
+import { translatePath } from '@/lib/svg/translatePath'
+
 import { createCommand } from './createCommand'
 
-export const moveShapeCommand = createCommand<{
-  id: string
+export const moveSelectionCommand = createCommand<{
+  ids: string[]
   dx: number
   dy: number
-}>('Move shape', (doc, { id, dx, dy }) =>
-  produce(doc, (draft) => {
-    const shape = draft.shapes.find((s) => s.id === id)
-    if (!shape) return
-    switch (shape.type) {
-      case 'rect':
-        shape.x += dx
-        shape.y += dy
-        break
-      case 'circle':
-        shape.cx += dx
-        shape.cy += dy
-        break
-      case 'path':
-        // delegate to lib/svg/transformPath
-        shape.d = translatePath(shape.d, dx, dy)
-        break
+}>('Move selection', (doc, { ids, dx, dy }) => {
+  if (ids.length === 0 || (dx === 0 && dy === 0)) return {}
+  const idSet = new Set(ids)
+  const next = produce(doc, (draft) => {
+    for (const shape of draft.shapes) {
+      if (!idSet.has(shape.id)) continue
+      switch (shape.type) {
+        case 'rect':
+          shape.x += dx
+          shape.y += dy
+          break
+        case 'circle':
+          shape.cx += dx
+          shape.cy += dy
+          break
+        case 'path':
+          shape.d = translatePath(shape.d, dx, dy)
+          break
+      }
     }
-  }),
-)
+  })
+  return next === doc ? {} : { document: next }
+})
 ```
+
+Multi-shape on purpose: a single dispatch translates every shape in the _Move Set_ by the same `{ dx, dy }` and pushes one _History Entry_. The Move Set is captured at gesture promotion and arrives here as `ids`; this command does not consult `selectedIdsAtom` itself.
 
 ### Usage in a Component
 
+Pointer-driven gestures follow the _Draft-then-commit_ pattern: every `pointermove` writes the transient draft atom, a single command dispatches on `pointerup`.
+
 ```tsx
 import { useSetAtom } from 'jotai'
-import { moveShapeCommand } from '@/store/commands/moveShape'
 
-function ShapeHandle({ id }: { id: string }) {
-  const moveShape = useSetAtom(moveShapeCommand)
+import { moveSelectionCommand } from '@/store/commands/moveSelection'
 
-  const onDrag = (dx: number, dy: number) => {
-    moveShape({ id, dx, dy })
+function useCommitMove() {
+  const moveSelection = useSetAtom(moveSelectionCommand)
+
+  return (ids: string[], dx: number, dy: number) => {
+    moveSelection({ ids, dx, dy })
   }
-  // ...
 }
 ```
 
@@ -349,6 +359,22 @@ Both meta-commands also restore selection (`set(selectedIdsAtom, entry.selection
 History stacks are unbounded. Memory cost is bounded in practice by Immer's structural sharing — `before` and `after` reuse every unmodified shape sub-tree — and by the small size of typical icon documents. If long sessions become an observed problem, revisit with data rather than a preemptive cap.
 
 The `label` field on `HistoryEntry` is currently consumed only by tests and dev tooling. When it surfaces in UI later (tooltip on the undo button, history panel, post-undo toast), labels will need an i18n migration — they are hardcoded English strings today.
+
+## Cancellation & Escape Priority
+
+The store distinguishes "an effective change is committing" from "a gesture is in flight" via `isGestureActiveAtom` (`src/store/atoms/draft.ts`). It is the union of every draft signal in the system — `activeDragAtom`, `resizeDraftAtom`, `marqueeDraftAtom`, `moveDraftAtom` — true exactly when at least one is non-null. Adding a new pointer-driven gesture means adding its draft atom to this union; nothing else.
+
+The freeze it powers lives in `createCommand` itself, not only in `undoCommand` / `redoCommand`. While an _Active Gesture_ runs, every command dispatch — document, selection, combined — is a no-op. A stray background event (layers-panel click, `Cmd+A`, a programmatic selection write) cannot mutate state mid-drag.
+
+`cancelDraftAtom` is gesture-agnostic: one write clears every draft atom. The invariant that makes this safe is that at most one gesture is in flight at any time — each pointer-driven hook owns a single `dragRef`, and the hooks all listen on the same `window` pointer events. One Cancel covers them all.
+
+`Escape` is a priority ladder, evaluated in `bindings.ts` (`canvas.escape`) with **early return after the first matching tier**:
+
+1. Active gesture → `cancelDraftAtom`, return. The pending change is not a _History Entry_ yet, so there is nothing to undo — only transient drafts to clear.
+2. Active tool → deactivate (`activeToolAtom → null`), return.
+3. Non-empty selection → `clearSelectionCommand`, return.
+
+The ladder is "one step up" — Escape never reaches past the first tier that applies. Combining tiers in a single press (cancel _and_ clear selection together) is a regression: cancel means "return to the state before the gesture started", not "throw away gesture and selection in one stroke".
 
 ## Rendering the Canvas
 
