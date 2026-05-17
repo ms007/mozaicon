@@ -6,6 +6,7 @@ import { type Rect, rectEqual, unionRects } from '@/lib/geometry/rect'
 import { bboxOf } from '@/lib/svg/bbox'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectionBboxAtom } from '@/store/atoms/selection'
 
 export const resizeDraftAtom = atom<Record<string, Rect> | null>(null)
@@ -26,6 +27,7 @@ export const resizeDraftForShapeAtom = atomFamily((id: string) =>
 // from re-rendering overlay + handles at gesture rate.
 const rawDisplayedSelectionBboxAtom = atom((get) => {
   if (get(marqueeDraftAtom) !== null) return null
+  if (get(moveDraftAtom) !== null) return null
   const resizing = get(resizeDraftAtom)
   if (resizing) return unionRects(Object.values(resizing))
   const drawing = get(draftShapeAtom)

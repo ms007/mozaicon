@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 import type { RectShape } from '@/types/shapes'
 
 import { activeDragAtom, cancelDraftAtom, draftShapeAtom } from './draft'
+import { marqueeDraftAtom } from './marquee-draft'
+import { moveDraftAtom } from './move-draft'
+import { resizeDraftAtom } from './resize-draft'
 
 function makeStore() {
   return createStore()
@@ -55,7 +58,7 @@ describe('activeDragAtom', () => {
 })
 
 describe('cancelDraftAtom', () => {
-  it('resets both draftShapeAtom and activeDragAtom', () => {
+  it('clears all draft atoms in a single write', () => {
     const store = makeStore()
     store.set(draftShapeAtom, draftRect)
     store.set(activeDragAtom, {
@@ -64,10 +67,23 @@ describe('cancelDraftAtom', () => {
       startViewBox: { x: 0, y: 0 },
       startScreen: { x: 0, y: 0 },
     })
+    store.set(marqueeDraftAtom, {
+      pointerId: 1,
+      startScreen: { x: 0, y: 0 },
+      startViewBox: { x: 0, y: 0 },
+      current: { x: 10, y: 10 },
+      additive: false,
+      baseSelection: [],
+    })
+    store.set(moveDraftAtom, { ids: ['s1'], dx: 5, dy: 5 })
+    store.set(resizeDraftAtom, { s1: { x: 0, y: 0, width: 20, height: 20 } })
 
     store.set(cancelDraftAtom)
 
     expect(store.get(draftShapeAtom)).toBeNull()
     expect(store.get(activeDragAtom)).toBeNull()
+    expect(store.get(marqueeDraftAtom)).toBeNull()
+    expect(store.get(moveDraftAtom)).toBeNull()
+    expect(store.get(resizeDraftAtom)).toBeNull()
   })
 })

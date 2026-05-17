@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
+import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { moveDraftAtom } from '@/store/atoms/move-draft'
+import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -16,122 +19,143 @@ const testDoc = makeDoc([
   makeRect({ id: 's2', name: 'S2', x: 10, y: 10 }),
 ])
 
-function makeStore() {
+function setup() {
   const store = createStore()
   store.set(documentAtom, testDoc)
-  return store
-}
-
-const draftRect = makeRect({
-  id: '__draft__',
-  x: 2,
-  y: 2,
-  width: 8,
-  height: 6,
-  fill: '#000',
-})
-
-function findEscapeBinding(store: ReturnType<typeof createStore>) {
   const bindings = createCanvasBindings(store)
-  const esc = bindings.find((b) => b.key === 'Escape')
-  if (!esc) throw new Error('No Escape binding found')
-  return esc
+  const escape = bindings.find((b) => b.key === 'Escape')
+  if (!escape) throw new Error('No Escape binding found')
+  return { store, escape }
 }
 
-describe('canvas Escape binding', () => {
-  it('clears the active tool when no drag is in progress', () => {
-    const store = makeStore()
-    store.set(activeToolAtom, 'rect')
+describe('canvas Escape priority ladder', () => {
+  describe('tier 1: active gesture → cancelDraftAtom', () => {
+    it('clears resize draft without clearing selection or tool', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1', 's2'])
+      store.set(activeToolAtom, 'rect')
+      store.set(resizeDraftAtom, { s1: { x: 0, y: 0, width: 10, height: 10 } })
 
-    findEscapeBinding(store).run()
+      escape.run()
 
-    expect(store.get(activeToolAtom)).toBeNull()
-  })
-
-  it('cancels the draft and clears the active tool when a drag is in progress', () => {
-    const store = makeStore()
-    store.set(activeToolAtom, 'rect')
-    store.set(draftShapeAtom, draftRect)
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+      expect(store.get(resizeDraftAtom)).toBeNull()
+      expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
+      expect(store.get(activeToolAtom)).toBe('rect')
     })
 
-    findEscapeBinding(store).run()
+    it('clears move draft without clearing selection', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1'])
+      store.set(moveDraftAtom, { ids: ['s1'], dx: 10, dy: 5 })
 
-    expect(store.get(draftShapeAtom)).toBeNull()
-    expect(store.get(activeDragAtom)).toBeNull()
-    expect(store.get(activeToolAtom)).toBeNull()
-  })
+      escape.run()
 
-  it('is a no-op when no tool is active and no drag is in progress', () => {
-    const store = makeStore()
-    store.set(activeToolAtom, null)
-
-    findEscapeBinding(store).run()
-
-    expect(store.get(activeToolAtom)).toBeNull()
-    expect(store.get(draftShapeAtom)).toBeNull()
-    expect(store.get(activeDragAtom)).toBeNull()
-  })
-
-  it('clears the selection when shapes are selected', () => {
-    const store = makeStore()
-    store.set(selectedIdsAtom, ['s1', 's2'])
-
-    findEscapeBinding(store).run()
-
-    expect(store.get(selectedIdsAtom)).toEqual([])
-  })
-
-  it('pushes a history entry when clearing a non-empty selection', () => {
-    const store = makeStore()
-    store.set(selectedIdsAtom, ['s1', 's2'])
-
-    findEscapeBinding(store).run()
-
-    expect(store.get(undoStackAtom)).toHaveLength(1)
-    expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
-  })
-
-  it('Cmd+Z after Escape restores previous selection', () => {
-    const store = makeStore()
-    store.set(selectedIdsAtom, ['s1', 's2'])
-
-    findEscapeBinding(store).run()
-    expect(store.get(selectedIdsAtom)).toEqual([])
-
-    store.set(undoCommand)
-    expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
-  })
-
-  it('does not push a history entry when selection is already empty', () => {
-    const store = makeStore()
-
-    findEscapeBinding(store).run()
-
-    expect(store.get(undoStackAtom)).toHaveLength(0)
-  })
-
-  it('clears tool, draft and selection together', () => {
-    const store = makeStore()
-    store.set(activeToolAtom, 'rect')
-    store.set(draftShapeAtom, draftRect)
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+      expect(store.get(moveDraftAtom)).toBeNull()
+      expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     })
-    store.set(selectedIdsAtom, ['s1'])
 
-    findEscapeBinding(store).run()
+    it('clears marquee draft without clearing selection', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1'])
+      store.set(marqueeDraftAtom, {
+        pointerId: 1,
+        startScreen: { x: 0, y: 0 },
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 20, y: 20 },
+        additive: false,
+        baseSelection: [],
+      })
 
-    expect(store.get(activeToolAtom)).toBeNull()
-    expect(store.get(draftShapeAtom)).toBeNull()
+      escape.run()
+
+      expect(store.get(marqueeDraftAtom)).toBeNull()
+      expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+    })
+
+    it('clears active drag draft without clearing selection or tool', () => {
+      const { store, escape } = setup()
+      store.set(activeToolAtom, 'rect')
+      store.set(selectedIdsAtom, ['s1'])
+      store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 2, y: 2, width: 8, height: 6 }))
+      store.set(activeDragAtom, {
+        toolId: 'rect',
+        pointerId: 1,
+        startViewBox: { x: 0, y: 0 },
+        startScreen: { x: 0, y: 0 },
+      })
+
+      escape.run()
+
+      expect(store.get(draftShapeAtom)).toBeNull()
+      expect(store.get(activeDragAtom)).toBeNull()
+      expect(store.get(activeToolAtom)).toBe('rect')
+      expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+    })
+  })
+
+  describe('tier 2: active tool → deactivate', () => {
+    it('deactivates tool without clearing selection', () => {
+      const { store, escape } = setup()
+      store.set(activeToolAtom, 'rect')
+      store.set(selectedIdsAtom, ['s1'])
+
+      escape.run()
+
+      expect(store.get(activeToolAtom)).toBeNull()
+      expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+    })
+  })
+
+  describe('tier 3: non-empty selection → clear selection', () => {
+    it('clears selection when no gesture and no tool active', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1', 's2'])
+
+      escape.run()
+
+      expect(store.get(selectedIdsAtom)).toEqual([])
+    })
+
+    it('pushes a history entry when clearing a non-empty selection', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1', 's2'])
+
+      escape.run()
+
+      expect(store.get(undoStackAtom)).toHaveLength(1)
+      expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
+    })
+
+    it('Cmd+Z after Escape restores previous selection', () => {
+      const { store, escape } = setup()
+      store.set(selectedIdsAtom, ['s1', 's2'])
+
+      escape.run()
+      expect(store.get(selectedIdsAtom)).toEqual([])
+
+      store.set(undoCommand)
+      expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
+    })
+
+    it('does not push a history entry when selection is already empty', () => {
+      const { store, escape } = setup()
+
+      escape.run()
+
+      expect(store.get(undoStackAtom)).toHaveLength(0)
+    })
+  })
+
+  it('is a no-op when nothing is active', () => {
+    const { store, escape } = setup()
+
+    escape.run()
+
     expect(store.get(activeDragAtom)).toBeNull()
+    expect(store.get(resizeDraftAtom)).toBeNull()
+    expect(store.get(marqueeDraftAtom)).toBeNull()
+    expect(store.get(moveDraftAtom)).toBeNull()
+    expect(store.get(activeToolAtom)).toBeNull()
     expect(store.get(selectedIdsAtom)).toEqual([])
   })
 })

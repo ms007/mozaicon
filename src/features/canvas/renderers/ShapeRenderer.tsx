@@ -1,7 +1,8 @@
 import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
-import { useClickToSelect } from '@/features/canvas/useClickToSelect'
+import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
 import { assertNever } from '@/lib/util/assertNever'
+import { moveDraftForShapeAtom } from '@/store/atoms/move-draft'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
@@ -21,12 +22,24 @@ export function ShapeRenderer(props: ShapeRendererProps) {
 function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
-  const { onPointerDown } = useClickToSelect(shape.id)
+  const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
+  const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
+    shape.id,
+  )
 
   const rendered = draftGeo ? { ...shape, ...draftGeo } : shape
+  const transform = moveOffset
+    ? `translate(${String(moveOffset.dx)} ${String(moveOffset.dy)})`
+    : undefined
 
   return (
-    <g onPointerDown={onPointerDown}>
+    <g
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      transform={transform}
+    >
       <ValueShapeRenderer shape={rendered} />
     </g>
   )

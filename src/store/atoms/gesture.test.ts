@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { type ActiveDrag, activeDragAtom } from './draft'
 import { isGestureActiveAtom } from './gesture'
 import { marqueeDraftAtom } from './marquee-draft'
+import { moveDraftAtom } from './move-draft'
 import { resizeDraftAtom } from './resize-draft'
 
 describe('isGestureActiveAtom', () => {
@@ -88,6 +89,19 @@ describe('isGestureActiveAtom', () => {
       baseSelection: [],
     })
     store.set(marqueeDraftAtom, null)
+    expect(store.get(isGestureActiveAtom)).toBe(false)
+  })
+
+  it('returns true when moveDraftAtom is set', () => {
+    const store = createStore()
+    store.set(moveDraftAtom, { ids: ['s1'], dx: 5, dy: 5 })
+    expect(store.get(isGestureActiveAtom)).toBe(true)
+  })
+
+  it('returns false after moveDraftAtom is cleared', () => {
+    const store = createStore()
+    store.set(moveDraftAtom, { ids: ['s1'], dx: 5, dy: 5 })
+    store.set(moveDraftAtom, null)
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 })

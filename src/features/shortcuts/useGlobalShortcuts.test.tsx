@@ -163,7 +163,7 @@ describe('useGlobalShortcuts', () => {
     expect(store.get(activeToolAtom)).toBeNull()
   })
 
-  it('pressing Escape mid-drag cancels the draft and clears the tool', () => {
+  it('pressing Escape mid-drag cancels the draft without clearing the tool', () => {
     const draft: RectShape = {
       type: 'rect',
       id: '__draft__',
@@ -190,7 +190,7 @@ describe('useGlobalShortcuts', () => {
 
     expect(store.get(draftShapeAtom)).toBeNull()
     expect(store.get(activeDragAtom)).toBeNull()
-    expect(store.get(activeToolAtom)).toBeNull()
+    expect(store.get(activeToolAtom)).toBe('rect')
   })
 
   it('pressing R after Escape re-activates the rect tool', () => {
