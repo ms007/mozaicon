@@ -2,8 +2,8 @@ import type { createStore } from 'jotai'
 
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
 import { activeDragAtom, cancelDraftAtom } from '@/store/atoms/draft'
-import { clearSelectionAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
+import { clearSelectionCommand } from '@/store/commands/selectionCommands'
 
 export function createCanvasBindings(store: ReturnType<typeof createStore>): ShortcutBinding[] {
   return [
@@ -20,7 +20,7 @@ export function createCanvasBindings(store: ReturnType<typeof createStore>): Sho
         if (store.get(activeToolAtom) !== null) {
           store.set(activeToolAtom, null)
         }
-        store.set(clearSelectionAtom)
+        store.set(clearSelectionCommand, undefined)
       },
     },
   ]

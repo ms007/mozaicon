@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
 
 import { addShapeCommand } from './addShape'
+import { redoCommand, undoCommand } from './historyCommands'
 
 const emptyDoc: Document = {
   id: 'doc-test',
@@ -67,7 +69,15 @@ describe('addShapeCommand', () => {
 
   it('clears the redo stack on dispatch', () => {
     const store = makeStore()
-    store.set(redoStackAtom, [{ label: 'stale', before: emptyDoc, after: emptyDoc }])
+    store.set(redoStackAtom, [
+      {
+        label: 'stale',
+        before: emptyDoc,
+        after: emptyDoc,
+        selectionBefore: [],
+        selectionAfter: [],
+      },
+    ])
 
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
@@ -167,5 +177,53 @@ describe('addShapeCommand', () => {
     const shape = store.get(documentAtom).shapes[0]
     expect(shape.visible).toBe(false)
     expect(shape.locked).toBe(true)
+  })
+
+  it('auto-selects the newly added shape', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, { type: 'rect', id: 'new-rect', x: 0, y: 0, width: 5, height: 5 })
+
+    expect(store.get(selectedIdsAtom)).toEqual(['new-rect'])
+  })
+
+  it('records selectionBefore/After in the history entry', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['old-id'])
+
+    store.set(addShapeCommand, { type: 'rect', id: 'new-rect', x: 0, y: 0, width: 5, height: 5 })
+
+    const entry = store.get(undoStackAtom)[0]
+    expect(entry.selectionBefore).toEqual(['old-id'])
+    expect(entry.selectionAfter).toEqual(['new-rect'])
+  })
+
+  it('undo rolls back both document and selection atomically', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['prev-sel'])
+
+    store.set(addShapeCommand, { type: 'rect', id: 'added', x: 0, y: 0, width: 5, height: 5 })
+    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(selectedIdsAtom)).toEqual(['added'])
+
+    store.set(undoCommand)
+
+    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(selectedIdsAtom)).toEqual(['prev-sel'])
+  })
+
+  it('redo re-appends the shape and re-selects it', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, { type: 'rect', id: 'r1', x: 0, y: 0, width: 5, height: 5 })
+    store.set(undoCommand)
+    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(selectedIdsAtom)).toEqual([])
+
+    store.set(redoCommand)
+
+    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(documentAtom).shapes[0].id).toBe('r1')
+    expect(store.get(selectedIdsAtom)).toEqual(['r1'])
   })
 })

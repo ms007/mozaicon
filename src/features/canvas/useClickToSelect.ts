@@ -2,6 +2,7 @@ import { useStore } from 'jotai'
 import { useCallback } from 'react'
 
 import { selectedIdsAtom } from '@/store/atoms/selection'
+import { selectShapesCommand, toggleSelectionCommand } from '@/store/commands/selectionCommands'
 
 export function useClickToSelect(shapeId: string) {
   const store = useStore()
@@ -12,19 +13,12 @@ export function useClickToSelect(shapeId: string) {
 
       e.stopPropagation()
 
-      const currentIds = store.get(selectedIdsAtom)
-
       if (e.shiftKey) {
-        if (currentIds.includes(shapeId)) {
-          store.set(
-            selectedIdsAtom,
-            currentIds.filter((id) => id !== shapeId),
-          )
-        } else {
-          store.set(selectedIdsAtom, [...currentIds, shapeId])
-        }
+        store.set(toggleSelectionCommand, shapeId)
       } else {
-        store.set(selectedIdsAtom, [shapeId])
+        const currentIds = store.get(selectedIdsAtom)
+        if (currentIds.length === 1 && currentIds[0] === shapeId) return
+        store.set(selectShapesCommand, [shapeId])
       }
     },
     [store, shapeId],

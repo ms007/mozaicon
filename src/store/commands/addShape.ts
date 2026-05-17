@@ -21,7 +21,10 @@ export function materializeShape(payload: AddShapePayload): Shape {
   }
 }
 
-export const addShapeCommand = createCommand<AddShapePayload>('Add shape', (doc, payload) => ({
-  ...doc,
-  shapes: [...doc.shapes, materializeShape(payload)],
-}))
+export const addShapeCommand = createCommand<AddShapePayload>('Add shape', (doc, payload) => {
+  const shape = materializeShape(payload)
+  return {
+    document: { ...doc, shapes: [...doc.shapes, shape] },
+    selection: [shape.id],
+  }
+})

@@ -2,7 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeDragAtom } from '@/store/atoms/draft'
+import { canRedoAtom, canUndoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
 
 import { createCommand } from './createCommand'
@@ -15,7 +17,9 @@ const emptyDoc: Document = {
   shapes: [],
 }
 
-const renameCommand = createCommand<string>('Rename', (doc, name) => ({ ...doc, name }))
+const renameCommand = createCommand<string>('Rename', (doc, name) => ({
+  document: { ...doc, name },
+}))
 
 function makeStore() {
   const store = createStore()
@@ -58,6 +62,49 @@ describe('undoCommand', () => {
     store.set(undoCommand)
     expect(store.get(documentAtom).name).toBe('A')
   })
+
+  it('restores selection on undo', () => {
+    const selectCommand = createCommand<string[]>('Select', (_doc, ids) => ({
+      selection: ids,
+    }))
+    const store = makeStore()
+    store.set(documentAtom, {
+      ...emptyDoc,
+      shapes: [
+        {
+          id: 's1',
+          name: 'S1',
+          visible: true,
+          locked: false,
+          type: 'rect',
+          x: 0,
+          y: 0,
+          width: 5,
+          height: 5,
+        },
+      ],
+    })
+    store.set(selectCommand, ['s1'])
+
+    store.set(undoCommand)
+
+    expect(store.get(selectedIdsAtom)).toEqual([])
+  })
+
+  it('is a no-op during active gesture', () => {
+    const store = makeStore()
+    store.set(renameCommand, 'B')
+    store.set(activeDragAtom, {
+      toolId: 'test',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+
+    store.set(undoCommand)
+
+    expect(store.get(documentAtom).name).toBe('B')
+  })
 })
 
 describe('redoCommand', () => {
@@ -82,5 +129,88 @@ describe('redoCommand', () => {
 
     expect(store.get(documentAtom)).toBe(before)
     expect(store.get(redoStackAtom)).toHaveLength(0)
+  })
+
+  it('restores selection on redo', () => {
+    const selectCommand = createCommand<string[]>('Select', (_doc, ids) => ({
+      selection: ids,
+    }))
+    const store = makeStore()
+    store.set(documentAtom, {
+      ...emptyDoc,
+      shapes: [
+        {
+          id: 's1',
+          name: 'S1',
+          visible: true,
+          locked: false,
+          type: 'rect',
+          x: 0,
+          y: 0,
+          width: 5,
+          height: 5,
+        },
+      ],
+    })
+    store.set(selectCommand, ['s1'])
+    store.set(undoCommand)
+
+    store.set(redoCommand)
+
+    expect(store.get(selectedIdsAtom)).toEqual(['s1'])
+  })
+
+  it('is a no-op during active gesture', () => {
+    const store = makeStore()
+    store.set(renameCommand, 'B')
+    store.set(undoCommand)
+    store.set(activeDragAtom, {
+      toolId: 'test',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+
+    store.set(redoCommand)
+
+    expect(store.get(documentAtom).name).toBe('A')
+  })
+})
+
+describe('canUndoAtom / canRedoAtom', () => {
+  it('canUndoAtom is false when stack is empty', () => {
+    const store = makeStore()
+    expect(store.get(canUndoAtom)).toBe(false)
+  })
+
+  it('canUndoAtom is true when stack is non-empty', () => {
+    const store = makeStore()
+    store.set(renameCommand, 'B')
+    expect(store.get(canUndoAtom)).toBe(true)
+  })
+
+  it('canUndoAtom is false during active gesture even with stack', () => {
+    const store = makeStore()
+    store.set(renameCommand, 'B')
+    store.set(activeDragAtom, {
+      toolId: 'test',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+    expect(store.get(canUndoAtom)).toBe(false)
+  })
+
+  it('canRedoAtom is false during active gesture even with stack', () => {
+    const store = makeStore()
+    store.set(renameCommand, 'B')
+    store.set(undoCommand)
+    store.set(activeDragAtom, {
+      toolId: 'test',
+      pointerId: 1,
+      startViewBox: { x: 0, y: 0 },
+      startScreen: { x: 0, y: 0 },
+    })
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 })

@@ -3,6 +3,7 @@ import { selectAtom } from 'jotai/utils'
 
 import { rectEqual } from '@/lib/geometry/rect'
 import { bboxOfMany } from '@/lib/svg/bbox'
+import type { Document } from '@/types/shapes'
 
 import { shapeAtom } from './document'
 
@@ -17,8 +18,17 @@ export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 
 export const selectionBboxAtom = selectAtom(selectedShapesAtom, bboxOfMany, rectEqual)
 
-export const clearSelectionAtom = atom(null, (get, set) => {
-  if (get(hasSelectionAtom)) {
-    set(selectedIdsAtom, [])
+const EMPTY: string[] = []
+
+export function normalizeSelection(ids: string[], doc: Document): string[] {
+  if (ids.length === 0) return EMPTY
+  const wanted = new Set(ids)
+  const result: string[] = []
+  for (const shape of doc.shapes) {
+    if (wanted.delete(shape.id)) {
+      result.push(shape.id)
+      if (wanted.size === 0) break
+    }
   }
-})
+  return result.length === 0 ? EMPTY : result
+}

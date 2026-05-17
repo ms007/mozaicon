@@ -8,7 +8,7 @@ export type ResizeShapePayload = Record<string, Rect>
 export const resizeShapeCommand = createCommand<ResizeShapePayload>(
   'Resize shape',
   (doc, geometryById) => {
-    if (Object.keys(geometryById).length === 0) return doc
+    if (Object.keys(geometryById).length === 0) return {}
 
     const nextShapes = doc.shapes.map((shape) => {
       const geo = geometryById[shape.id] as Rect | undefined
@@ -18,7 +18,7 @@ export const resizeShapeCommand = createCommand<ResizeShapePayload>(
     })
 
     const changed = nextShapes.some((s, i) => s !== doc.shapes[i])
-    if (!changed) return doc
-    return { ...doc, shapes: nextShapes }
+    if (!changed) return {}
+    return { document: { ...doc, shapes: nextShapes } }
   },
 )

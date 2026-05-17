@@ -246,10 +246,7 @@ export function createCommand<Payload>(
 
     if (docChanged) set(documentAtom, after)
     if (selChanged) set(selectedIdsAtom, selectionAfter)
-    set(undoStackAtom, (s) => [
-      ...s,
-      { label, before, after, selectionBefore, selectionAfter },
-    ])
+    set(undoStackAtom, (s) => [...s, { label, before, after, selectionBefore, selectionAfter }])
     set(redoStackAtom, [])
   })
 }

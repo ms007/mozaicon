@@ -1,6 +1,7 @@
 import {
   render,
   renderHook,
+  type RenderHookOptions,
   type RenderHookResult,
   type RenderResult,
 } from '@testing-library/react'
@@ -30,12 +31,13 @@ export type RenderHookWithStoreResult<Result, Props> = RenderHookResult<Result, 
 export function renderHookWithStore<Result, Props = unknown>(
   hook: (props: Props) => Result,
   seed?: (store: TestStore) => void,
+  options?: Pick<RenderHookOptions<Props>, 'initialProps'>,
 ): RenderHookWithStoreResult<Result, Props> {
   const store = createStore()
   seed?.(store)
   const wrapper = ({ children }: { children: ReactNode }) => (
     <Provider store={store}>{children}</Provider>
   )
-  const utils = renderHook(hook, { wrapper })
+  const utils = renderHook(hook, { wrapper, ...options })
   return { ...utils, store }
 }

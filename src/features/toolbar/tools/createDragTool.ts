@@ -7,7 +7,6 @@ import {
   DRAFT_SHAPE_ID,
   draftShapeAtom,
 } from '@/store/atoms/draft'
-import { selectedIdsAtom } from '@/store/atoms/selection'
 import { type StyleDefaults, styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import { addShapeCommand, type AddShapePayload, materializeShape } from '@/store/commands/addShape'
 
@@ -76,11 +75,13 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
           : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
         const id = newId()
         const styles = ctx.store.get(styleDefaultsAtom)
-        ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
-        ctx.store.set(selectedIdsAtom, [id])
 
+        // Order matters: cancelDraftAtom clears activeDragAtom, which lets
+        // createCommand's gesture-active guard pass for the addShape dispatch.
         ctx.store.set(cancelDraftAtom)
         lastGeometry = null
+
+        ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
       }
     },
 

@@ -1,10 +1,19 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DrawTool } from '@/features/toolbar/tools/registry'
+import { documentAtom } from '@/store/atoms/document'
+import { undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
+import { undoCommand } from '@/store/commands/historyCommands'
+import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
 
 import { useToolPointerBridge } from './useToolPointerBridge'
+
+const testDoc = makeDoc([
+  makeRect({ id: 's1', name: 'S1' }),
+  makeRect({ id: 's2', name: 'S2', x: 10, y: 10 }),
+])
 
 function makeTool(overrides: Partial<DrawTool> = {}): DrawTool {
   return {
@@ -19,6 +28,7 @@ function makeTool(overrides: Partial<DrawTool> = {}): DrawTool {
 
 function setup(tool: DrawTool | undefined) {
   const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool))
+  store.set(documentAtom, testDoc)
   const { svg, setCapture, releaseCapture, hasCapture } = makeSvgElement()
   result.current.svgRef.current = svg
   return { store, result, svg, setCapture, releaseCapture, hasCapture }
@@ -163,6 +173,28 @@ describe('useToolPointerBridge', () => {
     result.current.handlers.onPointerDown(makePointerEvent())
 
     expect(store.get(selectedIdsAtom)).toEqual([])
+    expect(store.get(undoStackAtom)).toHaveLength(0)
+  })
+
+  it('background pointerdown pushes a history entry when selection is non-empty', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1', 's2'])
+
+    result.current.handlers.onPointerDown(makePointerEvent())
+
+    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
+  })
+
+  it('Cmd+Z after background pointerdown restores previous selection', () => {
+    const { result, store } = setup(undefined)
+    store.set(selectedIdsAtom, ['s1', 's2'])
+
+    result.current.handlers.onPointerDown(makePointerEvent())
+    expect(store.get(selectedIdsAtom)).toEqual([])
+
+    store.set(undoCommand)
+    expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
   })
 
   it('pointerdown with non-primary button does not clear the selection', () => {

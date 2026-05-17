@@ -5,6 +5,7 @@ import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
+import { undoCommand } from '@/store/commands/historyCommands'
 
 import type { DragToolConfig } from './createDragTool'
 import { createDragTool } from './createDragTool'
@@ -439,5 +440,34 @@ describe('createDragTool', () => {
     const draft = ctx.store.get(draftShapeAtom)
     expect(draft).not.toBeNull()
     expect(draft).toMatchObject({ width: 8, height: 6 })
+  })
+
+  // --- Selection is set atomically via command, not post-hoc ---
+
+  it('history entry selectionAfter contains the committed shape id', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerUp(ctx, ev({ x: 2, y: 2 }, { x: 101, y: 100 }))
+
+    const entry = ctx.store.get(undoStackAtom)[0]
+    const committedId = ctx.store.get(documentAtom).shapes[0].id
+    expect(entry.selectionAfter).toEqual([committedId])
+  })
+
+  it('undo after drag-tool gesture restores both document and selection', () => {
+    const ctx = makeCtx()
+    ctx.store.set(selectedIdsAtom, ['pre-existing'])
+
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(1)
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([ctx.store.get(documentAtom).shapes[0].id])
+
+    ctx.store.set(undoCommand)
+
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(selectedIdsAtom)).toEqual(['pre-existing'])
   })
 })

@@ -13,6 +13,7 @@ export type ActiveDrag = {
 
 export const draftShapeAtom = atom<Shape | null>(null)
 export const activeDragAtom = atom<ActiveDrag | null>(null)
+export const isGestureActiveAtom = atom((get) => get(activeDragAtom) !== null)
 
 export const cancelDraftAtom = atom(null, (_get, set) => {
   set(draftShapeAtom, null)
