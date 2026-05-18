@@ -16,6 +16,7 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "check": "tsc -b --noEmit && eslint . && prettier --check . && vitest run --project unit",
+    "verify": "pnpm check",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "sandcastle:run": "tsx .sandcastle/main.ts",
