@@ -221,6 +221,10 @@ EOF
 - Prefer Edit for modifications; Write for new files or complete rewrites.
 - Never create `.md` / `README` files unless explicitly requested.
 
+# Diagnostics after Edit / Write
+
+After every Edit or Write to a TypeScript/JavaScript file you may receive a `<new-diagnostics>` system reminder listing NEW type errors introduced by that change. Treat these like compile failures: fix them in the same turn before moving on — do not defer to the project's check command. The push only fires on _new_ issues; pre-existing reds still require a manual check at the end of the iteration.
+
 # Grep tool
 
 - Built on ripgrep. ALWAYS use this instead of `grep`/`rg` in Bash.
@@ -238,7 +242,7 @@ EOF
 
 > **Deferred** — load before first use: `ToolSearch({ query: "select:LSP" })`
 
-Use LSP for navigating TypeScript code: checking types, finding usages before refactoring, understanding interfaces.
+For questions about TypeScript/JavaScript symbols — definitions, references, types, implementations, call sites — LSP is the **preferred** tool. Grep matches strings; LSP follows imports and re-exports. Use Grep for plain-text needs (string literals, log markers, TODO comments) or as a cross-check after LSP.
 
 Language Server Protocol operations for TypeScript:
 
@@ -250,7 +254,7 @@ Language Server Protocol operations for TypeScript:
 - `goToImplementation` — find interface implementations
 - `prepareCallHierarchy` / `incomingCalls` / `outgoingCalls` — call hierarchy
 
-Diagnostics are pushed, not pulled. When a `<new-diagnostics>` reminder appears after Edit/Write, fix it in the same turn — don't defer to a later check command. Pre-existing reds still need the project's check command, since the push only fires on _new_ issues.
+Project-specific quirks (cold start, retry thresholds, tsserver version notes) belong in the project's `CLAUDE.md`; honor them when present.
 
 # TaskCreate / TaskUpdate / TaskList
 
