@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm verify *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm test:e2e *)",
+      "Bash(pnpm exec tsc --noEmit *)",
+      "Bash(pnpm exec vitest run *)"
+    ]
+  },
+  "env": {
+    "ENABLE_LSP_TOOL": "1"
+  }
+}

@@ -44,8 +44,6 @@ pnpm build-storybook  # Build static Storybook
 - **Selection:** Array of shape IDs. Multi-select is first-class.
 - **Command:** Every mutation goes through a command (for undo/redo). See `src/store/commands/`.
 
-Full data flow + layer model: `docs/architecture.md`.
-
 ## Folder Structure
 
 ```
@@ -112,7 +110,8 @@ Patterns that recurred in past sessions and cost real turns. Apply them by defau
 - **Baseline before chasing reds.** When tests are red on the working branch, first run `pnpm check` (or the failing subset) on `main` to capture pre-existing failures. Don't fix Storybook a11y or unrelated e2e reds that were broken before your change.
 - **Parallel reads.** Independent `Read`/`Grep`/`Bash` calls go in one message. Sequential is only for genuinely dependent calls (e.g. needing a file path from `Grep` output).
 - **`pnpm check` once per logical iteration.** Run it after a coherent group of edits, not after every single `Edit`. The script takes ~10s; serial `check` loops add up.
-- **LSP for types and references, not diagnostics.** `LSP hover` gives the real inferred type (e.g. `PrimitiveAtom<string | null>` vs. Grep's literal source line) and `LSP findReferences` is scope-aware where Grep matches strings and comments. Use them for "what's the type here" and "where is this used". For TypeScript errors, stay with `pnpm check` — the tool exposes no diagnostics. If `hover` returns `any` on a clearly-typed symbol or `findReferences` finds only the definition, retry once: the language server was indexing.
+- **LSP for types and references.** `hover` gives the real inferred type, `findReferences` is scope-aware (vs. Grep matching strings). Cold-start quirks: batch a cheap `documentSymbol` in the same message as your first real LSP call (`tsserver` indexes lazily), and group multiple LSP questions about the same file into one message. Retry once when `hover` returns `any` on a clearly-typed symbol, `findReferences` returns ≤ 2 results for an *exported* symbol, or `goToDefinition` lands on the call site.
+- **LSP diagnostics arrive as a push, not a tool call.** The `typescript-lsp` plugin (enabled via `ENABLE_LSP_TOOL=1`) emits a `<new-diagnostics>` system reminder after every `Edit`/`Write` that introduces a *new* TS error. Trust those for fast feedback — they only fire on changes, so pre-existing reds need `pnpm check`.
 
 ## Testing Strategy
 

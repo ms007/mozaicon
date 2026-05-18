@@ -238,6 +238,8 @@ EOF
 
 > **Deferred** — load before first use: `ToolSearch({ query: "select:LSP" })`
 
+Use LSP for navigating TypeScript code: checking types, finding usages before refactoring, understanding interfaces.
+
 Language Server Protocol operations for TypeScript:
 
 - `goToDefinition` — find where a symbol is defined
@@ -248,7 +250,7 @@ Language Server Protocol operations for TypeScript:
 - `goToImplementation` — find interface implementations
 - `prepareCallHierarchy` / `incomingCalls` / `outgoingCalls` — call hierarchy
 
-Use LSP for navigating TypeScript code: checking types, finding usages before refactoring, understanding interfaces.
+Diagnostics are pushed, not pulled. When a `<new-diagnostics>` reminder appears after Edit/Write, fix it in the same turn — don't defer to a later check command. Pre-existing reds still need the project's check command, since the push only fires on _new_ issues.
 
 # TaskCreate / TaskUpdate / TaskList
 
