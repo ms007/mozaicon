@@ -25,9 +25,15 @@ export const resizeDraftForShapeAtom = atomFamily((id: string) =>
 // `selectAtom(rectEqual)` below keeps identical-rect frames from re-rendering
 // overlay + handles at gesture rate.
 const rawDisplayedSelectionBboxAtom = atom((get) => {
-  // Non-additive marquee falls through to selectionBboxAtom — #133.
+  // Marquee shows the live preview bbox when there are hits. Non-additive
+  // falls back to the pre-drag selection bbox when empty so the user keeps
+  // orientation — #133.
   const marquee = get(marqueeDraftAtom)
-  if (marquee?.additive) return get(previewSelectionBboxAtom)
+  if (marquee) {
+    const preview = get(previewSelectionBboxAtom)
+    if (preview) return preview
+    if (marquee.additive) return null
+  }
   const resizing = get(resizeDraftAtom)
   if (resizing) return unionRects(Object.values(resizing))
   const moveDraft = get(moveDraftAtom)

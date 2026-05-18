@@ -45,7 +45,7 @@ test.describe('Marquee selection (drag-to-select)', () => {
     await expect(overlay).toHaveCount(1)
   })
 
-  test('non-additive marquee: pre-drag bbox stays visible and hits get a live highlight', async ({
+  test('non-additive marquee: bbox follows the hit shape and it gets a live highlight', async ({
     page,
   }) => {
     const { canvas, box } = await setupTwoRects(page)
@@ -55,15 +55,15 @@ test.describe('Marquee selection (drag-to-select)', () => {
 
     await page.mouse.click(box.x + 100, box.y + 100)
     await expect(overlay).toHaveCount(1)
-    const baseWidth = Number(await overlay.getAttribute('width'))
+    const baseX = Number(await overlay.getAttribute('x'))
 
     await page.mouse.move(box.x + 220, box.y + 220)
     await page.mouse.down()
     await page.mouse.move(box.x + 380, box.y + 380, { steps: 10 })
 
     await expect(overlay).toHaveCount(1)
-    const midDragWidth = Number(await overlay.getAttribute('width'))
-    expect(midDragWidth).toEqual(baseWidth)
+    const midDragX = Number(await overlay.getAttribute('x'))
+    expect(midDragX).toBeGreaterThan(baseX)
 
     await expect(highlights).toHaveCount(1)
     await expect(highlightRects).toHaveCount(1)
@@ -72,6 +72,25 @@ test.describe('Marquee selection (drag-to-select)', () => {
 
     await expect(highlights).toHaveCount(0)
     await expect(overlay).toHaveCount(1)
+  })
+
+  test('non-additive marquee with no hits keeps the pre-drag bbox visible', async ({ page }) => {
+    const { canvas, box } = await setupTwoRects(page)
+    const overlay = canvas.locator('[data-testid="selection-overlay"]')
+
+    await page.mouse.click(box.x + 100, box.y + 100)
+    await expect(overlay).toHaveCount(1)
+    const baseX = Number(await overlay.getAttribute('x'))
+
+    // Drag a marquee in an empty corner that never crosses a shape.
+    await page.mouse.move(box.x + 420, box.y + 420)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 470, box.y + 470, { steps: 5 })
+
+    await expect(overlay).toHaveCount(1)
+    expect(Number(await overlay.getAttribute('x'))).toEqual(baseX)
+
+    await page.mouse.up()
   })
 
   test('Shift+drag toggles overlap', async ({ page }) => {
