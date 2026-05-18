@@ -25,9 +25,9 @@ export const resizeDraftForShapeAtom = atomFamily((id: string) =>
 // `selectAtom(rectEqual)` below keeps identical-rect frames from re-rendering
 // overlay + handles at gesture rate.
 const rawDisplayedSelectionBboxAtom = atom((get) => {
+  // Non-additive marquee falls through to selectionBboxAtom — #133.
   const marquee = get(marqueeDraftAtom)
   if (marquee?.additive) return get(previewSelectionBboxAtom)
-  if (marquee) return null
   const resizing = get(resizeDraftAtom)
   if (resizing) return unionRects(Object.values(resizing))
   const moveDraft = get(moveDraftAtom)

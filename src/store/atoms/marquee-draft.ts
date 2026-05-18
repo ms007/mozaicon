@@ -79,7 +79,7 @@ const stringArrayEqual = (a: readonly string[], b: readonly string[]) =>
 
 const rawHighlightedShapeIdsAtom = atom((get) => {
   const draft = get(marqueeDraftAtom)
-  if (!draft?.additive) return EMPTY_IDS
+  if (!draft) return EMPTY_IDS
   return get(previewSelectedIdsAtom)
 })
 

@@ -143,12 +143,22 @@ describe('highlightedShapeIdsAtom', () => {
     expect(store.get(highlightedShapeIdsAtom)).toEqual([])
   })
 
-  it('returns empty during non-additive marquee', () => {
+  it('highlights the live hits during a non-additive marquee', () => {
     const store = createStore()
     store.set(documentAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } }),
+    )
+    expect(store.get(highlightedShapeIdsAtom)).toEqual(['a', 'b'])
+  })
+
+  it('non-additive marquee with no hits → no highlights', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({ startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } }),
     )
     expect(store.get(highlightedShapeIdsAtom)).toEqual([])
   })
@@ -295,12 +305,12 @@ describe('previewSelectionBboxAtom', () => {
   })
 })
 
-describe('highlightedShapeIdsAtom: additive flag captured at pointerdown', () => {
-  it('changing additive on draft mid-drag changes highlight behavior', () => {
+describe('highlightedShapeIdsAtom: recomputes when draft fields change', () => {
+  it('toggling additive mid-drag switches between sym-diff and raw hits', () => {
     const store = createStore()
     store.set(documentAtom, doc)
 
-    // Start with additive: true
+    // 'a' is in base AND in the marquee → sym diff = [].
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -310,14 +320,13 @@ describe('highlightedShapeIdsAtom: additive flag captured at pointerdown', () =>
         baseSelection: ['a'],
       }),
     )
-    // additive: a is in hits + base → toggled off → empty highlight
     expect(store.get(highlightedShapeIdsAtom)).toEqual([])
 
-    // Flip additive to false mid-drag (should not happen in real UI
-    // because additive is captured at pointerdown per #126)
+    // Drop additive. In real UI this can't happen mid-drag (captured at
+    // pointerdown per #126); we exercise it here to prove the atom is a
+    // pure function of the draft. Non-additive uses raw hits → ['a'].
     store.set(marqueeDraftAtom, (prev) => (prev ? { ...prev, additive: false } : prev))
 
-    // Non-additive → no highlights shown at all
-    expect(store.get(highlightedShapeIdsAtom)).toEqual([])
+    expect(store.get(highlightedShapeIdsAtom)).toEqual(['a'])
   })
 })

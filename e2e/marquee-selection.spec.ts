@@ -45,6 +45,35 @@ test.describe('Marquee selection (drag-to-select)', () => {
     await expect(overlay).toHaveCount(1)
   })
 
+  test('non-additive marquee: pre-drag bbox stays visible and hits get a live highlight', async ({
+    page,
+  }) => {
+    const { canvas, box } = await setupTwoRects(page)
+    const overlay = canvas.locator('[data-testid="selection-overlay"]')
+    const highlights = canvas.locator('[data-testid="marquee-highlights"]')
+    const highlightRects = canvas.locator('[data-testid^="marquee-highlight-"]')
+
+    await page.mouse.click(box.x + 100, box.y + 100)
+    await expect(overlay).toHaveCount(1)
+    const baseWidth = Number(await overlay.getAttribute('width'))
+
+    await page.mouse.move(box.x + 220, box.y + 220)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 380, box.y + 380, { steps: 10 })
+
+    await expect(overlay).toHaveCount(1)
+    const midDragWidth = Number(await overlay.getAttribute('width'))
+    expect(midDragWidth).toEqual(baseWidth)
+
+    await expect(highlights).toHaveCount(1)
+    await expect(highlightRects).toHaveCount(1)
+
+    await page.mouse.up()
+
+    await expect(highlights).toHaveCount(0)
+    await expect(overlay).toHaveCount(1)
+  })
+
   test('Shift+drag toggles overlap', async ({ page }) => {
     const { canvas, box } = await setupTwoRects(page)
     const overlay = canvas.locator('[data-testid="selection-overlay"]')

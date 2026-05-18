@@ -160,10 +160,23 @@ describe('marquee: cancelDraftAtom', () => {
 })
 
 describe('marquee: displayedSelectionBboxAtom', () => {
-  it('returns null during non-additive marquee', () => {
+  it('keeps the pre-drag selection bbox visible during a non-additive marquee', () => {
     const store = makeStore()
     store.set(selectedIdsAtom, ['a'])
-    armMarquee(store)
+    // Marquee covers 'b' but displayed bbox must stay anchored on 'a'.
+    armMarquee(store, { startViewBox: { x: 9, y: 9 }, current: { x: 16, y: 16 } })
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
+    })
+  })
+
+  it('returns null during a non-additive marquee when nothing was pre-selected', () => {
+    const store = makeStore()
+    armMarquee(store, { startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } })
     expect(store.get(displayedSelectionBboxAtom)).toBe(null)
   })
 
