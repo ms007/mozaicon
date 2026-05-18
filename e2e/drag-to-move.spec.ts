@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test'
 
-import { CANVAS_SELECTOR, drawRect, getBox, SHAPE_RECT_SELECTOR } from './helpers'
+import {
+  CANVAS_SELECTOR,
+  centerOf,
+  clickShapeCenter,
+  dragBy,
+  drawRect,
+  getBox,
+  SHAPE_RECT_SELECTOR,
+  shiftClickShapeCenter,
+} from './helpers'
+
+const HANDLE_COUNT = 8 // 4 corners + 4 edges
 
 test.describe('Drag-to-Move gesture', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,14 +30,7 @@ test.describe('Drag-to-Move gesture', () => {
     const xBefore = Number(await rect.getAttribute('x'))
     const yBefore = Number(await rect.getAttribute('y'))
 
-    const rectBox = await getBox(rect)
-    const cx = rectBox.x + rectBox.width / 2
-    const cy = rectBox.y + rectBox.height / 2
-
-    await page.mouse.move(cx, cy)
-    await page.mouse.down()
-    await page.mouse.move(cx + 30, cy + 20, { steps: 5 })
-    await page.mouse.up()
+    await dragBy(page, centerOf(await getBox(rect)), 30, 20)
 
     const xAfter = Number(await rect.getAttribute('x'))
     const yAfter = Number(await rect.getAttribute('y'))
@@ -50,10 +54,7 @@ test.describe('Drag-to-Move gesture', () => {
     const rect = canvas.locator(SHAPE_RECT_SELECTOR).first()
     await expect(rect).toBeVisible()
 
-    const rectBox = await getBox(rect)
-    const cx = rectBox.x + rectBox.width / 2
-    const cy = rectBox.y + rectBox.height / 2
-
+    const { x: cx, y: cy } = centerOf(await getBox(rect))
     await page.mouse.move(cx, cy)
     await page.mouse.down()
     await page.mouse.move(cx + 30, cy + 20, { steps: 5 })
@@ -63,6 +64,44 @@ test.describe('Drag-to-Move gesture', () => {
     await page.mouse.up()
 
     await expect(canvas).not.toHaveClass(/cursor-move/)
+  })
+
+  test('selection bbox and resize handles stay visible during drag', async ({ page }) => {
+    const canvas = page.locator(CANVAS_SELECTOR)
+    const box = await getBox(canvas)
+
+    await drawRect(page, box, 50, 50, 100, 100)
+    await drawRect(page, box, 200, 200, 250, 250)
+
+    const rects = canvas.locator(SHAPE_RECT_SELECTOR)
+    await expect(rects).toHaveCount(2)
+
+    const rect1 = rects.nth(0)
+    const rect2 = rects.nth(1)
+
+    await clickShapeCenter(page, rect1)
+    await shiftClickShapeCenter(page, rect2)
+
+    const overlay = canvas.locator('[data-testid="selection-overlay"]')
+    const handles = canvas.locator('[data-testid="resize-handles"]')
+    const handleDots = handles.locator('[data-handle]')
+    await expect(overlay).toBeVisible()
+    await expect(handles).toBeVisible()
+    expect(await handleDots.count()).toBe(HANDLE_COUNT)
+
+    const start = centerOf(await getBox(rect1))
+    await page.mouse.move(start.x, start.y)
+    await page.mouse.down()
+    await page.mouse.move(start.x + 40, start.y + 30, { steps: 5 })
+
+    await expect(overlay).toBeVisible()
+    await expect(handles).toBeVisible()
+    expect(await handleDots.count()).toBe(HANDLE_COUNT)
+
+    await page.mouse.up()
+
+    await expect(overlay).toBeVisible()
+    await expect(handles).toBeVisible()
   })
 
   test('multi-select drag moves both rects, undo restores both', async ({ page }) => {
@@ -78,27 +117,15 @@ test.describe('Drag-to-Move gesture', () => {
     const rect1 = rects.nth(0)
     const rect2 = rects.nth(1)
 
-    const rect1Box = await getBox(rect1)
-    await page.mouse.click(rect1Box.x + rect1Box.width / 2, rect1Box.y + rect1Box.height / 2)
-
-    await page.keyboard.down('Shift')
-    const rect2Box = await getBox(rect2)
-    await page.mouse.click(rect2Box.x + rect2Box.width / 2, rect2Box.y + rect2Box.height / 2)
-    await page.keyboard.up('Shift')
+    await clickShapeCenter(page, rect1)
+    await shiftClickShapeCenter(page, rect2)
 
     const x1Before = Number(await rect1.getAttribute('x'))
     const y1Before = Number(await rect1.getAttribute('y'))
     const x2Before = Number(await rect2.getAttribute('x'))
     const y2Before = Number(await rect2.getAttribute('y'))
 
-    const r1 = await getBox(rect1)
-    const startX = r1.x + r1.width / 2
-    const startY = r1.y + r1.height / 2
-
-    await page.mouse.move(startX, startY)
-    await page.mouse.down()
-    await page.mouse.move(startX + 40, startY + 30, { steps: 5 })
-    await page.mouse.up()
+    await dragBy(page, centerOf(await getBox(rect1)), 40, 30)
 
     const x1After = Number(await rect1.getAttribute('x'))
     const y1After = Number(await rect1.getAttribute('y'))

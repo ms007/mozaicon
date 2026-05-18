@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 
 import type { Rect } from '@/lib/geometry/rect'
 import { viewBoxScaleAtom } from '@/store/atoms/canvas'
+import { isMovingAtom } from '@/store/atoms/move-draft'
 import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
 
 import { type HandlePosition, useResizeGesture } from './useResizeGesture'
@@ -39,6 +40,7 @@ function handlePositions(bbox: Rect) {
 export function ResizeHandles({ svgRef }: { svgRef: React.RefObject<SVGSVGElement | null> }) {
   const bbox = useAtomValue(displayedSelectionBboxAtom)
   const viewBoxScale = useAtomValue(viewBoxScaleAtom)
+  const isMoving = useAtomValue(isMovingAtom)
   const { onHandlePointerDown } = useResizeGesture(svgRef)
 
   if (!bbox) return null
@@ -67,6 +69,7 @@ export function ResizeHandles({ svgRef }: { svgRef: React.RefObject<SVGSVGElemen
             r={hitRadius}
             fill="transparent"
             style={{ cursor: CURSOR[pos] }}
+            pointerEvents={isMoving ? 'none' : 'auto'}
             onPointerDown={(e) => {
               onHandlePointerDown(pos, bbox, e)
             }}

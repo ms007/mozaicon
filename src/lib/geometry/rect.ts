@@ -29,6 +29,10 @@ export function unionRects(rects: readonly Rect[]): Rect | null {
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY }
 }
 
+export function translateRect(rect: Rect, dx: number, dy: number): Rect {
+  return { x: rect.x + dx, y: rect.y + dy, width: rect.width, height: rect.height }
+}
+
 export function rectEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true
   if (a === null || b === null) return false

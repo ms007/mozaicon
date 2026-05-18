@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Rect } from './rect'
-import { rectEqual, unionRects } from './rect'
+import { rectEqual, translateRect, unionRects } from './rect'
 
 describe('unionRects', () => {
   it('returns null for empty input', () => {
@@ -59,6 +59,25 @@ describe('unionRects', () => {
   it('returns a new object, not a reference to the input', () => {
     const r: Rect = { x: 1, y: 2, width: 3, height: 4 }
     const result = unionRects([r])
+    expect(result).not.toBe(r)
+    expect(result).toEqual(r)
+  })
+})
+
+describe('translateRect', () => {
+  it('shifts x and y, preserving width and height', () => {
+    const r: Rect = { x: 1, y: 2, width: 3, height: 4 }
+    expect(translateRect(r, 10, 20)).toEqual({ x: 11, y: 22, width: 3, height: 4 })
+  })
+
+  it('handles negative offsets', () => {
+    const r: Rect = { x: 5, y: 5, width: 10, height: 10 }
+    expect(translateRect(r, -3, -7)).toEqual({ x: 2, y: -2, width: 10, height: 10 })
+  })
+
+  it('returns a new object, not a reference to the input', () => {
+    const r: Rect = { x: 1, y: 2, width: 3, height: 4 }
+    const result = translateRect(r, 0, 0)
     expect(result).not.toBe(r)
     expect(result).toEqual(r)
   })

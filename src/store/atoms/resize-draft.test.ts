@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
@@ -158,6 +159,103 @@ describe('displayedSelectionBboxAtom', () => {
     const first = store.get(displayedSelectionBboxAtom)
 
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 10, height: 10 } })
+    const second = store.get(displayedSelectionBboxAtom)
+
+    expect(second).toBe(first)
+  })
+
+  it('returns the selection bbox shifted by move-draft offset', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+
+    store.set(moveDraftAtom, { ids: ['r1'], dx: 5, dy: 3 })
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 7,
+      y: 5,
+      width: 4,
+      height: 4,
+    })
+  })
+
+  it('returns the selection bbox when move-draft is cleared', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+
+    store.set(moveDraftAtom, { ids: ['r1'], dx: 5, dy: 3 })
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 7,
+      y: 5,
+      width: 4,
+      height: 4,
+    })
+
+    store.set(moveDraftAtom, null)
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 2,
+      y: 2,
+      width: 4,
+      height: 4,
+    })
+  })
+
+  it('returns selection bbox when both resize-draft and move-draft are null', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1', 'r2'])
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 2,
+      y: 2,
+      width: 14,
+      height: 14,
+    })
+  })
+
+  it('prefers resize-draft over move-draft when both are set', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+
+    store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 20, height: 20 } })
+    store.set(moveDraftAtom, { ids: ['r1'], dx: 100, dy: 100 })
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 0,
+      y: 0,
+      width: 20,
+      height: 20,
+    })
+  })
+
+  it('shifts multi-selection bbox by move-draft offset', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1', 'r2'])
+
+    store.set(moveDraftAtom, { ids: ['r1', 'r2'], dx: -1, dy: 2 })
+
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 1,
+      y: 4,
+      width: 14,
+      height: 14,
+    })
+  })
+
+  it('returns null when move-draft is active but nothing is selected', () => {
+    const store = makeStore()
+    store.set(moveDraftAtom, { ids: ['nonexistent'], dx: 10, dy: 10 })
+
+    expect(store.get(displayedSelectionBboxAtom)).toBeNull()
+  })
+
+  it('preserves referential identity when move-draft updates with same offset', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['r1'])
+
+    const ids = ['r1']
+    store.set(moveDraftAtom, { ids, dx: 3, dy: 4 })
+    const first = store.get(displayedSelectionBboxAtom)
+
+    store.set(moveDraftAtom, { ids, dx: 3, dy: 4 })
     const second = store.get(displayedSelectionBboxAtom)
 
     expect(second).toBe(first)

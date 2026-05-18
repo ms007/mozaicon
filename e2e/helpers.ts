@@ -13,6 +13,28 @@ export async function getBox(locator: Locator) {
   return box
 }
 
+export function centerOf(box: { x: number; y: number; width: number; height: number }) {
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+}
+
+export async function clickShapeCenter(page: Page, shape: Locator) {
+  const { x, y } = centerOf(await getBox(shape))
+  await page.mouse.click(x, y)
+}
+
+export async function shiftClickShapeCenter(page: Page, shape: Locator) {
+  await page.keyboard.down('Shift')
+  await clickShapeCenter(page, shape)
+  await page.keyboard.up('Shift')
+}
+
+export async function dragBy(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move(from.x + dx, from.y + dy, { steps: 5 })
+  await page.mouse.up()
+}
+
 // The rect tool is one-shot and the active tool defaults to null, so any test
 // that needs to draw must arm the tool first.
 export async function activateRectTool(page: Page) {
