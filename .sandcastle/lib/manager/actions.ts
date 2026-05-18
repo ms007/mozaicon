@@ -89,6 +89,7 @@ export async function execute(
     }
     case 'finalizeIssue': {
       await moveStatusIfTracked(deps, action.issue, 'Done')
+      if (action.close) await deps.closeIssue(action.issue.number)
       await deps.unblockDependents(action.issue.number)
       return { state: updatePhase(state, action.issue.number, 'done') }
     }

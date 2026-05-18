@@ -285,9 +285,18 @@ describe('execute', () => {
     assert.deepEqual(log, ['runMerger([1,2,3])'])
   })
 
-  it('finalizeIssue calls moveStatus + unblockDependents', async () => {
+  it('finalizeIssue with close=true calls moveStatus + closeIssue + unblockDependents', async () => {
     const { deps, log } = fakeActionDeps()
-    const action: Action = { tag: 'finalizeIssue', issue: issue(5) }
+    const action: Action = { tag: 'finalizeIssue', issue: issue(5), close: true }
+    const next = await execute(action, emptyState, deps)
+    assert.equal(next.state.phases.get(5), 'done')
+    assert.equal(next.stageOutcome, undefined)
+    assert.deepEqual(log, ['moveStatus(item-5, Done)', 'closeIssue(5)', 'unblockDependents(5)'])
+  })
+
+  it('finalizeIssue with close=false skips closeIssue (PRD child path)', async () => {
+    const { deps, log } = fakeActionDeps()
+    const action: Action = { tag: 'finalizeIssue', issue: issue(5), close: false }
     const next = await execute(action, emptyState, deps)
     assert.equal(next.state.phases.get(5), 'done')
     assert.equal(next.stageOutcome, undefined)
@@ -545,12 +554,12 @@ describe('execute — state preservation', () => {
     assert.equal(next.state.phases.get(3), 'done')
   })
 
-  it('finalizeIssue skips moveStatus when itemId is null', async () => {
+  it('finalizeIssue skips moveStatus when itemId is null but still closes', async () => {
     const { deps, log } = fakeActionDeps()
-    const action: Action = { tag: 'finalizeIssue', issue: issue(5, null) }
+    const action: Action = { tag: 'finalizeIssue', issue: issue(5, null), close: true }
     const next = await execute(action, emptyState, deps)
     assert.equal(next.state.phases.get(5), 'done')
-    assert.deepEqual(log, ['unblockDependents(5)'])
+    assert.deepEqual(log, ['closeIssue(5)', 'unblockDependents(5)'])
   })
 
   it('preserves attempts across non-rework actions', async () => {
@@ -669,6 +678,7 @@ describe('runWorkflow — single leaf issue', () => {
       'moveStatus(item-1, Ready to Merge)',
       'runMerger([1])',
       'moveStatus(item-1, Done)',
+      'closeIssue(1)',
       'unblockDependents(1)',
     ])
   })

@@ -45,7 +45,7 @@ function decideLeaf(obs: Observation): Decision {
   if (obs.seed.phase === "merged") {
     return {
       tag: "act",
-      action: { tag: "finalizeIssue", issue: obs.seed.issue },
+      action: { tag: "finalizeIssue", issue: obs.seed.issue, close: true },
     }
   }
 
@@ -58,7 +58,7 @@ function decidePrd(obs: Observation): Decision {
   const mergedChild = obs.children.find((c) => c.phase === "merged")
   if (mergedChild) {
     return actWithWave(
-      { tag: "finalizeIssue", issue: mergedChild.issue },
+      { tag: "finalizeIssue", issue: mergedChild.issue, close: false },
       mergedChild.issue.number,
       waveAssignments,
     )

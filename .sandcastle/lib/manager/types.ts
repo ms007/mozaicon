@@ -72,7 +72,7 @@ export type Action =
   | { readonly tag: 'promoteToReview'; readonly issue: IssueRef }
   | { readonly tag: 'runReviewer'; readonly issue: IssueRef }
   | { readonly tag: 'runMerger'; readonly issues: readonly IssueRef[] }
-  | { readonly tag: 'finalizeIssue'; readonly issue: IssueRef }
+  | { readonly tag: 'finalizeIssue'; readonly issue: IssueRef; readonly close: boolean }
   | {
       readonly tag: 'finalizePrd'
       readonly issue: IssueRef

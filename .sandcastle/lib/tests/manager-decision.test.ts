@@ -90,10 +90,13 @@ describe("decide — single leaf issue", () => {
     }
   })
 
-  it("merged → finalizeIssue", () => {
+  it("merged → finalizeIssue with close=true (standalone leaf must close the GH issue)", () => {
     const d = decide(singleObs("merged"))
     assert.equal(d.tag, "act")
-    if (d.tag === "act") assert.equal(d.action.tag, "finalizeIssue")
+    if (d.tag === "act") {
+      assert.equal(d.action.tag, "finalizeIssue")
+      if (d.action.tag === "finalizeIssue") assert.equal(d.action.close, true)
+    }
   })
 
   it("done → done", () => {
@@ -260,12 +263,15 @@ describe("decide — PRD with children", () => {
     }
   })
 
-  it("merged child → finalizeIssue (first merged)", () => {
+  it("merged child → finalizeIssue with close=false (children are closed later by finalizePrd)", () => {
     const d = decide(prdObs(["merged", "merged", "merged"]))
     assert.equal(d.tag, "act")
     if (d.tag === "act") {
       assert.equal(d.action.tag, "finalizeIssue")
-      if (d.action.tag === "finalizeIssue") assert.equal(d.action.issue.number, 1)
+      if (d.action.tag === "finalizeIssue") {
+        assert.equal(d.action.issue.number, 1)
+        assert.equal(d.action.close, false)
+      }
     }
   })
 

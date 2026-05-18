@@ -672,6 +672,7 @@ describe("pretty-stdout-sink", () => {
           action: {
             tag: "finalizeIssue" as const,
             issue: { number: 31, title: "issue-31", itemId: null, branch: "sandcastle/issue-31" },
+            close: true,
           },
         },
       }
@@ -805,6 +806,7 @@ describe("pretty-stdout-sink", () => {
           action: {
             tag: "finalizeIssue" as const,
             issue: { number: 31, title: "issue-31", itemId: null, branch: "sandcastle/issue-31" },
+            close: true,
           },
         },
       })
