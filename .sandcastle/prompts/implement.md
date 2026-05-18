@@ -37,9 +37,21 @@ gh issue view <parent-number>
   Reading the test file that covers the affected module alongside is
   expected — it's the most compact behavior contract you'll get.
 - Expand only with a concrete open question (e.g. "where is X
-  called?"). Use targeted `Grep` for the symbol — not directory
-  listings, not `find`, not recursive `ls`, not `Glob '**/*'`. The repo
-  layout is irrelevant to the task.
+  called?"). For TS/JS symbols, reach for **LSP first**
+  (`findReferences`, `hover`, `goToDefinition`) — it follows imports
+  and re-exports; `Grep` only finds string matches. Use `Grep` for
+  plain-text needs (literals, log markers, TODOs) or as a cross-check
+  after LSP. Never use directory listings, `find`, recursive `ls`, or
+  `Glob '**/*'` — the repo layout is irrelevant to the task.
+- **Before any cross-file edit** (changing an exported symbol, atom,
+  command, hook, component prop, or shape type), run LSP
+  `findReferences` on the symbol to map the blast radius. Treat the
+  result as a checklist of files you must update or consciously skip.
+  Cold-start quirk: if `findReferences` returns ≤ 2 hits for an
+  exported symbol, retry once before trusting it.
+- Trust the `<new-diagnostics>` push reminder after each Edit/Write —
+  fix new TS errors in the same turn rather than batching them for
+  `pnpm verify`.
 - Do **not** re-fetch context the prompt already inlines (the issue
   body, recent commits) and do not enumerate the workspace to "see what
   the project looks like".

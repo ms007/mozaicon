@@ -40,6 +40,17 @@ For anything suspicious — fragile logic, unchecked assumptions, missing
 guards, implicit type coercions — write a test that exercises it. If you
 can break it, fix it.
 
+For every **exported** symbol the diff adds, removes, renames, or
+changes the signature of, run LSP `findReferences` on it before
+approving. LSP is the preferred tool for this — it follows imports and
+re-exports where Grep would miss them. Confirm every call site still
+type-checks and behaves as the diff intends; flag uncovered call sites
+as a `rework` candidate. Cold-start quirk: if `findReferences` returns
+≤ 2 hits for an exported symbol, retry once.
+
+Use `hover` on changed atoms / commands / hooks to verify the inferred
+type matches the documented contract.
+
 ## 2. Stress-test edge cases
 
 For every changed code path:
