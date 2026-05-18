@@ -5,7 +5,7 @@ import { atomFamily } from 'jotai-family'
 import { type Rect, rectEqual, translateRect, unionRects } from '@/lib/geometry/rect'
 import { bboxOf } from '@/lib/svg/bbox'
 import { draftShapeAtom } from '@/store/atoms/draft'
-import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { marqueeDraftAtom, previewSelectionBboxAtom } from '@/store/atoms/marquee-draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectionBboxAtom } from '@/store/atoms/selection'
 
@@ -22,11 +22,12 @@ export const resizeDraftForShapeAtom = atomFamily((id: string) =>
   ),
 )
 
-// Folds in the draw-draft and move-draft so resize handles appear live during
-// drag-to-draw and drag-to-move (Figma parity). `selectAtom(rectEqual)` below
-// keeps identical-rect frames from re-rendering overlay + handles at gesture rate.
+// `selectAtom(rectEqual)` below keeps identical-rect frames from re-rendering
+// overlay + handles at gesture rate.
 const rawDisplayedSelectionBboxAtom = atom((get) => {
-  if (get(marqueeDraftAtom) !== null) return null
+  const marquee = get(marqueeDraftAtom)
+  if (marquee?.additive) return get(previewSelectionBboxAtom)
+  if (marquee) return null
   const resizing = get(resizeDraftAtom)
   if (resizing) return unionRects(Object.values(resizing))
   const moveDraft = get(moveDraftAtom)

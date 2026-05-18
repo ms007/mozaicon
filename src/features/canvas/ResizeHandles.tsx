@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 
 import type { Rect } from '@/lib/geometry/rect'
 import { viewBoxScaleAtom } from '@/store/atoms/canvas'
+import { isMarqueeActiveAtom } from '@/store/atoms/marquee-draft'
 import { isMovingAtom } from '@/store/atoms/move-draft'
 import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
 
@@ -41,6 +42,8 @@ export function ResizeHandles({ svgRef }: { svgRef: React.RefObject<SVGSVGElemen
   const bbox = useAtomValue(displayedSelectionBboxAtom)
   const viewBoxScale = useAtomValue(viewBoxScaleAtom)
   const isMoving = useAtomValue(isMovingAtom)
+  const isMarqueeActive = useAtomValue(isMarqueeActiveAtom)
+  const isInert = isMoving || isMarqueeActive
   const { onHandlePointerDown } = useResizeGesture(svgRef)
 
   if (!bbox) return null
@@ -69,7 +72,7 @@ export function ResizeHandles({ svgRef }: { svgRef: React.RefObject<SVGSVGElemen
             r={hitRadius}
             fill="transparent"
             style={{ cursor: CURSOR[pos] }}
-            pointerEvents={isMoving ? 'none' : 'auto'}
+            pointerEvents={isInert ? 'none' : 'auto'}
             onPointerDown={(e) => {
               onHandlePointerDown(pos, bbox, e)
             }}

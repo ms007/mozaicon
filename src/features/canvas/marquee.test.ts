@@ -160,11 +160,67 @@ describe('marquee: cancelDraftAtom', () => {
 })
 
 describe('marquee: displayedSelectionBboxAtom', () => {
-  it('returns null while marqueeDraftAtom is active', () => {
+  it('returns null during non-additive marquee', () => {
     const store = makeStore()
     store.set(selectedIdsAtom, ['a'])
     armMarquee(store)
     expect(store.get(displayedSelectionBboxAtom)).toBe(null)
+  })
+
+  it('returns live preview bbox during additive marquee', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['a', 'c'])
+
+    armMarquee(store, {
+      startViewBox: { x: 0, y: 0 },
+      current: { x: 12, y: 12 },
+      additive: true,
+      baseSelection: ['a', 'c'],
+    })
+
+    // hits = ['a','b'], base = ['a','c'] → preview = ['c','b']
+    // shape c: (20,20,5,5), shape b: (10,10,5,5) → bbox: (10,10,15,15)
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 10,
+      y: 10,
+      width: 15,
+      height: 15,
+    })
+  })
+
+  it('updates preview bbox as marquee area changes', () => {
+    const store = makeStore()
+    store.set(selectedIdsAtom, ['a'])
+
+    armMarquee(store, {
+      startViewBox: { x: 9, y: 9 },
+      current: { x: 16, y: 16 },
+      additive: true,
+      baseSelection: ['a'],
+    })
+
+    // hits = ['b'], base = ['a'] → preview = ['a','b']
+    // shape a: (0,0,5,5), shape b: (10,10,5,5) → bbox: (0,0,15,15)
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 0,
+      y: 0,
+      width: 15,
+      height: 15,
+    })
+
+    // Grow the marquee to also cover 'a'
+    store.set(marqueeDraftAtom, (prev) =>
+      prev ? { ...prev, current: { x: 16, y: 16 }, startViewBox: { x: 0, y: 0 } } : prev,
+    )
+
+    // hits = ['a','b'], base = ['a'] → preview = ['b'] (a toggled off)
+    // shape b: (10,10,5,5) → bbox: (10,10,5,5)
+    expect(store.get(displayedSelectionBboxAtom)).toEqual({
+      x: 10,
+      y: 10,
+      width: 5,
+      height: 5,
+    })
   })
 })
 

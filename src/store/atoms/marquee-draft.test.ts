@@ -5,7 +5,13 @@ import { documentAtom } from '@/store/atoms/document'
 import { makeMarqueeDraft } from '@/test/fixtures/marquee'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 
-import { marqueeDraftAtom, marqueeRectAtom, previewSelectedIdsAtom } from './marquee-draft'
+import {
+  highlightedShapeIdsAtom,
+  marqueeDraftAtom,
+  marqueeRectAtom,
+  previewSelectedIdsAtom,
+  previewSelectionBboxAtom,
+} from './marquee-draft'
 
 const baseDraft = (overrides?: Parameters<typeof makeMarqueeDraft>[0]) =>
   makeMarqueeDraft({ current: { x: 10, y: 10 }, ...overrides })
@@ -35,15 +41,15 @@ describe('marqueeRectAtom', () => {
   })
 })
 
-describe('previewSelectedIdsAtom', () => {
-  const doc = makeDoc([
-    makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
-    makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5 }),
-    makeRect({ id: 'c', x: 20, y: 20, width: 5, height: 5 }),
-    makeRect({ id: 'hidden', x: 0, y: 0, width: 5, height: 5, visible: false }),
-    makeRect({ id: 'locked', x: 0, y: 0, width: 5, height: 5, locked: true }),
-  ])
+const doc = makeDoc([
+  makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
+  makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5 }),
+  makeRect({ id: 'c', x: 20, y: 20, width: 5, height: 5 }),
+  makeRect({ id: 'hidden', x: 0, y: 0, width: 5, height: 5, visible: false }),
+  makeRect({ id: 'locked', x: 0, y: 0, width: 5, height: 5, locked: true }),
+])
 
+describe('previewSelectedIdsAtom', () => {
   it('returns empty when no draft', () => {
     const store = createStore()
     store.set(documentAtom, doc)
@@ -127,5 +133,191 @@ describe('previewSelectedIdsAtom', () => {
     )
     // hits = ['a'], base = ['a'] → sym diff = empty
     expect(store.get(previewSelectedIdsAtom)).toEqual([])
+  })
+})
+
+describe('highlightedShapeIdsAtom', () => {
+  it('returns empty when no draft is active', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    expect(store.get(highlightedShapeIdsAtom)).toEqual([])
+  })
+
+  it('returns empty during non-additive marquee', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({ startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } }),
+    )
+    expect(store.get(highlightedShapeIdsAtom)).toEqual([])
+  })
+
+  it('in-base, not in-marquee → highlighted (still selected)', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 9, y: 9 },
+        current: { x: 16, y: 16 },
+        additive: true,
+        baseSelection: ['a'],
+      }),
+    )
+    // hits = ['b'], base = ['a'] → preview = ['a','b']
+    expect(store.get(highlightedShapeIdsAtom)).toContain('a')
+  })
+
+  it('in-base, in-marquee → not highlighted (toggled off)', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 6, y: 6 },
+        additive: true,
+        baseSelection: ['a'],
+      }),
+    )
+    // hits = ['a'], base = ['a'] → preview = [] (toggled off)
+    expect(store.get(highlightedShapeIdsAtom)).not.toContain('a')
+  })
+
+  it('not in-base, in-marquee → highlighted (will be added)', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 6, y: 6 },
+        additive: true,
+        baseSelection: [],
+      }),
+    )
+    // hits = ['a'], base = [] → preview = ['a']
+    expect(store.get(highlightedShapeIdsAtom)).toContain('a')
+  })
+
+  it('not in-base, not in-marquee → not highlighted', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 9, y: 9 },
+        current: { x: 16, y: 16 },
+        additive: true,
+        baseSelection: [],
+      }),
+    )
+    // hits = ['b'], base = [] → preview = ['b']
+    expect(store.get(highlightedShapeIdsAtom)).not.toContain('a')
+    expect(store.get(highlightedShapeIdsAtom)).not.toContain('c')
+  })
+
+  it('empty marquee with non-empty base → highlight equals base', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 100, y: 100 },
+        current: { x: 101, y: 101 },
+        additive: true,
+        baseSelection: ['a', 'b'],
+      }),
+    )
+    // hits = [], base = ['a','b'] → preview = ['a','b']
+    expect(store.get(highlightedShapeIdsAtom)).toEqual(['a', 'b'])
+  })
+
+  it('all four quadrants in one scenario', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 12, y: 12 },
+        additive: true,
+        baseSelection: ['a', 'c'],
+      }),
+    )
+    // hits = ['a','b'], base = ['a','c']
+    // sym diff: 'c' (base not hit), 'b' (hit not base)
+    // 'a' toggled off (base + hit)
+    const highlighted = store.get(highlightedShapeIdsAtom)
+    expect(highlighted).toContain('c')
+    expect(highlighted).toContain('b')
+    expect(highlighted).not.toContain('a')
+  })
+})
+
+describe('previewSelectionBboxAtom', () => {
+  it('returns null when no draft is active', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    expect(store.get(previewSelectionBboxAtom)).toBe(null)
+  })
+
+  it('returns null when draft has no hits and no base (non-additive)', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({ startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } }),
+    )
+    expect(store.get(previewSelectionBboxAtom)).toBe(null)
+  })
+
+  it('returns bbox of preview shapes during additive marquee', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 12, y: 12 },
+        additive: true,
+        baseSelection: ['a', 'c'],
+      }),
+    )
+    // preview = ['c','b'] → shapes c(20,20,5,5) + b(10,10,5,5) → bbox (10,10,15,15)
+    expect(store.get(previewSelectionBboxAtom)).toEqual({
+      x: 10,
+      y: 10,
+      width: 15,
+      height: 15,
+    })
+  })
+})
+
+describe('highlightedShapeIdsAtom: additive flag captured at pointerdown', () => {
+  it('changing additive on draft mid-drag changes highlight behavior', () => {
+    const store = createStore()
+    store.set(documentAtom, doc)
+
+    // Start with additive: true
+    store.set(
+      marqueeDraftAtom,
+      baseDraft({
+        startViewBox: { x: 0, y: 0 },
+        current: { x: 6, y: 6 },
+        additive: true,
+        baseSelection: ['a'],
+      }),
+    )
+    // additive: a is in hits + base → toggled off → empty highlight
+    expect(store.get(highlightedShapeIdsAtom)).toEqual([])
+
+    // Flip additive to false mid-drag (should not happen in real UI
+    // because additive is captured at pointerdown per #126)
+    store.set(marqueeDraftAtom, (prev) => (prev ? { ...prev, additive: false } : prev))
+
+    // Non-additive → no highlights shown at all
+    expect(store.get(highlightedShapeIdsAtom)).toEqual([])
   })
 })

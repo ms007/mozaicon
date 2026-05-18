@@ -1,12 +1,14 @@
 import { atom } from 'jotai'
+import { selectAtom } from 'jotai/utils'
 
-import { rectFromPoints } from '@/lib/geometry/rect'
+import { rectEqual, rectFromPoints } from '@/lib/geometry/rect'
 import { rectsIntersect } from '@/lib/geometry/rectsIntersect'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { isSelectable } from '@/lib/selection'
-import { bboxOf } from '@/lib/svg/bbox'
+import { bboxOf, bboxOfMany } from '@/lib/svg/bbox'
+import type { Shape } from '@/types/shapes'
 
-import { documentAtom } from './document'
+import { documentAtom, shapeAtom } from './document'
 
 export type MarqueeDraft = {
   pointerId: number
@@ -57,3 +59,32 @@ export const previewSelectedIdsAtom = atom((get) => {
   }
   return result
 })
+
+export const isMarqueeActiveAtom = atom((get) => get(marqueeDraftAtom) !== null)
+
+const EMPTY_SHAPES: readonly Shape[] = []
+
+const previewSelectedShapesAtom = atom((get) => {
+  const ids = get(previewSelectedIdsAtom)
+  if (ids.length === 0) return EMPTY_SHAPES
+  return ids.map((id) => get(shapeAtom(id))).filter((s) => s !== undefined)
+})
+
+export const previewSelectionBboxAtom = selectAtom(previewSelectedShapesAtom, bboxOfMany, rectEqual)
+
+const EMPTY_IDS: readonly string[] = []
+
+const stringArrayEqual = (a: readonly string[], b: readonly string[]) =>
+  a === b || (a.length === b.length && a.every((id, i) => id === b[i]))
+
+const rawHighlightedShapeIdsAtom = atom((get) => {
+  const draft = get(marqueeDraftAtom)
+  if (!draft?.additive) return EMPTY_IDS
+  return get(previewSelectedIdsAtom)
+})
+
+export const highlightedShapeIdsAtom = selectAtom(
+  rawHighlightedShapeIdsAtom,
+  (ids) => ids,
+  stringArrayEqual,
+)
