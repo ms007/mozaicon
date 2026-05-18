@@ -42,6 +42,29 @@ test.describe('Drag-to-Move gesture', () => {
     expect(yRestored).toBeCloseTo(yBefore, 0)
   })
 
+  test('shows cursor-move during drag and reverts on release', async ({ page }) => {
+    const canvas = page.locator(CANVAS_SELECTOR)
+    const box = await getBox(canvas)
+
+    await drawRect(page, box, 50, 50, 150, 150)
+    const rect = canvas.locator(SHAPE_RECT_SELECTOR).first()
+    await expect(rect).toBeVisible()
+
+    const rectBox = await getBox(rect)
+    const cx = rectBox.x + rectBox.width / 2
+    const cy = rectBox.y + rectBox.height / 2
+
+    await page.mouse.move(cx, cy)
+    await page.mouse.down()
+    await page.mouse.move(cx + 30, cy + 20, { steps: 5 })
+
+    await expect(canvas).toHaveClass(/cursor-move/)
+
+    await page.mouse.up()
+
+    await expect(canvas).not.toHaveClass(/cursor-move/)
+  })
+
   test('multi-select drag moves both rects, undo restores both', async ({ page }) => {
     const canvas = page.locator(CANVAS_SELECTOR)
     const box = await getBox(canvas)

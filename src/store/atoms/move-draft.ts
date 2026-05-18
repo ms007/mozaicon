@@ -25,6 +25,8 @@ export const moveDraftAtom = atom(
   },
 )
 
+export const isMovingAtom = atom((get) => get(moveDraftAtom) !== null)
+
 export const moveDraftForShapeAtom = atomFamily((id: string) =>
   selectAtom(
     moveDraftAtom,

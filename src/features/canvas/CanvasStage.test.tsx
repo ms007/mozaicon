@@ -1,8 +1,10 @@
+import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { renderWithStore } from '@/test/renderWithStore'
@@ -114,5 +116,42 @@ describe('CanvasStage', () => {
     })
 
     expect(container.querySelector('rect[vector-effect="non-scaling-stroke"]')).not.toBeNull()
+  })
+
+  it('applies cursor-move when moveDraftAtom is non-null', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+      store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
+    })
+
+    expect(container.querySelector('svg')).toHaveClass('cursor-move')
+  })
+
+  it('removes cursor-move when moveDraftAtom returns to null', () => {
+    const { container, store } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+      store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg).toHaveClass('cursor-move')
+
+    act(() => {
+      store.set(moveDraftAtom, null)
+    })
+
+    expect(svg).not.toHaveClass('cursor-move')
+  })
+
+  it('cursor-move wins over tool cursorClass during a move', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+      store.set(activeToolAtom, 'rect')
+      store.set(moveDraftAtom, { ids: ['r1'], dx: 0, dy: 0 })
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg).toHaveClass('cursor-move')
+    expect(svg).not.toHaveClass('cursor-crosshair')
   })
 })
