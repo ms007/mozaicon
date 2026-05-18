@@ -4,7 +4,7 @@ import { selectAtom } from 'jotai/utils'
 import { rectEqual, rectFromPoints } from '@/lib/geometry/rect'
 import { rectsIntersect } from '@/lib/geometry/rectsIntersect'
 import type { Vec2 } from '@/lib/geometry/vec2'
-import { isSelectable } from '@/lib/selection'
+import { isSelectable, symmetricDifference } from '@/lib/selection'
 import { bboxOf, bboxOfMany } from '@/lib/svg/bbox'
 import type { Shape } from '@/types/shapes'
 
@@ -43,21 +43,7 @@ export const previewSelectedIdsAtom = atom((get) => {
 
   if (!draft.additive) return hits
 
-  const hitSet = new Set(hits)
-  const result: string[] = []
-  for (const id of draft.baseSelection) {
-    if (!hitSet.has(id)) {
-      result.push(id)
-    } else {
-      hitSet.delete(id)
-    }
-  }
-  for (const id of hits) {
-    if (hitSet.has(id)) {
-      result.push(id)
-    }
-  }
-  return result
+  return symmetricDifference(draft.baseSelection, hits)
 })
 
 export const isMarqueeActiveAtom = atom((get) => get(marqueeDraftAtom) !== null)

@@ -94,7 +94,7 @@ export function useShapeInteraction(shapeId: string) {
 
         const moveIds = store.get(selectedIdsAtom).filter((id) => {
           const s = store.get(shapeAtom(id))
-          return s && s.visible && !s.locked
+          return s && isSelectable(s)
         })
 
         if (moveIds.length === 0) return

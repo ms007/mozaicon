@@ -1,3 +1,5 @@
+import { symmetricDifference } from '@/lib/selection'
+
 import { createCommand } from './createCommand'
 
 export const selectShapesCommand = createCommand<string[]>('Select shapes', (_doc, ids) => ({
@@ -6,12 +8,7 @@ export const selectShapesCommand = createCommand<string[]>('Select shapes', (_do
 
 export const toggleSelectionCommand = createCommand<string>(
   'Toggle selection',
-  (_doc, id, selection) => {
-    if (selection.includes(id)) {
-      return { selection: selection.filter((s) => s !== id) }
-    }
-    return { selection: [...selection, id] }
-  },
+  (_doc, id, selection) => ({ selection: symmetricDifference(selection, [id]) }),
 )
 
 export const clearSelectionCommand = createCommand<undefined>('Clear selection', () => ({

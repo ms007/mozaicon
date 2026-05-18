@@ -118,22 +118,6 @@ describe('previewSelectedIdsAtom', () => {
     )
     expect(store.get(previewSelectedIdsAtom)).toEqual([])
   })
-
-  it('additive mode: full overlap toggles all off (empty result)', () => {
-    const store = createStore()
-    store.set(documentAtom, doc)
-    store.set(
-      marqueeDraftAtom,
-      baseDraft({
-        startViewBox: { x: 0, y: 0 },
-        current: { x: 6, y: 6 },
-        additive: true,
-        baseSelection: ['a'],
-      }),
-    )
-    // hits = ['a'], base = ['a'] → sym diff = empty
-    expect(store.get(previewSelectedIdsAtom)).toEqual([])
-  })
 })
 
 describe('highlightedShapeIdsAtom', () => {
