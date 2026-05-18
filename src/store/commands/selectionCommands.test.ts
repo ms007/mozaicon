@@ -5,6 +5,7 @@ import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { seedSelection } from '@/test/seedSelection'
 import type { Document } from '@/types/shapes'
 
 import { redoCommand, undoCommand } from './historyCommands'
@@ -47,7 +48,7 @@ describe('selectShapesCommand', () => {
 
   it('is a no-op when selecting already-selected ids', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(selectShapesCommand, ['a'])
 
@@ -70,12 +71,13 @@ describe('selectShapesCommand', () => {
 
     expect(store.get(documentAtom)).toBe(before)
     const undo = store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
     expect(undo[0].before).toBe(undo[0].after)
   })
 
   it('all-stale ids clears selection when non-empty', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(selectShapesCommand, ['gone1', 'gone2'])
 
@@ -95,7 +97,7 @@ describe('selectShapesCommand', () => {
 describe('toggleSelectionCommand', () => {
   it('adds id to selection when not present', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(toggleSelectionCommand, 'b')
 
@@ -104,7 +106,7 @@ describe('toggleSelectionCommand', () => {
 
   it('removes id from selection when already present', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    seedSelection(store, ['a', 'b'])
 
     store.set(toggleSelectionCommand, 'a')
 
@@ -116,12 +118,14 @@ describe('toggleSelectionCommand', () => {
 
     store.set(toggleSelectionCommand, 'a')
 
-    expect(store.get(undoStackAtom)[0].label).toBe('Toggle selection')
+    const undo = store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
+    expect(undo[0].label).toBe('Toggle selection')
   })
 
   it('toggle add then undo restores prior selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(toggleSelectionCommand, 'b')
     expect(store.get(selectedIdsAtom)).toEqual(['a', 'b'])
@@ -132,7 +136,7 @@ describe('toggleSelectionCommand', () => {
 
   it('is a no-op when toggling a stale id not in the document', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(toggleSelectionCommand, 'nonexistent')
 
@@ -142,7 +146,7 @@ describe('toggleSelectionCommand', () => {
 
   it('removing the last selected item yields empty selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(toggleSelectionCommand, 'a')
 
@@ -154,7 +158,7 @@ describe('toggleSelectionCommand', () => {
 describe('clearSelectionCommand', () => {
   it('empties the selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    seedSelection(store, ['a', 'b'])
 
     store.set(clearSelectionCommand, undefined)
 
@@ -163,11 +167,13 @@ describe('clearSelectionCommand', () => {
 
   it('pushes a history entry with correct label', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(clearSelectionCommand, undefined)
 
-    expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
+    const undo = store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
+    expect(undo[0].label).toBe('Clear selection')
   })
 
   it('is a no-op when selection is already empty', () => {
@@ -180,7 +186,7 @@ describe('clearSelectionCommand', () => {
 
   it('undo restores previous selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    seedSelection(store, ['a', 'b'])
 
     store.set(clearSelectionCommand, undefined)
     store.set(undoCommand)
@@ -190,7 +196,7 @@ describe('clearSelectionCommand', () => {
 
   it('redo after undo re-clears the selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    seedSelection(store, ['a', 'b'])
 
     store.set(clearSelectionCommand, undefined)
     store.set(undoCommand)

@@ -32,7 +32,7 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 
 ## Selection
 
-**Selection** — The set of currently selected shapes, identified by IDs in `selectedIdsAtom`. Semantically a set: IDs are unique and ordered by document z-order (their position in `documentAtom.shapes`), not by click sequence. Session-local — not persisted by export or save. Written exclusively through _Selection-Commands_ and _Combined Commands_ so each effective change becomes one _History Entry_. Distinct from _Selection bbox_, which is the geometric envelope of the selected shapes.
+**Selection** — The set of currently selected shapes, identified by IDs in `selectedIdsAtom`. Semantically a set: IDs are unique and ordered by document z-order (their position in `documentAtom.shapes`), not by click sequence. Session-local — not persisted by export or save. `selectedIdsAtom` is read-only; its module-private backing atom is accessible only through two write seams (`commitSelectionAtom` and `restoreSelectionAtom`), enforced structurally at compile time. All user-facing mutations go through _Selection-Commands_ and _Combined Commands_ so each effective change becomes one _History Entry_. Distinct from _Selection bbox_, which is the geometric envelope of the selected shapes.
 
 **Selectable Shape** — A shape that qualifies as a candidate for user-driven selection: `shape.visible && !shape.locked`. Both _Drag-to-Select_ and click-to-select consult this predicate so the two paths can't diverge — hidden shapes don't render and shouldn't be ghost-selectable, locked shapes are explicitly protected from manipulation. Programmatic selection (e.g. an `addShapeCommand` selecting the freshly created shape) bypasses the predicate.
 

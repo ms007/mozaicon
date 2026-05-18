@@ -135,7 +135,11 @@ export const shapeAtom = atomFamily((id: string) =>
 import { atom } from 'jotai'
 import { shapeAtom } from './document'
 
-export const selectedIdsAtom = atom<string[]>([])
+// Module-private — the only writable atom for selection state.
+const _selectedIdsAtom = atom<string[]>([])
+
+// Public: read-only. A direct set() fails to compile.
+export const selectedIdsAtom = atom((get) => get(_selectedIdsAtom))
 
 // Derived: the actual selected Shape objects. Subscribes only to the
 // per-id atoms — mutating an unrelated shape doesn't re-run this.
@@ -147,7 +151,12 @@ export const selectedShapesAtom = atom((get) => {
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 ```
 
-**Writes go through Selection-Commands**, never `set(selectedIdsAtom, ...)` from a component. `selectShapesCommand` (replace), `toggleSelectionCommand` (additive shift+click), and `clearSelectionCommand` (Escape / background click) each push one `HistoryEntry`. They enforce two invariants on every write: IDs are deduplicated, and the array is sorted by document z-order (position in `documentAtom.shapes`). The stale-id filter inside `selectedShapesAtom` stays as defense-in-depth — the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
+**Writes are structurally sealed.** `selectedIdsAtom` is a read-only derived atom; a direct `set()` on it fails to compile. The only paths into selection state are two module-private write seams:
+
+- `commitSelectionAtom` — normalises (dedup, z-order, stale-ID drop), compares to prior value, writes only on change. Used by `createCommand`.
+- `restoreSelectionAtom` — writes verbatim without normalisation. Used by undo/redo to restore a snapshot.
+
+`selectShapesCommand` (replace), `toggleSelectionCommand` (additive shift+click), and `clearSelectionCommand` (Escape / background click) each push one `HistoryEntry`. They enforce two invariants on every write: IDs are deduplicated, and the array is sorted by document z-order (position in `documentAtom.shapes`). The stale-id filter inside `selectedShapesAtom` stays as defense-in-depth — the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
 If a future surface needs "which shape did the user click first" (e.g. an Align anchor), that's its own atom — don't smuggle the meaning into list position.
 
@@ -192,7 +201,7 @@ Atoms in the store fall into two categories with different mutation rules:
 
 **UI state** (`activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, `resizeDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
-**Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the document. Selection therefore lives on the _same_ history stack as the document and is written exclusively through Commands, never via direct `set` from a component. A `HistoryEntry` snapshots both axes (`before`/`after` for the document, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the document axis untouched (`before === after`), a _Combined Command_ moves both atomically.
+**Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the document. Selection therefore lives on the _same_ history stack as the document. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the document, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the document axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
 Consumers of selection still filter stale ids against the per-shape atoms as defense-in-depth (`selectedShapesAtom` already does this), but the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
@@ -213,10 +222,9 @@ Three flavours fall out of one primitive: **document-only** commands (e.g. `move
 ```ts
 import { atom } from 'jotai'
 import { documentAtom } from '../atoms/document'
-import { selectedIdsAtom } from '../atoms/selection'
-import { isGestureActiveAtom } from '../atoms/draft'
+import { commitSelectionAtom, selectedIdsAtom } from '../atoms/selection'
+import { isGestureActiveAtom } from '../atoms/gesture'
 import { undoStackAtom, redoStackAtom } from '../atoms/history'
-import { normalizeSelection } from '../atoms/selection' // dedup + z-order sort + drop stale
 import type { Document } from '@/types/shapes'
 
 export type CommandResult = {
@@ -236,16 +244,14 @@ export function createCommand<Payload>(
     const result = apply(before, payload, selectionBefore)
 
     const after = result.document ?? before
-    const selectionAfter = result.selection
-      ? normalizeSelection(result.selection, after)
-      : selectionBefore
+    const { changed: selChanged, ids: selectionAfter } = result.selection
+      ? set(commitSelectionAtom, { ids: result.selection, doc: after })
+      : { changed: false, ids: selectionBefore }
 
     const docChanged = after !== before
-    const selChanged = !arrayShallowEqual(selectionAfter, selectionBefore)
     if (!docChanged && !selChanged) return // no-op on both axes
 
     if (docChanged) set(documentAtom, after)
-    if (selChanged) set(selectedIdsAtom, selectionAfter)
     set(undoStackAtom, (s) => [...s, { label, before, after, selectionBefore, selectionAfter }])
     set(redoStackAtom, [])
   })
@@ -352,7 +358,7 @@ export const redoCommand = atom(null, (get, set) => {
 })
 ```
 
-Both meta-commands also restore selection (`set(selectedIdsAtom, entry.selectionBefore)` on undo, `entry.selectionAfter` on redo) — omitted above for brevity.
+Both meta-commands also restore selection via `restoreSelectionAtom` (`entry.selectionBefore` on undo, `entry.selectionAfter` on redo) — omitted above for brevity.
 
 **History is frozen during an Active Gesture.** _All_ commands no-op while a drag-to-draw, drag-to-move, resize, or drag-to-select is in flight (`get(isGestureActiveAtom)` is true) — document, selection, and combined alike — and `undoCommand`/`redoCommand` are frozen along with them. `isGestureActiveAtom` is the union of all draft signals — `activeDragAtom`, `resizeDraftAtom`, and `marqueeDraftAtom` are all non-null exclusively during their respective gestures, and any of them being non-null freezes history. The freeze lives in `createCommand` itself, not only in the meta-commands, so a stray background event (layers-panel click, `Cmd+A`, programmatic selection) can't yank state out from under the gesture. The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
 

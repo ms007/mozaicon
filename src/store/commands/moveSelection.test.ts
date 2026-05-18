@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
 
@@ -107,7 +108,7 @@ describe('moveSelectionCommand', () => {
 
   it('undo restores selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    store.set(selectShapesCommand, ['a', 'b'])
 
     store.set(moveSelectionCommand, { ids: ['a', 'b'], dx: 5, dy: 5 })
     store.set(undoCommand)

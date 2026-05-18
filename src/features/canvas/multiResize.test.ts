@@ -8,8 +8,9 @@ import { bboxOf } from '@/lib/svg/bbox'
 import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
-import { selectedIdsAtom, selectionBboxAtom } from '@/store/atoms/selection'
+import { selectionBboxAtom } from '@/store/atoms/selection'
 import { resizeShapeCommand } from '@/store/commands/resizeShape'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import type { Document, RectShape } from '@/types/shapes'
 
 const r1: RectShape = {
@@ -64,13 +65,13 @@ function computeMultiDraft(shapes: RectShape[], anchor: Vec2, sx: number, sy: nu
 describe('Multi-shape resize', () => {
   it('selectionBboxAtom covers the union bbox of both shapes', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
     expect(store.get(selectionBboxAtom)).toEqual({ x: 2, y: 2, width: 14, height: 14 })
   })
 
   it('draft entries cover every selected shape', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
 
     const anchor = { x: 16, y: 16 }
     const draft = computeMultiDraft([r1, r2], anchor, 1.5, 1.5)

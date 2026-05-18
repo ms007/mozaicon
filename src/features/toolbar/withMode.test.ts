@@ -12,7 +12,7 @@ import {
 import type { ToolCtx } from '@/features/toolbar/tools/registry'
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, cancelDraftAtom } from '@/store/atoms/draft'
-import { selectedIdsAtom } from '@/store/atoms/selection'
+import { restoreSelectionAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
 
@@ -58,7 +58,7 @@ describe('withMode — oneShot', () => {
 
   it('calls completeTool on clear-selection pointerup (sub-threshold with existing selection)', () => {
     const ctx = makeCtx()
-    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+    ctx.store.set(restoreSelectionAtom, ['existing-shape'])
 
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))

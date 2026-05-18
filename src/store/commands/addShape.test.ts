@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { canRedoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
-import { selectedIdsAtom } from '@/store/atoms/selection'
+import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
 
 import { addShapeCommand } from './addShape'
@@ -189,18 +189,19 @@ describe('addShapeCommand', () => {
 
   it('records selectionBefore/After in the history entry', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['old-id'])
+    store.set(restoreSelectionAtom, ['old-id'])
 
     store.set(addShapeCommand, { type: 'rect', id: 'new-rect', x: 0, y: 0, width: 5, height: 5 })
 
-    const entry = store.get(undoStackAtom)[0]
-    expect(entry.selectionBefore).toEqual(['old-id'])
-    expect(entry.selectionAfter).toEqual(['new-rect'])
+    const undo = store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
+    expect(undo[0].selectionBefore).toEqual(['old-id'])
+    expect(undo[0].selectionAfter).toEqual(['new-rect'])
   })
 
   it('undo rolls back both document and selection atomically', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['prev-sel'])
+    store.set(restoreSelectionAtom, ['prev-sel'])
 
     store.set(addShapeCommand, { type: 'rect', id: 'added', x: 0, y: 0, width: 5, height: 5 })
     expect(store.get(documentAtom).shapes).toHaveLength(1)

@@ -6,6 +6,7 @@ import { activeDragAtom } from '@/store/atoms/draft'
 import { canRedoAtom, canUndoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { seedSelection } from '@/test/seedSelection'
 import type { Document, Shape } from '@/types/shapes'
 
 import { createCommand } from './createCommand'
@@ -128,11 +129,11 @@ describe('createCommand', () => {
       selection: ids,
     }))
     const store = makeStore(twoShapeDoc)
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
 
     store.set(selectCommand, ['a'])
 
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('normalizes selection: dedup, z-order sort, drop stale ids', () => {

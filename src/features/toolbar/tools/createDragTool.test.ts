@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
-import { selectedIdsAtom } from '@/store/atoms/selection'
+import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import { undoCommand } from '@/store/commands/historyCommands'
 
@@ -291,7 +291,7 @@ describe('createDragTool', () => {
 
   it('fires click-fallback on sub-threshold release even when selection is non-empty', () => {
     const ctx = makeCtx()
-    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+    ctx.store.set(restoreSelectionAtom, ['existing-shape'])
 
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
@@ -317,7 +317,7 @@ describe('createDragTool', () => {
 
   it('still triggers drag-to-draw when selection exists and drag exceeds threshold', () => {
     const ctx = makeCtx()
-    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+    ctx.store.set(restoreSelectionAtom, ['existing-shape'])
 
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
@@ -330,7 +330,7 @@ describe('createDragTool', () => {
 
   it('drag-back-to-start with selection uses click-fallback', () => {
     const ctx = makeCtx()
-    ctx.store.set(selectedIdsAtom, ['existing-shape'])
+    ctx.store.set(restoreSelectionAtom, ['existing-shape'])
 
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
@@ -449,14 +449,15 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
-    const entry = ctx.store.get(undoStackAtom)[0]
+    const undo = ctx.store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
     const committedId = ctx.store.get(documentAtom).shapes[0].id
-    expect(entry.selectionAfter).toEqual([committedId])
+    expect(undo[0].selectionAfter).toEqual([committedId])
   })
 
   it('undo after drag-tool gesture restores both document and selection', () => {
     const ctx = makeCtx()
-    ctx.store.set(selectedIdsAtom, ['pre-existing'])
+    ctx.store.set(restoreSelectionAtom, ['pre-existing'])
 
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))

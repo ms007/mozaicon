@@ -2,12 +2,14 @@ import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { canUndoAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
+import { seedSelection } from '@/test/seedSelection'
 
 import { useShapeInteraction } from './useShapeInteraction'
 
@@ -61,7 +63,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['other'])
+        s.set(selectShapesCommand, ['other'])
       },
     )
 
@@ -77,7 +79,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s2'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -93,7 +95,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 's2'])
+        s.set(selectShapesCommand, ['s1', 's2'])
       },
     )
 
@@ -125,7 +127,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -158,7 +160,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        seedSelection(s, ['s1'])
       },
     )
 
@@ -167,7 +169,7 @@ describe('useShapeInteraction — click-to-select', () => {
     })
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it.each([
@@ -181,7 +183,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction(id),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -223,7 +225,7 @@ describe('useShapeInteraction — click-to-select', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['other'])
+        s.set(selectShapesCommand, ['other'])
       },
     )
 
@@ -247,7 +249,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -265,7 +267,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 's2'])
+        s.set(selectShapesCommand, ['s1', 's2'])
       },
     )
 
@@ -282,7 +284,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s2'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -301,7 +303,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s2'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -320,7 +322,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 's2', 'other'])
+        s.set(selectShapesCommand, ['s1', 's2', 'other'])
       },
     )
 
@@ -338,7 +340,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -360,7 +362,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -381,7 +383,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -398,7 +400,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -415,7 +417,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -431,7 +433,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -465,7 +467,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -488,7 +490,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -506,7 +508,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -529,7 +531,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -555,7 +557,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -573,7 +575,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -591,7 +593,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -612,7 +614,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -633,7 +635,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -654,7 +656,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1'])
+        s.set(selectShapesCommand, ['s1'])
       },
     )
 
@@ -709,7 +711,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 's2', 'locked'])
+        s.set(selectShapesCommand, ['s1', 's2', 'locked'])
       },
     )
 
@@ -728,7 +730,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 'hidden'])
+        s.set(selectShapesCommand, ['s1', 'hidden'])
       },
     )
 
@@ -746,7 +748,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 'locked'])
+        s.set(selectShapesCommand, ['s1', 'locked'])
       },
     )
 
@@ -764,7 +766,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       () => useShapeInteraction('s1'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['s1', 'locked'])
+        s.set(selectShapesCommand, ['s1', 'locked'])
       },
     )
 
@@ -788,7 +790,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       () => useShapeInteraction('locked'),
       (s) => {
         s.set(documentAtom, testDoc)
-        s.set(selectedIdsAtom, ['locked'])
+        seedSelection(s, ['locked'])
       },
     )
 
@@ -798,7 +800,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 20, clientY: 20 }).event)
     })
 
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 })

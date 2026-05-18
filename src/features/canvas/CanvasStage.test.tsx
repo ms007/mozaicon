@@ -5,8 +5,8 @@ import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
-import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
 import type { Document } from '@/types/shapes'
 
@@ -112,7 +112,7 @@ describe('CanvasStage', () => {
   it('mounts SelectionOverlay when a shape is selected', () => {
     const { container } = renderWithStore(<CanvasStage />, (store) => {
       store.set(documentAtom, seededDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     expect(container.querySelector('rect[vector-effect="non-scaling-stroke"]')).not.toBeNull()

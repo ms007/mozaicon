@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
-import { selectedIdsAtom } from '@/store/atoms/selection'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
 
@@ -51,7 +51,7 @@ function makeStore() {
 describe('displayedSelectionBboxAtom', () => {
   it('returns the committed selection bbox when no draft is active', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
 
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
       x: 2,
@@ -63,7 +63,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('tracks the draft union while a resize is in flight', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
 
     store.set(resizeDraftAtom, {
       r1: { x: 2, y: 2, width: 8, height: 8 },
@@ -80,7 +80,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('falls back to the committed bbox after the draft is cleared', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 20, height: 20 } })
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
@@ -118,7 +118,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('prefers the resize draft over the draw draft when both are set', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 20, height: 20 } })
     store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 100, y: 100, width: 1, height: 1 }))
 
@@ -132,7 +132,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('falls back to the committed bbox after the draw draft is cleared', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
     store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 50, y: 50, width: 4, height: 4 }))
 
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
@@ -153,7 +153,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('preserves referential identity when consecutive drafts yield the same union rect', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 10, height: 10 } })
     const first = store.get(displayedSelectionBboxAtom)
@@ -166,7 +166,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('returns the selection bbox shifted by move-draft offset', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     store.set(moveDraftAtom, { ids: ['r1'], dx: 5, dy: 3 })
 
@@ -180,7 +180,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('returns the selection bbox when move-draft is cleared', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     store.set(moveDraftAtom, { ids: ['r1'], dx: 5, dy: 3 })
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
@@ -201,7 +201,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('returns selection bbox when both resize-draft and move-draft are null', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
 
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
       x: 2,
@@ -213,7 +213,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('prefers resize-draft over move-draft when both are set', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 20, height: 20 } })
     store.set(moveDraftAtom, { ids: ['r1'], dx: 100, dy: 100 })
@@ -228,7 +228,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('shifts multi-selection bbox by move-draft offset', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1', 'r2'])
+    store.set(selectShapesCommand, ['r1', 'r2'])
 
     store.set(moveDraftAtom, { ids: ['r1', 'r2'], dx: -1, dy: 2 })
 
@@ -249,7 +249,7 @@ describe('displayedSelectionBboxAtom', () => {
 
   it('preserves referential identity when move-draft updates with same offset', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['r1'])
+    store.set(selectShapesCommand, ['r1'])
 
     const ids = ['r1']
     store.set(moveDraftAtom, { ids, dx: 3, dy: 4 })

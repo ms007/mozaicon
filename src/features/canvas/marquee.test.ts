@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { cancelDraftAtom } from '@/store/atoms/draft'
 import { isGestureActiveAtom } from '@/store/atoms/gesture'
-import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { undoStackAtom } from '@/store/atoms/history'
 import {
   type MarqueeDraft,
   marqueeDraftAtom,
@@ -16,6 +16,7 @@ import { undoCommand } from '@/store/commands/historyCommands'
 import { clearSelectionCommand, selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeMarqueeDraft } from '@/test/fixtures/marquee'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { seedSelection } from '@/test/seedSelection'
 
 const testDoc = makeDoc([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
@@ -54,33 +55,32 @@ describe('marquee integration: full drag-past-threshold', () => {
 
   it('sub-threshold + no Shift commits a clearSelectionCommand', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'b'])
+    seedSelection(store, ['a', 'b'])
     armMarquee(store)
 
-    // Simulate sub-threshold: clear draft, dispatch clear
     store.set(marqueeDraftAtom, null)
     store.set(clearSelectionCommand, undefined)
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(canUndoAtom)).toBe(true)
-    expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
+    const undo = store.get(undoStackAtom)
+    expect(undo).toHaveLength(1)
+    expect(undo[0].label).toBe('Clear selection')
   })
 
   it('sub-threshold + Shift commits nothing', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
     armMarquee(store, { additive: true, baseSelection: ['a'] })
 
-    // Simulate sub-threshold + additive: just clear draft
     store.set(marqueeDraftAtom, null)
 
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('Shift+drag commits symmetric difference', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'c'])
+    seedSelection(store, ['a', 'c'])
 
     armMarquee(store, {
       startViewBox: { x: 0, y: 0 },
@@ -93,34 +93,31 @@ describe('marquee integration: full drag-past-threshold', () => {
     store.set(marqueeDraftAtom, null)
     store.set(selectShapesCommand, ids)
 
-    // hits = ['a', 'b'], base = ['a', 'c']
-    // sym diff = 'c' (in base, not in hits) + 'b' (in hits, not in base)
     expect(store.get(selectedIdsAtom)).toEqual(['b', 'c'])
   })
 
   it('Escape mid-drag clears draft and leaves selectedIdsAtom + undo stack untouched', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    seedSelection(store, ['a'])
     armMarquee(store, { startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } })
 
-    // Escape → cancelDraft
     store.set(cancelDraftAtom)
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('pointercancel clears draft same as Escape', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['b'])
+    seedSelection(store, ['b'])
     armMarquee(store, { startViewBox: { x: 0, y: 0 }, current: { x: 22, y: 22 } })
 
     store.set(cancelDraftAtom)
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['b'])
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('command dispatch during marquee is a no-op (gesture freeze)', () => {
@@ -131,7 +128,7 @@ describe('marquee integration: full drag-past-threshold', () => {
     store.set(selectShapesCommand, ['c'])
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(undoStackAtom).length).toBe(0)
   })
 })
 
@@ -162,8 +159,7 @@ describe('marquee: cancelDraftAtom', () => {
 describe('marquee: displayedSelectionBboxAtom', () => {
   it('shows the live hit bbox during a non-additive marquee', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
-    // Marquee covers 'b' (10,10,5,5) — bbox follows the hit, not pre-drag 'a'.
+    store.set(selectShapesCommand, ['a'])
     armMarquee(store, { startViewBox: { x: 9, y: 9 }, current: { x: 16, y: 16 } })
 
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
@@ -176,7 +172,7 @@ describe('marquee: displayedSelectionBboxAtom', () => {
 
   it('falls back to the pre-drag bbox when the non-additive marquee has no hits', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    store.set(selectShapesCommand, ['a'])
     armMarquee(store, { startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } })
 
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
@@ -195,7 +191,7 @@ describe('marquee: displayedSelectionBboxAtom', () => {
 
   it('returns live preview bbox during additive marquee', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a', 'c'])
+    store.set(selectShapesCommand, ['a', 'c'])
 
     armMarquee(store, {
       startViewBox: { x: 0, y: 0 },
@@ -204,8 +200,6 @@ describe('marquee: displayedSelectionBboxAtom', () => {
       baseSelection: ['a', 'c'],
     })
 
-    // hits = ['a','b'], base = ['a','c'] → preview = ['c','b']
-    // shape c: (20,20,5,5), shape b: (10,10,5,5) → bbox: (10,10,15,15)
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
       x: 10,
       y: 10,
@@ -216,7 +210,7 @@ describe('marquee: displayedSelectionBboxAtom', () => {
 
   it('updates preview bbox as marquee area changes', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['a'])
+    store.set(selectShapesCommand, ['a'])
 
     armMarquee(store, {
       startViewBox: { x: 9, y: 9 },
@@ -225,8 +219,6 @@ describe('marquee: displayedSelectionBboxAtom', () => {
       baseSelection: ['a'],
     })
 
-    // hits = ['b'], base = ['a'] → preview = ['a','b']
-    // shape a: (0,0,5,5), shape b: (10,10,5,5) → bbox: (0,0,15,15)
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
       x: 0,
       y: 0,
@@ -234,13 +226,10 @@ describe('marquee: displayedSelectionBboxAtom', () => {
       height: 15,
     })
 
-    // Grow the marquee to also cover 'a'
     store.set(marqueeDraftAtom, (prev) =>
       prev ? { ...prev, current: { x: 16, y: 16 }, startViewBox: { x: 0, y: 0 } } : prev,
     )
 
-    // hits = ['a','b'], base = ['a'] → preview = ['b'] (a toggled off)
-    // shape b: (10,10,5,5) → bbox: (10,10,5,5)
     expect(store.get(displayedSelectionBboxAtom)).toEqual({
       x: 10,
       y: 10,
@@ -253,7 +242,7 @@ describe('marquee: displayedSelectionBboxAtom', () => {
 describe('marquee: undo after commit restores prior selection', () => {
   it('single undo after marquee commit restores the prior selection', () => {
     const store = makeStore()
-    store.set(selectedIdsAtom, ['c'])
+    store.set(selectShapesCommand, ['c'])
 
     armMarquee(store, { startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } })
     const ids = store.get(previewSelectedIdsAtom)

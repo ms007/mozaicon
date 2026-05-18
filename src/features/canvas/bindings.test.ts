@@ -3,14 +3,16 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
-import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { seedSelection } from '@/test/seedSelection'
 
 import { createCanvasBindings } from './bindings'
 
@@ -32,7 +34,7 @@ describe('canvas Escape priority ladder', () => {
   describe('tier 1: active gesture → cancelDraftAtom', () => {
     it('clears resize draft without clearing selection or tool', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1', 's2'])
+      store.set(selectShapesCommand, ['s1', 's2'])
       store.set(activeToolAtom, 'rect')
       store.set(resizeDraftAtom, { s1: { x: 0, y: 0, width: 10, height: 10 } })
 
@@ -45,7 +47,7 @@ describe('canvas Escape priority ladder', () => {
 
     it('clears move draft without clearing selection', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1'])
+      store.set(selectShapesCommand, ['s1'])
       store.set(moveDraftAtom, { ids: ['s1'], dx: 10, dy: 5 })
 
       escape.run()
@@ -56,7 +58,7 @@ describe('canvas Escape priority ladder', () => {
 
     it('clears marquee draft without clearing selection', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1'])
+      store.set(selectShapesCommand, ['s1'])
       store.set(marqueeDraftAtom, {
         pointerId: 1,
         startScreen: { x: 0, y: 0 },
@@ -75,7 +77,7 @@ describe('canvas Escape priority ladder', () => {
     it('clears active drag draft without clearing selection or tool', () => {
       const { store, escape } = setup()
       store.set(activeToolAtom, 'rect')
-      store.set(selectedIdsAtom, ['s1'])
+      store.set(selectShapesCommand, ['s1'])
       store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 2, y: 2, width: 8, height: 6 }))
       store.set(activeDragAtom, {
         toolId: 'rect',
@@ -97,7 +99,7 @@ describe('canvas Escape priority ladder', () => {
     it('deactivates tool without clearing selection', () => {
       const { store, escape } = setup()
       store.set(activeToolAtom, 'rect')
-      store.set(selectedIdsAtom, ['s1'])
+      store.set(selectShapesCommand, ['s1'])
 
       escape.run()
 
@@ -109,7 +111,7 @@ describe('canvas Escape priority ladder', () => {
   describe('tier 3: non-empty selection → clear selection', () => {
     it('clears selection when no gesture and no tool active', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1', 's2'])
+      store.set(selectShapesCommand, ['s1', 's2'])
 
       escape.run()
 
@@ -118,17 +120,18 @@ describe('canvas Escape priority ladder', () => {
 
     it('pushes a history entry when clearing a non-empty selection', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1', 's2'])
+      seedSelection(store, ['s1', 's2'])
 
       escape.run()
 
-      expect(store.get(canUndoAtom)).toBe(true)
-      expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
+      const undo = store.get(undoStackAtom)
+      expect(undo).toHaveLength(1)
+      expect(undo[0].label).toBe('Clear selection')
     })
 
     it('Cmd+Z after Escape restores previous selection', () => {
       const { store, escape } = setup()
-      store.set(selectedIdsAtom, ['s1', 's2'])
+      seedSelection(store, ['s1', 's2'])
 
       escape.run()
       expect(store.get(selectedIdsAtom)).toEqual([])
@@ -142,7 +145,7 @@ describe('canvas Escape priority ladder', () => {
 
       escape.run()
 
-      expect(store.get(canUndoAtom)).toBe(false)
+      expect(store.get(undoStackAtom)).toHaveLength(0)
     })
   })
 

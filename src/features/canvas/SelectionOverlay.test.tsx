@@ -5,7 +5,7 @@ import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { CANVAS_SIZE } from '@/store/atoms/canvas'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
-import { selectedIdsAtom } from '@/store/atoms/selection'
+import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeRect } from '@/test/fixtures/shapes'
 import { renderWithStore, type TestStore } from '@/test/renderWithStore'
 import type { Document } from '@/types/shapes'
@@ -43,7 +43,7 @@ describe('SelectionOverlay', () => {
   it('renders a rect matching the selection bbox with the expected SVG attributes', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const rect = container.querySelector('rect')
@@ -62,7 +62,7 @@ describe('SelectionOverlay', () => {
   it('renders the union bbox when multiple shapes are selected', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1', 'r2'])
+      store.set(selectShapesCommand, ['r1', 'r2'])
     })
 
     const rects = container.querySelectorAll('rect')
@@ -104,7 +104,7 @@ describe('ResizeHandles', () => {
   it('renders exactly 8 visible circles and 8 hit-area circles for a single selection', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const handles = container.querySelectorAll('[data-handle]')
@@ -116,7 +116,7 @@ describe('ResizeHandles', () => {
   it('renders 8 handles around the union bbox for multi-shape selection', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1', 'r2'])
+      store.set(selectShapesCommand, ['r1', 'r2'])
     })
 
     expect(container.querySelectorAll('[data-handle]')).toHaveLength(8)
@@ -125,7 +125,7 @@ describe('ResizeHandles', () => {
   it('positions corner handles at bbox corners and edge handles at midpoints', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const handle = (pos: string) => container.querySelector(`[data-handle="${pos}"]`)
@@ -159,7 +159,7 @@ describe('ResizeHandles', () => {
   it('applies correct resize cursors per handle position', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const cursor = (pos: string) =>
@@ -178,7 +178,7 @@ describe('ResizeHandles', () => {
   it('visible handles have fill-background, stroke-primary, and non-scaling-stroke', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const handle = container.querySelector('[data-handle="nw"]')
@@ -191,7 +191,7 @@ describe('ResizeHandles', () => {
   it('hit-area circles have double the visual radius and are transparent', () => {
     const { container } = renderOverlay((store) => {
       store.set(documentAtom, testDoc)
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const visual = container.querySelector('[data-handle="nw"]')
@@ -211,12 +211,12 @@ describe('ResizeHandles', () => {
 
     const { container: c1 } = renderOverlay((store) => {
       store.set(documentAtom, { ...testDoc, viewBox: [0, 0, 24, 24] })
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const { container: c2 } = renderOverlay((store) => {
       store.set(documentAtom, { ...testDoc, viewBox: [0, 0, 48, 48] })
-      store.set(selectedIdsAtom, ['r1'])
+      store.set(selectShapesCommand, ['r1'])
     })
 
     const h1 = c1.querySelector('[data-handle="nw"]')

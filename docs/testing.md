@@ -208,7 +208,7 @@ it('updates fill color on input', async () => {
     s.set(documentAtom, {
       /* doc with one shape */
     })
-    s.set(selectedIdsAtom, ['r1'])
+    s.set(selectShapesCommand, ['r1'])
   })
 
   const fillInput = screen.getByLabelText('Fill')
