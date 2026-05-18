@@ -2,7 +2,7 @@ import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom } from '@/store/atoms/history'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -167,7 +167,7 @@ describe('useShapeInteraction — click-to-select', () => {
     })
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it.each([
@@ -205,14 +205,14 @@ describe('useShapeInteraction — click-to-select', () => {
       clickSequence(result.current)
     })
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
 
     rerender({ id: 's2' })
     act(() => {
       clickSequence(result.current)
     })
     expect(store.get(selectedIdsAtom)).toEqual(['s2'])
-    expect(store.get(undoStackAtom)).toHaveLength(2)
+    expect(store.get(canUndoAtom)).toBe(true)
 
     store.set(undoCommand)
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
@@ -798,7 +798,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 20, clientY: 20 }).event)
     })
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 })

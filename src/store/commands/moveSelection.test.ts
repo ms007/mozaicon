@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
@@ -76,7 +76,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: [], dx: 5, dy: 5 })
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('is a no-op on zero delta', () => {
@@ -84,7 +84,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['a'], dx: 0, dy: 0 })
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('is a no-op when ids contain only non-existent shapes', () => {
@@ -92,7 +92,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['nonexistent', 'also-gone'], dx: 5, dy: 5 })
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('undo restores shape positions', () => {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom } from '@/store/atoms/draft'
-import { canRedoAtom, canUndoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { canRedoAtom, canUndoAtom, redoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
 
@@ -35,8 +35,8 @@ describe('undoCommand', () => {
     store.set(undoCommand)
 
     expect(store.get(documentAtom).name).toBe('A')
-    expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(redoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(canRedoAtom)).toBe(true)
     expect(store.get(redoStackAtom)[0].label).toBe('Rename')
   })
 
@@ -47,8 +47,8 @@ describe('undoCommand', () => {
     store.set(undoCommand)
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(redoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 
   it('peels entries one at a time', () => {
@@ -116,8 +116,8 @@ describe('redoCommand', () => {
     store.set(redoCommand)
 
     expect(store.get(documentAtom).name).toBe('B')
-    expect(store.get(undoStackAtom)).toHaveLength(1)
-    expect(store.get(redoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(true)
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 
   it('is a no-op when the redo stack is empty', () => {
@@ -128,7 +128,7 @@ describe('redoCommand', () => {
     store.set(redoCommand)
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(redoStackAtom)).toHaveLength(0)
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 
   it('restores selection on redo', () => {

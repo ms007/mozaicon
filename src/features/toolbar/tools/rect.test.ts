@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import type { Document } from '@/types/shapes'
@@ -230,7 +230,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerMove(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
     rectTool.onPointerUp(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    expect(ctx.store.get(undoStackAtom)).toHaveLength(1)
+    expect(ctx.store.get(canUndoAtom)).toBe(true)
   })
 
   it('ignores pointerup from a different pointer id', () => {

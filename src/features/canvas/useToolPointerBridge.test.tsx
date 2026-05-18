@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { DrawTool } from '@/features/toolbar/tools/registry'
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -176,7 +176,7 @@ describe('useToolPointerBridge', () => {
     result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('sub-threshold pointerup pushes a history entry when selection is non-empty', () => {
@@ -186,7 +186,7 @@ describe('useToolPointerBridge', () => {
     result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
     result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
     expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
   })
 
@@ -249,7 +249,7 @@ describe('useToolPointerBridge', () => {
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
     expect(store.get(undoStackAtom)[0].label).toBe('Select shapes')
   })
 
@@ -276,7 +276,7 @@ describe('useToolPointerBridge', () => {
     result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('pointerup releases pointer capture even when tool is undefined', () => {

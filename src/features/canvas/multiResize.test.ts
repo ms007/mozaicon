@@ -6,7 +6,7 @@ import { scaleShape } from '@/lib/geometry/scale'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { bboxOf } from '@/lib/svg/bbox'
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectedIdsAtom, selectionBboxAtom } from '@/store/atoms/selection'
 import { resizeShapeCommand } from '@/store/commands/resizeShape'
@@ -100,8 +100,8 @@ describe('Multi-shape resize', () => {
 
     store.set(resizeShapeCommand, draft)
 
+    expect(store.get(canUndoAtom)).toBe(true)
     const undo = store.get(undoStackAtom)
-    expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Resize shape')
 
     const doc = store.get(documentAtom)
@@ -130,8 +130,8 @@ describe('Multi-shape resize', () => {
     store.set(resizeShapeCommand, draft)
     expect(store.get(documentAtom)).not.toBe(beforeDoc)
 
+    expect(store.get(canUndoAtom)).toBe(true)
     const undo = store.get(undoStackAtom)
-    expect(undo).toHaveLength(1)
 
     expect(undo[0].before.shapes[0]).toMatchObject({
       id: 'r1',

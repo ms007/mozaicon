@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom } from '@/store/atoms/draft'
-import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { canRedoAtom, canUndoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document, Shape } from '@/types/shapes'
@@ -49,7 +49,7 @@ describe('createCommand', () => {
     store.set(noopCommand, null)
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('clears the redo stack on every dispatch', () => {
@@ -69,7 +69,7 @@ describe('createCommand', () => {
 
     store.set(bumpCommand, null)
 
-    expect(store.get(redoStackAtom)).toEqual([])
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 
   it('is a no-op during active gesture', () => {
@@ -87,7 +87,7 @@ describe('createCommand', () => {
     store.set(renameCommand, 'Next')
 
     expect(store.get(documentAtom).name).toBe('Test')
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('handles selection-only commands', () => {
@@ -132,7 +132,7 @@ describe('createCommand', () => {
 
     store.set(selectCommand, ['a'])
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('normalizes selection: dedup, z-order sort, drop stale ids', () => {

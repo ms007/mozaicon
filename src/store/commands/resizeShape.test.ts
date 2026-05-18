@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import type { Document } from '@/types/shapes'
 
 import { resizeShapeCommand } from './resizeShape'
@@ -76,7 +76,7 @@ describe('resizeShapeCommand', () => {
     })
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('does not push history for empty payload', () => {
@@ -86,7 +86,7 @@ describe('resizeShapeCommand', () => {
     store.set(resizeShapeCommand, {})
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('does not push history when id is not found', () => {
@@ -98,7 +98,7 @@ describe('resizeShapeCommand', () => {
     })
 
     expect(store.get(documentAtom)).toBe(before)
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('resizes multiple shapes in a single command', () => {
@@ -129,7 +129,7 @@ describe('resizeShapeCommand', () => {
     const shapes = store.get(documentAtom).shapes
     expect(shapes[0]).toMatchObject({ id: 'r1', x: 2, y: 2, width: 16, height: 12 })
     expect(shapes[1]).toMatchObject({ id: 'r2', x: 8, y: 8, width: 8, height: 8 })
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
   })
 
   it('updates found shapes and ignores missing IDs in mixed payload', () => {
@@ -143,7 +143,7 @@ describe('resizeShapeCommand', () => {
     const shapes = store.get(documentAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ x: 0, y: 0, width: 20, height: 20 })
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
   })
 
   it('skips unchanged shapes in a multi-shape payload', () => {

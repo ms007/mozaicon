@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
@@ -51,7 +51,7 @@ describe('selectShapesCommand', () => {
 
     store.set(selectShapesCommand, ['a'])
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('normalizes selection (dedup, z-order, drop stale)', () => {
@@ -80,7 +80,7 @@ describe('selectShapesCommand', () => {
     store.set(selectShapesCommand, ['gone1', 'gone2'])
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
   })
 
   it('all-stale ids is no-op when selection already empty', () => {
@@ -88,7 +88,7 @@ describe('selectShapesCommand', () => {
 
     store.set(selectShapesCommand, ['gone1', 'gone2'])
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 })
 
@@ -137,7 +137,7 @@ describe('toggleSelectionCommand', () => {
     store.set(toggleSelectionCommand, 'nonexistent')
 
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('removing the last selected item yields empty selection', () => {
@@ -147,7 +147,7 @@ describe('toggleSelectionCommand', () => {
     store.set(toggleSelectionCommand, 'a')
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
   })
 })
 
@@ -175,7 +175,7 @@ describe('clearSelectionCommand', () => {
 
     store.set(clearSelectionCommand, undefined)
 
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('undo restores previous selection', () => {

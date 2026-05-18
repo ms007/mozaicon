@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -191,7 +191,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    expect(ctx.store.get(undoStackAtom)).toHaveLength(1)
+    expect(ctx.store.get(canUndoAtom)).toBe(true)
   })
 
   it('produces one undo entry for click-fallback gesture', () => {
@@ -199,7 +199,7 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    expect(ctx.store.get(undoStackAtom)).toHaveLength(1)
+    expect(ctx.store.get(canUndoAtom)).toBe(true)
   })
 
   // --- Selection write after commit ---

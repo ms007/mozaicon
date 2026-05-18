@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { canRedoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
 
@@ -81,7 +81,7 @@ describe('addShapeCommand', () => {
 
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
-    expect(store.get(redoStackAtom)).toEqual([])
+    expect(store.get(canRedoAtom)).toBe(false)
   })
 
   it('uses the explicit id when provided', () => {

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { documentAtom } from '@/store/atoms/document'
 import { cancelDraftAtom } from '@/store/atoms/draft'
 import { isGestureActiveAtom } from '@/store/atoms/gesture'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import {
   type MarqueeDraft,
   marqueeDraftAtom,
@@ -62,7 +62,7 @@ describe('marquee integration: full drag-past-threshold', () => {
     store.set(clearSelectionCommand, undefined)
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom)).toHaveLength(1)
+    expect(store.get(canUndoAtom)).toBe(true)
     expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
   })
 
@@ -75,7 +75,7 @@ describe('marquee integration: full drag-past-threshold', () => {
     store.set(marqueeDraftAtom, null)
 
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('Shift+drag commits symmetric difference', () => {
@@ -108,7 +108,7 @@ describe('marquee integration: full drag-past-threshold', () => {
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('pointercancel clears draft same as Escape', () => {
@@ -120,7 +120,7 @@ describe('marquee integration: full drag-past-threshold', () => {
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['b'])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 
   it('command dispatch during marquee is a no-op (gesture freeze)', () => {
@@ -131,7 +131,7 @@ describe('marquee integration: full drag-past-threshold', () => {
     store.set(selectShapesCommand, ['c'])
 
     expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom)).toHaveLength(0)
+    expect(store.get(canUndoAtom)).toBe(false)
   })
 })
 

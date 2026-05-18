@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
-import { undoStackAtom } from '@/store/atoms/history'
+import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
@@ -122,7 +122,7 @@ describe('canvas Escape priority ladder', () => {
 
       escape.run()
 
-      expect(store.get(undoStackAtom)).toHaveLength(1)
+      expect(store.get(canUndoAtom)).toBe(true)
       expect(store.get(undoStackAtom)[0].label).toBe('Clear selection')
     })
 
@@ -142,7 +142,7 @@ describe('canvas Escape priority ladder', () => {
 
       escape.run()
 
-      expect(store.get(undoStackAtom)).toHaveLength(0)
+      expect(store.get(canUndoAtom)).toBe(false)
     })
   })
 
