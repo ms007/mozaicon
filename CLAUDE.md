@@ -82,7 +82,7 @@ src/
 
 - **All mutations via commands.** Don't call `set` on primitive atoms from components — dispatch via command atoms in `store/commands/` (use `createCommand`).
 - **Small atoms, derived views.** Prefer many focused atoms + `atom((get) => …)` for computed state over one big atom.
-- **Selection lives outside the document.** Never embed selection in shape data.
+- **Selection is session-local but goes through commands.** Don't embed selection in shape data, and don't `set(selectedIdsAtom, …)` directly from features — dispatch `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`. Selection is a first-class undo step (PRD #119): every effective change pushes one history entry, document mutations that change selection push one combined entry. See `docs/architecture.md` → Selection / Command Pattern.
 
 Details (atomFamily, splitAtom, atomWithImmer, command internals) → `docs/architecture.md`.
 
@@ -101,6 +101,18 @@ Details (atomFamily, splitAtom, atomWithImmer, command internals) → `docs/arch
 3. A `TODO`/`FIXME` with context and a follow-up
 
 If a comment restates what the code already says, delete it. Names, types, and small functions carry the meaning. Never leave commented-out code — git has history.
+
+### Tool Hygiene
+
+Patterns that recurred in past sessions and cost real turns. Apply them by default — only deviate with a reason.
+
+- **Edit, don't rewrite.** Use `Edit` for any change that touches less than ~70% of a file. `Write` is for new files or full rewrites — using it to "edit" risks silently deleting unrelated content.
+- **Read, don't `cat | head | tail`.** Use the `Read` tool with `offset`/`limit` to inspect parts of a file. Long shell pipelines on the same file across turns are wasted round-trips.
+- **Git archaeology in one shot.** To find when a symbol, atom, or behaviour changed, use `git log -S '<symbol>' --oneline -- <path>` or `git log -p -- <path>` once. Don't stash/checkout-loop through commits to bisect by hand.
+- **Baseline before chasing reds.** When tests are red on the working branch, first run `pnpm check` (or the failing subset) on `main` to capture pre-existing failures. Don't fix Storybook a11y or unrelated e2e reds that were broken before your change.
+- **Parallel reads.** Independent `Read`/`Grep`/`Bash` calls go in one message. Sequential is only for genuinely dependent calls (e.g. needing a file path from `Grep` output).
+- **`pnpm check` once per logical iteration.** Run it after a coherent group of edits, not after every single `Edit`. The script takes ~10s; serial `check` loops add up.
+- **LSP for types and references, not diagnostics.** `LSP hover` gives the real inferred type (e.g. `PrimitiveAtom<string | null>` vs. Grep's literal source line) and `LSP findReferences` is scope-aware where Grep matches strings and comments. Use them for "what's the type here" and "where is this used". For TypeScript errors, stay with `pnpm check` — the tool exposes no diagnostics. If `hover` returns `any` on a clearly-typed symbol or `findReferences` finds only the definition, retry once: the language server was indexing.
 
 ## Testing Strategy
 

@@ -319,6 +319,14 @@ test('draws a rect, moves it, exports valid SVG', async ({ page }) => {
 })
 ```
 
+### Playwright Conventions
+
+A few setup-specific gotchas that bite every new spec:
+
+- **Undo is `Control+z`, never `Meta+z`.** Chromium on the Playwright runner doesn't translate `Meta` to the OS-level command modifier on macOS, so `Meta+z` is silently a no-op. Use `await page.keyboard.press('Control+z')` everywhere.
+- **Always activate the tool first.** `activeToolAtom` is `string | null` and starts `null`. Tools like `rect` are one-shot — they unset themselves after one drag. A direct pointerdown on the canvas without an active tool falls through to marquee-select, not draw. Use the `activateRectTool(page)` helper in `e2e/helpers.ts` (presses `r`) before any canvas pointer interaction that's meant to draw, and re-activate it between successive draws.
+- **Use the keyboard, not the toolbar button.** Tool palette buttons may move; keyboard shortcuts are stable.
+
 ### Visual Regression
 
 Playwright can capture screenshots:
