@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { canRedoAtom, canUndoAtom, redoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import type { Document } from '@/types/shapes'
@@ -94,11 +94,16 @@ describe('undoCommand', () => {
   it('is a no-op during active gesture', () => {
     const store = makeStore()
     store.set(renameCommand, 'B')
-    store.set(activeDragAtom, {
-      toolId: 'test',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Draft',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
     })
 
     store.set(undoCommand)
@@ -164,11 +169,16 @@ describe('redoCommand', () => {
     const store = makeStore()
     store.set(renameCommand, 'B')
     store.set(undoCommand)
-    store.set(activeDragAtom, {
-      toolId: 'test',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Draft',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
     })
 
     store.set(redoCommand)
@@ -192,11 +202,16 @@ describe('canUndoAtom / canRedoAtom', () => {
   it('canUndoAtom is false during active gesture even with stack', () => {
     const store = makeStore()
     store.set(renameCommand, 'B')
-    store.set(activeDragAtom, {
-      toolId: 'test',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Draft',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
     })
     expect(store.get(canUndoAtom)).toBe(false)
   })
@@ -205,11 +220,16 @@ describe('canUndoAtom / canRedoAtom', () => {
     const store = makeStore()
     store.set(renameCommand, 'B')
     store.set(undoCommand)
-    store.set(activeDragAtom, {
-      toolId: 'test',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Draft',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
     })
     expect(store.get(canRedoAtom)).toBe(false)
   })

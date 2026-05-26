@@ -1,7 +1,7 @@
 import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { renderHookWithStore } from '@/test/renderWithStore'
 
@@ -32,12 +32,6 @@ describe('useToolLifecycle', () => {
   it('calls onDeactivate on the previous tool when switching away mid-draft', () => {
     const { store, result } = setup('rect')
 
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    })
     store.set(draftShapeAtom, {
       type: 'rect',
       id: '__draft__',
@@ -56,42 +50,52 @@ describe('useToolLifecycle', () => {
     })
 
     expect(result.current).toBeUndefined()
-    expect(store.get(activeDragAtom)).toBeNull()
     expect(store.get(draftShapeAtom)).toBeNull()
   })
 
   it('does not call onDeactivate when switching to the same tool', () => {
     const { store } = setup('rect')
 
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Rect',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      fill: '#000',
     })
 
     act(() => {
       store.set(activeToolAtom, 'rect')
     })
 
-    expect(store.get(activeDragAtom)).not.toBeNull()
+    expect(store.get(draftShapeAtom)).not.toBeNull()
   })
 
   it('calls onDeactivate on unmount mid-draft', () => {
     const { store, unmount } = setup('rect')
 
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
+    store.set(draftShapeAtom, {
+      type: 'rect',
+      id: '__draft__',
+      name: 'Rect',
+      visible: true,
+      locked: false,
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      fill: '#000',
     })
 
     act(() => {
       unmount()
     })
 
-    expect(store.get(activeDragAtom)).toBeNull()
     expect(store.get(draftShapeAtom)).toBeNull()
   })
 })

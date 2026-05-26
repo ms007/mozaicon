@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { cancelDraftAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
@@ -18,7 +18,11 @@ const stubConfig: DragToolConfig<BoxGeometry> = {
 }
 
 describe('createDragTool', () => {
-  const tool = createDragTool(stubConfig)
+  let tool: ReturnType<typeof createDragTool<BoxGeometry>>
+
+  beforeEach(() => {
+    tool = createDragTool(stubConfig)
+  })
 
   it('exposes toolId and cursorClass from config', () => {
     expect(tool.id).toBe('stub-box')
@@ -30,7 +34,7 @@ describe('createDragTool', () => {
   it('ignores non-primary button on pointerdown', () => {
     const ctx = makeCtx()
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }, { buttons: 2 }))
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   // --- Single-active-drag guard ---
@@ -39,8 +43,9 @@ describe('createDragTool', () => {
     const ctx = makeCtx()
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerDown(ctx, ev({ x: 20, y: 20 }, { x: 300, y: 300 }, { pointerId: 2 }))
-    const drag = ctx.store.get(activeDragAtom)
-    expect(drag?.startViewBox).toEqual({ x: 5, y: 5 })
+    tool.onPointerMove(ctx, ev({ x: 12, y: 12 }, { x: 200, y: 200 }))
+    const draft = ctx.store.get(draftShapeAtom)
+    expect(draft).toMatchObject({ x: 5, y: 5 })
   })
 
   // --- Down/move/up flow ---
@@ -48,12 +53,7 @@ describe('createDragTool', () => {
   it('starts drag on primary pointerdown', () => {
     const ctx = makeCtx()
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
-    expect(ctx.store.get(activeDragAtom)).toEqual({
-      toolId: 'stub-box',
-      pointerId: 1,
-      startViewBox: { x: 5, y: 5 },
-      startScreen: { x: 100, y: 100 },
-    })
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(true)
   })
 
   it('creates draft on move beyond threshold', () => {
@@ -121,7 +121,7 @@ describe('createDragTool', () => {
     const ctx = makeCtx()
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 10 }, { x: 200, y: 200 }, { pointerId: 99 }))
-    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(true)
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
   })
 
@@ -164,23 +164,23 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
     expect(ctx.store.get(draftShapeAtom)).not.toBeNull()
-    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(true)
 
     tool.onDeactivate?.(ctx)
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   it('deactivation is a no-op when no drag is active', () => {
     const ctx = makeCtx()
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
 
     tool.onDeactivate?.(ctx)
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   // --- Single-undo-entry guarantee ---
@@ -223,7 +223,7 @@ describe('createDragTool', () => {
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   // --- shouldHandlePointerMove predicate ---
@@ -300,7 +300,7 @@ describe('createDragTool', () => {
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5, width: 2, height: 2 })
     expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
   })
 
@@ -343,7 +343,7 @@ describe('createDragTool', () => {
     expect(shapes[0]).toMatchObject({ width: 2, height: 2 })
     expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   // --- Drag-back-to-start uses click-fallback ---
@@ -362,7 +362,7 @@ describe('createDragTool', () => {
     // Gets click-fallback geometry (w:2, h:2), not the dragged geometry
     expect(shapes[0]).toMatchObject({ width: 2, height: 2 })
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   // --- Modifiers pass-through ---
@@ -470,5 +470,70 @@ describe('createDragTool', () => {
 
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
     expect(ctx.store.get(selectedIdsAtom)).toEqual(['pre-existing'])
+  })
+
+  // --- External cancel (e.g. Escape clearing draftShapeAtom) ---
+
+  it('resets closure on next move after external cancel mid-drag', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    expect(ctx.store.get(draftShapeAtom)).not.toBeNull()
+
+    ctx.store.set(cancelDraftAtom)
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+
+    tool.onPointerMove(ctx, ev({ x: 12, y: 10 }, { x: 220, y: 220 }))
+
+    expect(ctx.store.get(draftShapeAtom)).toBeNull()
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
+  })
+
+  it('does not commit shape on pointerUp after external cancel', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+
+    ctx.store.set(cancelDraftAtom)
+
+    tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+
+    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
+  })
+
+  it('starts a fresh gesture after external cancel', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    ctx.store.set(cancelDraftAtom)
+    tool.onPointerMove(ctx, ev({ x: 12, y: 10 }, { x: 220, y: 220 }))
+
+    tool.onPointerDown(ctx, ev({ x: 20, y: 20 }, { x: 300, y: 300 }))
+    tool.onPointerMove(ctx, ev({ x: 28, y: 26 }, { x: 400, y: 400 }))
+    tool.onPointerUp(ctx, ev({ x: 28, y: 26 }, { x: 400, y: 400 }))
+
+    const shapes = ctx.store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0]).toMatchObject({ x: 20, y: 20, width: 8, height: 6 })
+  })
+
+  it('recovers from stale closure after pointercancel clears only atom state', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+
+    // Simulate pointercancel: clears draftShapeAtom via cancelDraftAtom
+    // but cannot reach the closure's activeDrag
+    ctx.store.set(cancelDraftAtom)
+
+    tool.onPointerDown(ctx, ev({ x: 10, y: 10 }, { x: 300, y: 300 }))
+    expect(tool.shouldHandlePointerMove?.(ctx)).toBe(true)
+
+    tool.onPointerMove(ctx, ev({ x: 18, y: 16 }, { x: 400, y: 400 }))
+    tool.onPointerUp(ctx, ev({ x: 18, y: 16 }, { x: 400, y: 400 }))
+
+    const shapes = ctx.store.get(documentAtom).shapes
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0]).toMatchObject({ x: 10, y: 10, width: 8, height: 6 })
   })
 })

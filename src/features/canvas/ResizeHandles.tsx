@@ -2,9 +2,9 @@ import { useAtomValue } from 'jotai'
 
 import type { Rect } from '@/lib/geometry/rect'
 import { viewBoxScaleAtom } from '@/store/atoms/canvas'
-import { isMarqueeActiveAtom } from '@/store/atoms/marquee-draft'
-import { isMovingAtom } from '@/store/atoms/move-draft'
-import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
+import { isMarqueeActiveAtom } from '@/store/atoms/gestures/marquee'
+import { isMovingAtom } from '@/store/atoms/gestures/move'
+import { displayedSelectionBboxFromRegistryAtom as displayedSelectionBboxAtom } from '@/store/atoms/gestures/registry'
 
 import { type HandlePosition, useResizeGesture } from './useResizeGesture'
 

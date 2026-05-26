@@ -1,15 +1,17 @@
 import { createStore } from 'jotai'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { Rect } from '@/lib/geometry/rect'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { canUndoAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import type { Document } from '@/types/shapes'
 
-import { geometryFromDrag, rectTool } from './rect'
+import { createDragTool } from './createDragTool'
+import { geometryFromDrag } from './rect'
 import type { Modifiers, ToolCtx, ToolEvent } from './registry'
 
 const NO_MODIFIERS: Modifiers = { shift: false, alt: false, meta: false, ctrl: false }
@@ -133,31 +135,55 @@ function event(point: Vec2, screenPoint: Vec2, overrides: Partial<ToolEvent> = {
   }
 }
 
+const DEFAULT_SIZE = 4
+
+function createRectTool() {
+  return createDragTool<Rect>({
+    toolId: 'rect',
+    cursorClass: 'cursor-crosshair',
+    geometryFromDrag,
+    clickFallbackGeometry: (point) => ({
+      x: point.x,
+      y: point.y,
+      width: DEFAULT_SIZE,
+      height: DEFAULT_SIZE,
+    }),
+    geometryEquals: (a, b) =>
+      a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height,
+    buildShape: (geo, styles) => ({
+      type: 'rect' as const,
+      ...styles,
+      ...geo,
+    }),
+  })
+}
+
 describe('rectTool lifecycle', () => {
+  let rectTool: ReturnType<typeof createRectTool>
+
+  beforeEach(() => {
+    rectTool = createRectTool()
+  })
+
   it('ignores non-primary button', () => {
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }, { buttons: 2 }))
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   it('starts a drag on primary pointerdown', () => {
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }))
-    expect(ctx.store.get(activeDragAtom)).toEqual({
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 5, y: 5 },
-      startScreen: { x: 100, y: 100 },
-    })
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(true)
   })
 
   it('does not start a second drag while one is active', () => {
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }))
     rectTool.onPointerDown(ctx, event({ x: 10, y: 10 }, { x: 200, y: 200 }, { pointerId: 2 }))
-    const drag = ctx.store.get(activeDragAtom)
-    expect(drag).not.toBeNull()
-    expect(drag?.startViewBox).toEqual({ x: 5, y: 5 })
+    rectTool.onPointerMove(ctx, event({ x: 12, y: 12 }, { x: 200, y: 200 }))
+    const draft = ctx.store.get(draftShapeAtom)
+    expect(draft).toMatchObject({ x: 5, y: 5 })
   })
 
   it('creates draft on move beyond threshold', () => {
@@ -221,7 +247,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerUp(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   it('produces exactly one undo entry per gesture', () => {
@@ -237,8 +263,7 @@ describe('rectTool lifecycle', () => {
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
     rectTool.onPointerUp(ctx, event({ x: 10, y: 10 }, { x: 200, y: 200 }, { pointerId: 99 }))
-    // drag is still active, no shape committed
-    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(true)
     expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
   })
 
@@ -282,46 +307,54 @@ describe('rectTool lifecycle', () => {
 })
 
 describe('rectTool.onDeactivate', () => {
-  const { onDeactivate } = rectTool
+  let rectTool: ReturnType<typeof createRectTool>
+
+  beforeEach(() => {
+    rectTool = createRectTool()
+  })
 
   it('clears draft and drag when a draft is active', () => {
-    expect(onDeactivate).toBeDefined()
+    expect(rectTool.onDeactivate).toBeDefined()
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
     rectTool.onPointerMove(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
     expect(ctx.store.get(draftShapeAtom)).not.toBeNull()
-    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(true)
 
-    onDeactivate?.(ctx)
+    rectTool.onDeactivate?.(ctx)
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
   it('is a no-op when no draft is active', () => {
     const ctx = makeCtx()
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
 
-    onDeactivate?.(ctx)
+    rectTool.onDeactivate?.(ctx)
 
     expect(ctx.store.get(draftShapeAtom)).toBeNull()
-    expect(ctx.store.get(activeDragAtom)).toBeNull()
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 })
 
 describe('rectTool.shouldHandlePointerMove', () => {
-  const { shouldHandlePointerMove } = rectTool
+  let rectTool: ReturnType<typeof createRectTool>
+
+  beforeEach(() => {
+    rectTool = createRectTool()
+  })
 
   it('returns true when a drag is active', () => {
-    expect(shouldHandlePointerMove).toBeDefined()
+    expect(rectTool.shouldHandlePointerMove).toBeDefined()
     const ctx = makeCtx()
     rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }))
-    expect(shouldHandlePointerMove?.(ctx)).toBe(true)
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(true)
   })
 
   it('returns false when no drag is active', () => {
     const ctx = makeCtx()
-    expect(shouldHandlePointerMove?.(ctx)).toBe(false)
+    expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 })

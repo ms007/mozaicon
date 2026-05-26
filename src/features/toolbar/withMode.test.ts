@@ -1,5 +1,5 @@
 import { createStore } from 'jotai'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { createDragTool } from '@/features/toolbar/tools/createDragTool'
 import {
@@ -11,17 +11,25 @@ import {
 } from '@/features/toolbar/tools/dragToolHarness'
 import type { ToolCtx } from '@/features/toolbar/tools/registry'
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom, cancelDraftAtom } from '@/store/atoms/draft'
+import { cancelDraftAtom } from '@/store/atoms/draft'
 import { restoreSelectionAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
 
 import { withMode } from './withMode'
 
-const innerTool = createDragTool<BoxGeometry>({ ...baseBoxConfig, toolId: 'wrapped-box' })
+function createInnerTool() {
+  return createDragTool<BoxGeometry>({ ...baseBoxConfig, toolId: 'wrapped-box' })
+}
 
 describe('withMode — sticky', () => {
-  const tool = withMode(innerTool, 'sticky')
+  let innerTool: ReturnType<typeof createInnerTool>
+  let tool: ReturnType<typeof withMode>
+
+  beforeEach(() => {
+    innerTool = createInnerTool()
+    tool = withMode(innerTool, 'sticky')
+  })
 
   it('returns the same tool reference (no wrapping)', () => {
     expect(tool).toBe(innerTool)
@@ -37,7 +45,13 @@ describe('withMode — sticky', () => {
 })
 
 describe('withMode — oneShot', () => {
-  const tool = withMode(innerTool, 'oneShot')
+  let innerTool: ReturnType<typeof createInnerTool>
+  let tool: ReturnType<typeof withMode>
+
+  beforeEach(() => {
+    innerTool = createInnerTool()
+    tool = withMode(innerTool, 'oneShot')
+  })
 
   it('calls completeTool after successful drag-to-draw', () => {
     const ctx = makeCtx()
@@ -71,7 +85,7 @@ describe('withMode — oneShot', () => {
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }, { pointerId: 99 }))
 
-    expect(ctx.store.get(activeDragAtom)).not.toBeNull()
+    expect(innerTool.shouldHandlePointerMove?.(ctx)).toBe(true)
     expect(ctx.completeTool).not.toHaveBeenCalled()
   })
 
@@ -83,7 +97,7 @@ describe('withMode — oneShot', () => {
   })
 
   it('does not call completeTool when the draft was cancelled before pointer release', () => {
-    // Escape mid-drag clears activeDragAtom — by the time pointerup arrives,
+    // Escape mid-drag clears the draft — by the time pointerup arrives,
     // there is no in-flight gesture, so the wrapper must not complete the tool.
     const ctx = makeCtx()
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
@@ -94,11 +108,24 @@ describe('withMode — oneShot', () => {
 
     expect(ctx.completeTool).not.toHaveBeenCalled()
   })
+
+  it('calls completeTool on the next gesture after an external cancel', () => {
+    const ctx = makeCtx()
+    tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
+    tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
+    ctx.store.set(cancelDraftAtom)
+    tool.onPointerMove(ctx, ev({ x: 12, y: 10 }, { x: 220, y: 220 }))
+
+    tool.onPointerDown(ctx, ev({ x: 20, y: 20 }, { x: 300, y: 300 }))
+    tool.onPointerUp(ctx, ev({ x: 20, y: 20 }, { x: 301, y: 300 }))
+
+    expect(ctx.completeTool).toHaveBeenCalledOnce()
+  })
 })
 
 describe('withMode — undo does not restore active tool', () => {
   it('undoing the shape leaves activeToolAtom at null', () => {
-    const tool = withMode(innerTool, 'oneShot')
+    const tool = withMode(createInnerTool(), 'oneShot')
     const ctx: ToolCtx = {
       store: createStore(),
       completeTool: () => {

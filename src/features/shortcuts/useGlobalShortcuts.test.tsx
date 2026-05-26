@@ -4,7 +4,7 @@ import { type PropsWithChildren } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { activeToolAtom } from '@/store/atoms/tool'
 import type { Document, RectShape } from '@/types/shapes'
 
@@ -179,17 +179,10 @@ describe('useGlobalShortcuts', () => {
     const { store } = setup()
     store.set(activeToolAtom, 'rect')
     store.set(draftShapeAtom, draft)
-    store.set(activeDragAtom, {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    })
 
     fireKey('Escape')
 
     expect(store.get(draftShapeAtom)).toBeNull()
-    expect(store.get(activeDragAtom)).toBeNull()
     expect(store.get(activeToolAtom)).toBe('rect')
   })
 

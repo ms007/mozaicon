@@ -199,7 +199,7 @@ Atoms in the store fall into two categories with different mutation rules:
 
 **Document state** (`documentAtom`): the SVG being edited. Mutations must go through commands so they're undoable.
 
-**UI state** (`activeToolAtom`, `draftShapeAtom`, `activeDragAtom`, `resizeDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
+**UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
 **Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the document. Selection therefore lives on the _same_ history stack as the document. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the document, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the document axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
@@ -360,7 +360,7 @@ export const redoCommand = atom(null, (get, set) => {
 
 Both meta-commands also restore selection via `restoreSelectionAtom` (`entry.selectionBefore` on undo, `entry.selectionAfter` on redo) — omitted above for brevity.
 
-**History is frozen during an Active Gesture.** _All_ commands no-op while a drag-to-draw, drag-to-move, resize, or drag-to-select is in flight (`get(isGestureActiveAtom)` is true) — document, selection, and combined alike — and `undoCommand`/`redoCommand` are frozen along with them. `isGestureActiveAtom` is the union of all draft signals — `activeDragAtom`, `resizeDraftAtom`, and `marqueeDraftAtom` are all non-null exclusively during their respective gestures, and any of them being non-null freezes history. The freeze lives in `createCommand` itself, not only in the meta-commands, so a stray background event (layers-panel click, `Cmd+A`, programmatic selection) can't yank state out from under the gesture. The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
+**History is frozen during an Active Gesture.** _All_ commands no-op while a drag-to-draw, drag-to-move, resize, or drag-to-select is in flight (`get(isGestureActiveAtom)` is true) — document, selection, and combined alike — and `undoCommand`/`redoCommand` are frozen along with them. `isGestureActiveAtom` (re-exported from the _Gesture Registry_'s `isAnyGestureActiveAtom`) is true whenever any registered adapter's draft atom is non-null. The freeze lives in `createCommand` itself, not only in the meta-commands, so a stray background event (layers-panel click, `Cmd+A`, programmatic selection) can't yank state out from under the gesture. The pending change isn't in history yet — it only commits on `pointerup` via a single command — so rewinding mid-gesture would mix half-drafted UI state with a rewound document. To cancel a gesture, use Escape (separate mechanism). `canUndoAtom` and `canRedoAtom` fold in the same check, so the toolbar buttons grey out automatically.
 
 History stacks are unbounded. Memory cost is bounded in practice by Immer's structural sharing — `before` and `after` reuse every unmodified shape sub-tree — and by the small size of typical icon documents. If long sessions become an observed problem, revisit with data rather than a preemptive cap.
 
@@ -368,11 +368,17 @@ The `label` field on `HistoryEntry` is currently consumed only by tests and dev 
 
 ## Cancellation & Escape Priority
 
-The store distinguishes "an effective change is committing" from "a gesture is in flight" via `isGestureActiveAtom` (`src/store/atoms/draft.ts`). It is the union of every draft signal in the system — `activeDragAtom`, `resizeDraftAtom`, `marqueeDraftAtom`, `moveDraftAtom` — true exactly when at least one is non-null. Adding a new pointer-driven gesture means adding its draft atom to this union; nothing else.
+### Gesture Registry (`src/store/atoms/gestures/registry.ts`)
 
-The freeze it powers lives in `createCommand` itself, not only in `undoCommand` / `redoCommand`. While an _Active Gesture_ runs, every command dispatch — document, selection, combined — is a no-op. A stray background event (layers-panel click, `Cmd+A`, a programmatic selection write) cannot mutate state mid-drag.
+The gesture registry is the single source of truth for "which gestures exist and which is active". It is an ordered list of `GestureAdapter` objects — currently Marquee → Resize → Move → Draw — each wrapping a draft atom and an optional `displayBbox` callback. The core invariant is **Active Gesture iff draft atom is non-null**: a gesture is in flight exactly when its adapter's draft atom holds a value, and at most one adapter is active at any time (each pointer-driven hook owns a single `dragRef` and the hooks all listen on the same `window` pointer events). The at-most-one-active invariant is verified by a contract test in `registry.test.ts`.
 
-`cancelDraftAtom` is gesture-agnostic: one write clears every draft atom. The invariant that makes this safe is that at most one gesture is in flight at any time — each pointer-driven hook owns a single `dragRef`, and the hooks all listen on the same `window` pointer events. One Cancel covers them all.
+Three derived atoms are computed from the registry:
+
+- **`isAnyGestureActiveAtom`** — `true` iff any adapter's draft is non-null. Powers the command freeze in `createCommand`: while an _Active Gesture_ runs, every command dispatch — document, selection, combined — is a no-op. The freeze lives in `createCommand` itself, not only in `undoCommand` / `redoCommand`, so a stray background event (layers-panel click, `Cmd+A`, a programmatic selection write) cannot mutate state mid-drag.
+- **`displayedSelectionBboxFromRegistryAtom`** — resolves what selection bbox to render by iterating adapters in precedence order. Each active adapter's `displayBbox` returns a `DisplayContribution`, a tagged union with three variants: `rect` (override with a concrete rect), `hide` (suppress the bbox entirely — returns `null`), `passThrough` (skip this adapter, continue to the next). If no adapter is active or all pass through, the atom falls back to `selectionBboxAtom`. Precedence order means Marquee's contribution always wins over Resize, Resize over Move, etc.
+- **`cancelGesturesAtom`** — one write sets every adapter's draft to `null`. Safe because at most one gesture is active at any time — one Cancel covers them all.
+
+Adding a new pointer-driven gesture means writing a `GestureAdapter` (draft atom + optional `displayBbox`) and inserting it at the correct precedence position in the registry list.
 
 `Escape` is a priority ladder, evaluated in `bindings.ts` (`canvas.escape`) with **early return after the first matching tier**:
 

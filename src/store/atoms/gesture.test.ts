@@ -1,11 +1,26 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { type ActiveDrag, activeDragAtom } from './draft'
+import type { RectShape } from '@/types/shapes'
+
+import { draftShapeAtom } from './draft'
 import { isGestureActiveAtom } from './gesture'
 import { marqueeDraftAtom } from './marquee-draft'
 import { moveDraftAtom } from './move-draft'
 import { resizeDraftAtom } from './resize-draft'
+
+const draftRect: RectShape = {
+  type: 'rect',
+  id: '__draft__',
+  name: 'Rect',
+  visible: true,
+  locked: false,
+  x: 2,
+  y: 2,
+  width: 8,
+  height: 6,
+  fill: '#000',
+}
 
 describe('isGestureActiveAtom', () => {
   it('returns false when no gesture is active', () => {
@@ -13,15 +28,9 @@ describe('isGestureActiveAtom', () => {
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 
-  it('returns true when activeDragAtom is set', () => {
+  it('returns true when draftShapeAtom is set', () => {
     const store = createStore()
-    const drag: ActiveDrag = {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    }
-    store.set(activeDragAtom, drag)
+    store.set(draftShapeAtom, draftRect)
     expect(store.get(isGestureActiveAtom)).toBe(true)
   })
 
@@ -31,30 +40,18 @@ describe('isGestureActiveAtom', () => {
     expect(store.get(isGestureActiveAtom)).toBe(true)
   })
 
-  it('returns true when both activeDrag and resizeDraft are set', () => {
+  it('returns true when both draftShape and resizeDraft are set', () => {
     const store = createStore()
-    const drag: ActiveDrag = {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    }
-    store.set(activeDragAtom, drag)
+    store.set(draftShapeAtom, draftRect)
     store.set(resizeDraftAtom, { shape1: { x: 0, y: 0, width: 10, height: 10 } })
     expect(store.get(isGestureActiveAtom)).toBe(true)
   })
 
-  it('remains true when activeDrag is cleared but resizeDraft is active', () => {
+  it('remains true when draftShape is cleared but resizeDraft is active', () => {
     const store = createStore()
-    const drag: ActiveDrag = {
-      toolId: 'rect',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    }
-    store.set(activeDragAtom, drag)
+    store.set(draftShapeAtom, draftRect)
     store.set(resizeDraftAtom, { shape1: { x: 0, y: 0, width: 10, height: 10 } })
-    store.set(activeDragAtom, null)
+    store.set(draftShapeAtom, null)
     expect(store.get(isGestureActiveAtom)).toBe(true)
   })
 
@@ -102,6 +99,13 @@ describe('isGestureActiveAtom', () => {
     const store = createStore()
     store.set(moveDraftAtom, { ids: ['s1'], dx: 5, dy: 5 })
     store.set(moveDraftAtom, null)
+    expect(store.get(isGestureActiveAtom)).toBe(false)
+  })
+
+  it('returns false after draftShapeAtom is cleared', () => {
+    const store = createStore()
+    store.set(draftShapeAtom, draftRect)
+    store.set(draftShapeAtom, null)
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 })

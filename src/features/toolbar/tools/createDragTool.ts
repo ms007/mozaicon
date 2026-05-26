@@ -1,16 +1,17 @@
 import { DRAG_THRESHOLD_PX, screenDistance } from '@/lib/geometry/distance'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { newId } from '@/lib/ids'
-import {
-  activeDragAtom,
-  cancelDraftAtom,
-  DRAFT_SHAPE_ID,
-  draftShapeAtom,
-} from '@/store/atoms/draft'
+import { cancelDraftAtom, DRAFT_SHAPE_ID, draftShapeAtom } from '@/store/atoms/draft'
 import { type StyleDefaults, styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import { addShapeCommand, type AddShapePayload, materializeShape } from '@/store/commands/addShape'
 
 import type { DrawTool, Modifiers } from './registry'
+
+type ClosureDrag = {
+  pointerId: number
+  startViewBox: Vec2
+  startScreen: Vec2
+}
 
 export type DragToolConfig<G> = {
   toolId: string
@@ -23,35 +24,46 @@ export type DragToolConfig<G> = {
 
 export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
   let lastGeometry: G | null = null
+  let activeDrag: ClosureDrag | null = null
+
+  function resetClosure() {
+    activeDrag = null
+    lastGeometry = null
+  }
 
   const tool: DrawTool = {
     id: config.toolId,
     cursorClass: config.cursorClass,
 
-    onPointerDown(ctx, event) {
+    onPointerDown(_ctx, event) {
       if (event.buttons !== 1) return
+      if (activeDrag) {
+        // Recover from stale closure: pointercancel can clear the draft atom
+        // without reaching the closure. Same pointerId proves the gesture ended.
+        if (activeDrag.pointerId !== event.pointerId) return
+        resetClosure()
+      }
 
-      const existing = ctx.store.get(activeDragAtom)
-      if (existing) return
-
-      lastGeometry = null
-      ctx.store.set(activeDragAtom, {
-        toolId: config.toolId,
+      activeDrag = {
         pointerId: event.pointerId,
         startViewBox: event.point,
         startScreen: event.screenPoint,
-      })
+      }
     },
 
     onPointerMove(ctx, event) {
-      const drag = ctx.store.get(activeDragAtom)
-      if (!drag) return
-      if (event.pointerId !== drag.pointerId) return
+      if (!activeDrag) return
+      if (event.pointerId !== activeDrag.pointerId) return
 
-      const dist = screenDistance(drag.startScreen, event.screenPoint)
+      if (lastGeometry && ctx.store.get(draftShapeAtom) === null) {
+        resetClosure()
+        return
+      }
+
+      const dist = screenDistance(activeDrag.startScreen, event.screenPoint)
       if (dist < DRAG_THRESHOLD_PX) return
 
-      const geo = config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
+      const geo = config.geometryFromDrag(activeDrag.startViewBox, event.point, event.modifiers)
 
       if (lastGeometry && config.geometryEquals(lastGeometry, geo)) return
 
@@ -63,35 +75,37 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
     },
 
     onPointerUp(ctx, event) {
-      const drag = ctx.store.get(activeDragAtom)
-      if (drag && event.pointerId !== drag.pointerId) return
+      if (!activeDrag) return
+      if (event.pointerId !== activeDrag.pointerId) return
 
-      if (drag) {
-        const dist = screenDistance(drag.startScreen, event.screenPoint)
-        const isClick = dist < DRAG_THRESHOLD_PX
+      const drag = activeDrag
+      const draftWasBuilt = lastGeometry !== null
+      resetClosure()
 
-        const geo: G = isClick
-          ? config.clickFallbackGeometry(drag.startViewBox)
-          : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
-        const id = newId()
-        const styles = ctx.store.get(styleDefaultsAtom)
-
-        // Order matters: cancelDraftAtom clears activeDragAtom, which lets
-        // createCommand's gesture-active guard pass for the addShape dispatch.
-        ctx.store.set(cancelDraftAtom)
-        lastGeometry = null
-
-        ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
+      if (draftWasBuilt && ctx.store.get(draftShapeAtom) === null) {
+        return
       }
+
+      const dist = screenDistance(drag.startScreen, event.screenPoint)
+      const isClick = dist < DRAG_THRESHOLD_PX
+
+      const geo: G = isClick
+        ? config.clickFallbackGeometry(drag.startViewBox)
+        : config.geometryFromDrag(drag.startViewBox, event.point, event.modifiers)
+      const id = newId()
+      const styles = ctx.store.get(styleDefaultsAtom)
+
+      ctx.store.set(cancelDraftAtom)
+      ctx.store.set(addShapeCommand, { ...config.buildShape(geo, styles), id })
     },
 
     onDeactivate(ctx) {
+      resetClosure()
       ctx.store.set(cancelDraftAtom)
-      lastGeometry = null
     },
 
-    shouldHandlePointerMove(ctx) {
-      return !!ctx.store.get(activeDragAtom)
+    shouldHandlePointerMove() {
+      return activeDrag !== null
     },
   }
 

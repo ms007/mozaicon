@@ -1,8 +1,10 @@
 import type { createStore } from 'jotai'
 
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
-import { cancelDraftAtom } from '@/store/atoms/draft'
-import { isGestureActiveAtom } from '@/store/atoms/gesture'
+import {
+  cancelGesturesAtom as cancelDraftAtom,
+  isAnyGestureActiveAtom as isGestureActiveAtom,
+} from '@/store/atoms/gestures/registry'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { clearSelectionCommand } from '@/store/commands/selectionCommands'

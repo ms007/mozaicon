@@ -1,7 +1,7 @@
 import { useAtomValue } from 'jotai'
 
 import { ResizeHandles } from '@/features/canvas/ResizeHandles'
-import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
+import { displayedSelectionBboxFromRegistryAtom as displayedSelectionBboxAtom } from '@/store/atoms/gestures/registry'
 
 export function SelectionOverlay({ svgRef }: { svgRef: React.RefObject<SVGSVGElement | null> }) {
   const bbox = useAtomValue(displayedSelectionBboxAtom)

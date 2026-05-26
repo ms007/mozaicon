@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom, draftShapeAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
@@ -74,22 +74,15 @@ describe('canvas Escape priority ladder', () => {
       expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     })
 
-    it('clears active drag draft without clearing selection or tool', () => {
+    it('clears active draw draft without clearing selection or tool', () => {
       const { store, escape } = setup()
       store.set(activeToolAtom, 'rect')
       store.set(selectShapesCommand, ['s1'])
       store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 2, y: 2, width: 8, height: 6 }))
-      store.set(activeDragAtom, {
-        toolId: 'rect',
-        pointerId: 1,
-        startViewBox: { x: 0, y: 0 },
-        startScreen: { x: 0, y: 0 },
-      })
 
       escape.run()
 
       expect(store.get(draftShapeAtom)).toBeNull()
-      expect(store.get(activeDragAtom)).toBeNull()
       expect(store.get(activeToolAtom)).toBe('rect')
       expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     })
@@ -154,7 +147,7 @@ describe('canvas Escape priority ladder', () => {
 
     escape.run()
 
-    expect(store.get(activeDragAtom)).toBeNull()
+    expect(store.get(draftShapeAtom)).toBeNull()
     expect(store.get(resizeDraftAtom)).toBeNull()
     expect(store.get(marqueeDraftAtom)).toBeNull()
     expect(store.get(moveDraftAtom)).toBeNull()

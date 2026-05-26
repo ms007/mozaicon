@@ -2,7 +2,7 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
-import { activeDragAtom } from '@/store/atoms/draft'
+import { draftShapeAtom } from '@/store/atoms/draft'
 import { canRedoAtom, canUndoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
@@ -78,12 +78,7 @@ describe('createCommand', () => {
       document: { ...doc, name },
     }))
     const store = makeStore()
-    store.set(activeDragAtom, {
-      toolId: 'test',
-      pointerId: 1,
-      startViewBox: { x: 0, y: 0 },
-      startScreen: { x: 0, y: 0 },
-    })
+    store.set(draftShapeAtom, makeRect({ id: '__draft__', name: 'Draft' }))
 
     store.set(renameCommand, 'Next')
 
