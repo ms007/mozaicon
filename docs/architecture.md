@@ -390,6 +390,8 @@ The ladder is "one step up" — Escape never reaches past the first tier that ap
 
 ## Rendering the Canvas
 
+Static visual scaffolding (surface hierarchy, Artboard, Pixel Grid, the Canvas-is-SVG invariant) is documented in [`canvas-chrome.md`](./canvas-chrome.md). This section covers the gesture-driven rendering pipeline — how atoms project into DOM and how draft overlays layer on top.
+
 The canvas uses `splitAtom` so each shape subscribes only to itself:
 
 ```tsx

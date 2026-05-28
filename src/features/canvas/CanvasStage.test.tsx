@@ -36,7 +36,7 @@ describe('CanvasStage', () => {
       store.set(documentAtom, seededDoc)
     })
 
-    const rect = container.querySelector('rect')
+    const rect = container.querySelector('rect[fill="#000"]')
     expect(rect).not.toBeNull()
     expect(rect?.getAttribute('x')).toBe('4')
     expect(rect?.getAttribute('y')).toBe('4')
@@ -66,7 +66,16 @@ describe('CanvasStage', () => {
       store.set(documentAtom, doc)
     })
 
-    expect(container.querySelectorAll('rect')).toHaveLength(2)
+    expect(container.querySelectorAll('rect[fill="#000"]')).toHaveLength(2)
+  })
+
+  it('sets overflow visible so edge grid dots are not clipped', () => {
+    const { container } = renderWithStore(<CanvasStage />, (store) => {
+      store.set(documentAtom, seededDoc)
+    })
+
+    const svg = container.querySelector('svg')
+    expect(svg?.getAttribute('overflow')).toBe('visible')
   })
 
   it('applies no tool cursor when no tool is active', () => {
@@ -105,7 +114,10 @@ describe('CanvasStage', () => {
       })
     })
 
-    expect(container.querySelectorAll('rect')).toHaveLength(2)
+    // Exactly the draft shape rect + the selection-overlay bbox; the pixel-grid
+    // covering rect is excluded since it always renders.
+    expect(container.querySelectorAll('rect:not([data-testid="pixel-grid"])')).toHaveLength(2)
+    expect(container.querySelector('rect[fill="#000"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="selection-overlay"]')).not.toBeNull()
   })
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { CANVAS_SELECTOR, drawRect, getBox } from './helpers'
+import { CANVAS_SELECTOR, drawRect, getBox, SHAPE_RECT_SELECTOR } from './helpers'
 
 test.describe('Click-to-select & Shift-click multi-select', () => {
   test.beforeEach(async ({ page }) => {
@@ -16,7 +16,7 @@ test.describe('Click-to-select & Shift-click multi-select', () => {
     const overlay = canvas.locator('[data-testid="selection-overlay"]')
 
     await drawRect(page, box, 50, 50, 150, 150)
-    await expect(canvas.locator('rect').first()).toBeVisible()
+    await expect(canvas.locator(SHAPE_RECT_SELECTOR).first()).toBeVisible()
 
     await drawRect(page, box, 300, 300, 400, 400)
 

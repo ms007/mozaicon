@@ -129,12 +129,12 @@ One knob retints the whole app:
 
 Derived scale (exposed under Tailwind):
 
-| Tailwind     | CSS var       | Formula          | Pixels | Use                                                   |
-| ------------ | ------------- | ---------------- | ------ | ----------------------------------------------------- |
-| `rounded-sm` | `--radius-sm` | `--radius - 4px` | 2px    | Tight inner surfaces, checkboxes.                     |
-| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons**, tags, badges, small inputs.              |
-| `rounded-lg` | `--radius-lg` | `--radius`       | 6px    | **Cards, panels, inputs.**                            |
-| `rounded-xl` | `--radius-xl` | `--radius + 4px` | 10px   | **Reserved** — don't reach for this without a reason. |
+| Tailwind     | CSS var       | Formula          | Pixels | Use                                      |
+| ------------ | ------------- | ---------------- | ------ | ---------------------------------------- |
+| `rounded-sm` | `--radius-sm` | `--radius - 4px` | 2px    | Tight inner surfaces, checkboxes.        |
+| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons**, tags, badges, small inputs. |
+| `rounded-lg` | `--radius-lg` | `--radius`       | 6px    | **Cards, panels, inputs.**               |
+| `rounded-xl` | `--radius-xl` | `--radius + 4px` | 10px   | Artboard / stage surface.                |
 
 ## Type Scale
 

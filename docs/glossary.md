@@ -2,6 +2,14 @@
 
 Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-model terms are also defined as Zod schemas in `src/types/`.
 
+## Canvas
+
+**Canvas** — The `<svg>` element rendered by `CanvasStage`, 1:1 with the icon coordinate system (its `viewBox` equals `documentAtom.viewBox`). Everything inside the SVG lives in viewBox coordinates; everything outside lives in app/screen coordinates. Boundary against _Artboard_ (the presentation wrapper that frames the Canvas) and _Document_ (the data model the Canvas projects). See [`canvas-chrome.md`](./canvas-chrome.md).
+
+**Artboard** — The presentation-only `<div>` wrapper (`src/features/canvas/Artboard.tsx`) that frames the Canvas (`bg-card` — the same surface as the Canvas — `rounded-xl`), set off against the `bg-muted` Page. Holds no state, dispatches no commands. Boundary against _Canvas_ (the `<svg>` element it wraps) and _Page_ (the surrounding app chrome on `bg-muted`). Future chrome (rulers, zoom HUD) mounts as siblings of the `<svg>` inside the Artboard, outside the Canvas. See [`canvas-chrome.md`](./canvas-chrome.md).
+
+**Pixel Grid** — The integer-position dot overlay rendered as the deepest layer inside the Canvas. Implemented as an O(1) SVG `<pattern>` + covering `<rect>`, viewBox-aware via a focused `selectAtom`. The grid is a spatial reference for pixel-perfect placement — it is not part of the document model and does not appear in export. Boundary against shape geometry (the grid is reference, not data) and _Artboard_ (the grid lives inside the `<svg>`, not in app-space chrome). See [`canvas-chrome.md`](./canvas-chrome.md).
+
 ## Interaction
 
 **Gesture** — A single pointer-down-to-pointer-up interaction on the canvas, sourced from exactly one draft atom, with a `null → populated → null` lifecycle. The draft atom is `null` at rest, populated while the gesture is in flight (pointer is down and the drag threshold is crossed), and cleared back to `null` on `pointerup` (commit) or Escape / `pointercancel` (cancel). The four canonical gestures are _Drag-to-Draw_, _Drag-to-Select_ (marquee), _Drag-to-Move_, and Resize. Each is wrapped in a _Gesture Adapter_ and registered in the _Gesture Registry_. **Non-gestures:** tool-mode switches (e.g. choosing the rect tool), hover affordances (e.g. cursor changes, handle highlights), and overlays that contribute additional visuals during a gesture (snap guides, smart-distance indicators). These may read gesture state but do not own a draft atom and are not entries in the registry.

@@ -29,8 +29,8 @@ or adjusting spacing. It is the authoritative DS ↔ shadcn ↔ Tailwind mapping
 ## Defaults to know
 
 - **Radii:** buttons `rounded-md` (4px), cards / panels / inputs
-  `rounded-lg` (6px). `rounded-xl` is reserved — don't reach for it without
-  a reason.
+  `rounded-lg` (6px). `rounded-xl` (10px) is for the Artboard / stage
+  surface — don't use it elsewhere.
 - **Focus ring:** always brand. `ring-ring` resolves to `--primary`.
 - **Motion:** `transition-*` utilities default to **120ms** + DS `ease-out`
   via `--default-transition-duration` / `--default-transition-timing-function`.

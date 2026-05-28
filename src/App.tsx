@@ -2,6 +2,7 @@ import { useStore } from 'jotai'
 import { useMemo } from 'react'
 
 import { TooltipProvider } from '@/components/primitives/Tooltip'
+import { Artboard } from '@/features/canvas/Artboard'
 import { createCanvasBindings } from '@/features/canvas/bindings'
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { createHistoryBindings } from '@/features/history/bindings'
@@ -28,7 +29,9 @@ export default function App() {
       <div className="bg-muted relative flex min-h-svh">
         <Toolbar />
         <main className="flex flex-1 items-center justify-center p-8 pl-16">
-          <CanvasStage />
+          <Artboard>
+            <CanvasStage />
+          </Artboard>
         </main>
       </div>
     </TooltipProvider>

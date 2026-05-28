@@ -7,6 +7,7 @@
 This file is the entry point. For non-trivial changes, read the matching deep-dive:
 
 - **`docs/architecture.md`** — atoms, command pattern, rendering pipeline
+- **`docs/canvas-chrome.md`** — surface hierarchy, Artboard, Pixel Grid, Canvas-is-SVG invariant
 - **`docs/shapes.md`** — shape model and how to add a new shape type
 - **`docs/testing.md`** — test layers, golden-file conventions, Jotai test helpers
 - **`docs/ui-primitives.md`** — shadcn vendoring and the `primitives/` wrapper seam

@@ -2,10 +2,11 @@ import type { Locator, Page } from '@playwright/test'
 
 export const CANVAS_SELECTOR = 'svg[aria-label="Icon canvas"]'
 
-// Selects only shape rects, excluding the SelectionOverlay's bbox rect — which
-// shares the `<rect>` tag but carries `data-testid="selection-overlay"`.
+// Selects only shape rects, excluding the chrome/overlay rects that share the
+// `<rect>` tag: the PixelGrid covering rect (data-testid="pixel-grid"), the
+// SelectionOverlay bbox, the marquee, and marquee highlights.
 export const SHAPE_RECT_SELECTOR =
-  'rect:not([data-testid="selection-overlay"]):not([data-testid="marquee-overlay"]):not([data-testid^="marquee-highlight-"])'
+  'rect:not([data-testid="pixel-grid"]):not([data-testid="selection-overlay"]):not([data-testid="marquee-overlay"]):not([data-testid^="marquee-highlight-"])'
 
 export async function getBox(locator: Locator) {
   const box = await locator.boundingBox()
