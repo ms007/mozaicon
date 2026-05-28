@@ -203,8 +203,10 @@ test.describe('Marquee selection (drag-to-select)', () => {
     await page.keyboard.up('Shift')
     await expect(overlay).toHaveCount(1)
 
-    // Record base selection overlay width before the marquee
-    const baseWidth = Number(await overlay.getAttribute('width'))
+    // Record base selection bbox height before the marquee. B and C share the
+    // same x-extent (both drawn at x 200→300) and differ only vertically, so the
+    // [A,B] → [A,C] swap changes the bbox height, not its width.
+    const baseHeight = Number(await overlay.getAttribute('height'))
 
     // Shift+marquee covering B and C (not A)
     await page.keyboard.down('Shift')
@@ -223,8 +225,8 @@ test.describe('Marquee selection (drag-to-select)', () => {
     // The live preview selection overlay (bbox of A + C) should exist and
     // differ from the original base selection bbox (which was A + B)
     await expect(overlay).toHaveCount(1)
-    const previewWidth = Number(await overlay.getAttribute('width'))
-    expect(previewWidth).not.toEqual(baseWidth)
+    const previewHeight = Number(await overlay.getAttribute('height'))
+    expect(previewHeight).not.toEqual(baseHeight)
 
     // --- release ---
     await page.mouse.up()
