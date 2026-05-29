@@ -1,11 +1,8 @@
-import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
-import { moveDraftAtom } from '@/store/atoms/move-draft'
-import { activeToolAtom } from '@/store/atoms/tool'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
 import type { Document } from '@/types/shapes'
@@ -30,9 +27,13 @@ const seededDoc: Document = {
   ],
 }
 
+function makeSvgRef(): React.RefObject<SVGSVGElement | null> {
+  return { current: null }
+}
+
 describe('CanvasStage', () => {
   it('renders a <rect> with the seeded shape attributes', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, seededDoc)
     })
 
@@ -46,7 +47,7 @@ describe('CanvasStage', () => {
   })
 
   it('renders the canvas with the document viewBox', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, seededDoc)
     })
 
@@ -62,7 +63,7 @@ describe('CanvasStage', () => {
         { ...seededDoc.shapes[0], id: 'r2', x: 10 },
       ],
     }
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, doc)
     })
 
@@ -70,7 +71,7 @@ describe('CanvasStage', () => {
   })
 
   it('sets overflow visible so edge grid dots are not clipped', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, seededDoc)
     })
 
@@ -78,27 +79,8 @@ describe('CanvasStage', () => {
     expect(svg?.getAttribute('overflow')).toBe('visible')
   })
 
-  it('applies no tool cursor when no tool is active', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
-      store.set(documentAtom, seededDoc)
-    })
-
-    const svg = container.querySelector('svg')
-    expect(svg?.classList.contains('cursor-crosshair')).toBe(false)
-  })
-
-  it('applies crosshair cursor when a draw tool is active', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
-      store.set(documentAtom, seededDoc)
-      store.set(activeToolAtom, 'rect')
-    })
-
-    const svg = container.querySelector('svg')
-    expect(svg?.classList.contains('cursor-crosshair')).toBe(true)
-  })
-
   it('renders draft shape and selection overlay bbox when draftShapeAtom is set', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, { ...seededDoc, shapes: [] })
       store.set(draftShapeAtom, {
         type: 'rect',
@@ -114,56 +96,17 @@ describe('CanvasStage', () => {
       })
     })
 
-    // Exactly the draft shape rect + the selection-overlay bbox; the pixel-grid
-    // covering rect is excluded since it always renders.
     expect(container.querySelectorAll('rect:not([data-testid="pixel-grid"])')).toHaveLength(2)
     expect(container.querySelector('rect[fill="#000"]')).not.toBeNull()
     expect(container.querySelector('[data-testid="selection-overlay"]')).not.toBeNull()
   })
 
   it('mounts SelectionOverlay when a shape is selected', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
+    const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
       store.set(documentAtom, seededDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
     expect(container.querySelector('rect[vector-effect="non-scaling-stroke"]')).not.toBeNull()
-  })
-
-  it('applies cursor-move when moveDraftAtom is non-null', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
-      store.set(documentAtom, seededDoc)
-      store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
-    })
-
-    expect(container.querySelector('svg')).toHaveClass('cursor-move')
-  })
-
-  it('removes cursor-move when moveDraftAtom returns to null', () => {
-    const { container, store } = renderWithStore(<CanvasStage />, (store) => {
-      store.set(documentAtom, seededDoc)
-      store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
-    })
-
-    const svg = container.querySelector('svg')
-    expect(svg).toHaveClass('cursor-move')
-
-    act(() => {
-      store.set(moveDraftAtom, null)
-    })
-
-    expect(svg).not.toHaveClass('cursor-move')
-  })
-
-  it('cursor-move wins over tool cursorClass during a move', () => {
-    const { container } = renderWithStore(<CanvasStage />, (store) => {
-      store.set(documentAtom, seededDoc)
-      store.set(activeToolAtom, 'rect')
-      store.set(moveDraftAtom, { ids: ['r1'], dx: 0, dy: 0 })
-    })
-
-    const svg = container.querySelector('svg')
-    expect(svg).toHaveClass('cursor-move')
-    expect(svg).not.toHaveClass('cursor-crosshair')
   })
 })

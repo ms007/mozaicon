@@ -1,5 +1,5 @@
 import { useSetAtom, useStore } from 'jotai'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import type { DrawTool, ToolCtx, ToolEvent } from '@/features/toolbar/tools/registry'
 import { DRAG_THRESHOLD_PX, screenDistance } from '@/lib/geometry/distance'
@@ -30,21 +30,20 @@ function makeToolEvent(svg: SVGSVGElement, e: React.PointerEvent): ToolEvent {
   }
 }
 
-export type PointerHandlers = {
-  onPointerDown: (e: React.PointerEvent<SVGSVGElement>) => void
-  onPointerMove: (e: React.PointerEvent<SVGSVGElement>) => void
-  onPointerUp: (e: React.PointerEvent<SVGSVGElement>) => void
-  onPointerCancel: (e: React.PointerEvent<SVGSVGElement>) => void
+export type PointerHandlers<E extends Element = Element> = {
+  onPointerDown: (e: React.PointerEvent<E>) => void
+  onPointerMove: (e: React.PointerEvent<E>) => void
+  onPointerUp: (e: React.PointerEvent<E>) => void
+  onPointerCancel: (e: React.PointerEvent<E>) => void
   onContextMenu: (e: React.MouseEvent) => void
 }
 
-export function useToolPointerBridge(tool: DrawTool | undefined): {
-  svgRef: React.RefObject<SVGSVGElement | null>
-  handlers: PointerHandlers
-} {
+export function useToolPointerBridge(
+  tool: DrawTool | undefined,
+  svgRef: React.RefObject<SVGSVGElement | null>,
+): PointerHandlers {
   const store = useStore()
   const cancelDraft = useSetAtom(cancelDraftAtom)
-  const svgRef = useRef<SVGSVGElement>(null)
   const ctx = useMemo<ToolCtx>(
     () => ({
       store,
@@ -56,7 +55,7 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
   )
 
   const handlePointerDown = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
+    (e: React.PointerEvent) => {
       if (e.button !== 0) return
       const svg = svgRef.current
       if (!svg) return
@@ -74,18 +73,18 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
           baseSelection: e.shiftKey ? store.get(selectedIdsAtom) : [],
         }
         store.set(marqueeDraftAtom, draft)
-        svg.setPointerCapture(e.pointerId)
+        e.currentTarget.setPointerCapture(e.pointerId)
         return
       }
 
-      svg.setPointerCapture(e.pointerId)
+      e.currentTarget.setPointerCapture(e.pointerId)
       tool.onPointerDown(ctx, makeToolEvent(svg, e))
     },
-    [tool, ctx, store],
+    [tool, ctx, store, svgRef],
   )
 
   const handlePointerMove = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
+    (e: React.PointerEvent) => {
       if (!tool) {
         const draft = store.get(marqueeDraftAtom)
         if (!draft) return
@@ -102,15 +101,16 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
       if (!svg) return
       tool.onPointerMove(ctx, makeToolEvent(svg, e))
     },
-    [tool, ctx, store],
+    [tool, ctx, store, svgRef],
   )
 
   const handlePointerUp = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
+    (e: React.PointerEvent) => {
       const svg = svgRef.current
+      const target = e.currentTarget
       // Release capture unconditionally — if a prior Escape cleared the tool
-      // mid-drag, the SVG would otherwise keep capture until the pointer
-      // leaves the document.
+      // mid-drag, the handler element would otherwise keep capture until the
+      // pointer leaves the document.
       try {
         if (!svg) return
         if (!tool) {
@@ -131,20 +131,19 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
         }
         tool.onPointerUp(ctx, makeToolEvent(svg, e))
       } finally {
-        if (svg?.hasPointerCapture(e.pointerId)) {
-          svg.releasePointerCapture(e.pointerId)
+        if (target.hasPointerCapture(e.pointerId)) {
+          target.releasePointerCapture(e.pointerId)
         }
       }
     },
-    [tool, ctx, store],
+    [tool, ctx, store, svgRef],
   )
 
   const handlePointerCancel = useCallback(
-    (e: React.PointerEvent<SVGSVGElement>) => {
+    (e: React.PointerEvent) => {
       cancelDraft()
-      const svg = svgRef.current
-      if (svg?.hasPointerCapture(e.pointerId)) {
-        svg.releasePointerCapture(e.pointerId)
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId)
       }
     },
     [cancelDraft],
@@ -160,13 +159,10 @@ export function useToolPointerBridge(tool: DrawTool | undefined): {
   )
 
   return {
-    svgRef,
-    handlers: {
-      onPointerDown: handlePointerDown,
-      onPointerMove: handlePointerMove,
-      onPointerUp: handlePointerUp,
-      onPointerCancel: handlePointerCancel,
-      onContextMenu: handleContextMenu,
-    },
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerCancel: handlePointerCancel,
+    onContextMenu: handleContextMenu,
   }
 }

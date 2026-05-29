@@ -28,32 +28,33 @@ function makeTool(overrides: Partial<DrawTool> = {}): DrawTool {
   }
 }
 
-function setup(tool: DrawTool | undefined) {
-  const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool))
-  store.set(documentAtom, testDoc)
-  const { svg, setCapture, releaseCapture, hasCapture } = makeSvgElement()
-  result.current.svgRef.current = svg
-  return { store, result, svg, setCapture, releaseCapture, hasCapture }
-}
-
-function makeSvgElement() {
+function makeSvgRef() {
+  const ref: React.RefObject<SVGSVGElement | null> = { current: null }
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  const setCapture = vi.fn()
-  const releaseCapture = vi.fn()
-  const hasCapture = vi.fn().mockReturnValue(true)
-  svg.setPointerCapture = setCapture
-  svg.releasePointerCapture = releaseCapture
-  svg.hasPointerCapture = hasCapture
   svg.getScreenCTM = vi.fn().mockReturnValue({
     inverse: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
   })
-  return { svg, setCapture, releaseCapture, hasCapture }
+  ref.current = svg
+  return ref
 }
 
-function makePointerEvent(
-  overrides: Record<string, unknown> = {},
-): React.PointerEvent<SVGSVGElement> {
-  return {
+function setup(tool: DrawTool | undefined) {
+  const svgRef = makeSvgRef()
+  const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef))
+  store.set(documentAtom, testDoc)
+  return { store, result }
+}
+
+function makePointerEvent(overrides: Record<string, unknown> = {}) {
+  const setCapture = vi.fn()
+  const releaseCapture = vi.fn()
+  const hasCapture = vi.fn().mockReturnValue(true)
+  const currentTarget = document.createElement('div')
+  currentTarget.setPointerCapture = setCapture
+  currentTarget.releasePointerCapture = releaseCapture
+  currentTarget.hasPointerCapture = hasCapture
+
+  const event = {
     button: 0,
     buttons: 1,
     clientX: 100,
@@ -64,8 +65,11 @@ function makePointerEvent(
     metaKey: false,
     ctrlKey: false,
     preventDefault: vi.fn(),
+    currentTarget,
     ...overrides,
-  } as unknown as React.PointerEvent<SVGSVGElement>
+  } as unknown as React.PointerEvent
+
+  return { event, setCapture, releaseCapture, hasCapture }
 }
 
 function mouseEvent() {
@@ -74,42 +78,44 @@ function mouseEvent() {
 }
 
 describe('useToolPointerBridge', () => {
-  it('returns an svgRef and handler functions', () => {
-    const { result } = renderHookWithStore(() => useToolPointerBridge(makeTool()))
-    const { svgRef, handlers } = result.current
-    expect(svgRef).toBeDefined()
-    expect(handlers.onPointerDown).toBeInstanceOf(Function)
-    expect(handlers.onPointerMove).toBeInstanceOf(Function)
-    expect(handlers.onPointerUp).toBeInstanceOf(Function)
-    expect(handlers.onPointerCancel).toBeInstanceOf(Function)
-    expect(handlers.onContextMenu).toBeInstanceOf(Function)
+  it('returns handler functions', () => {
+    const svgRef = makeSvgRef()
+    const { result } = renderHookWithStore(() => useToolPointerBridge(makeTool(), svgRef))
+    expect(result.current.onPointerDown).toBeInstanceOf(Function)
+    expect(result.current.onPointerMove).toBeInstanceOf(Function)
+    expect(result.current.onPointerUp).toBeInstanceOf(Function)
+    expect(result.current.onPointerCancel).toBeInstanceOf(Function)
+    expect(result.current.onContextMenu).toBeInstanceOf(Function)
   })
 
-  it('sets pointer capture on pointerdown', () => {
+  it('sets pointer capture on currentTarget on pointerdown', () => {
     const tool = makeTool()
-    const { result, setCapture } = setup(tool)
+    const { result } = setup(tool)
+    const { event, setCapture } = makePointerEvent({ pointerId: 42 })
 
-    result.current.handlers.onPointerDown(makePointerEvent({ pointerId: 42 }))
+    result.current.onPointerDown(event)
 
     expect(setCapture).toHaveBeenCalledWith(42)
     expect(tool.onPointerDown).toHaveBeenCalled()
   })
 
-  it('releases pointer capture on pointerup', () => {
+  it('releases pointer capture on currentTarget on pointerup', () => {
     const tool = makeTool()
-    const { result, releaseCapture } = setup(tool)
+    const { result } = setup(tool)
+    const { event, releaseCapture } = makePointerEvent({ pointerId: 42 })
 
-    result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 42 }))
+    result.current.onPointerUp(event)
 
     expect(releaseCapture).toHaveBeenCalledWith(42)
     expect(tool.onPointerUp).toHaveBeenCalled()
   })
 
-  it('releases pointer capture on pointercancel', () => {
+  it('releases pointer capture on currentTarget on pointercancel', () => {
     const tool = makeTool()
-    const { result, releaseCapture } = setup(tool)
+    const { result } = setup(tool)
+    const { event, releaseCapture } = makePointerEvent({ pointerId: 42 })
 
-    result.current.handlers.onPointerCancel(makePointerEvent({ pointerId: 42 }))
+    result.current.onPointerCancel(event)
 
     expect(releaseCapture).toHaveBeenCalledWith(42)
   })
@@ -118,7 +124,7 @@ describe('useToolPointerBridge', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(false) })
     const { result } = setup(tool)
 
-    result.current.handlers.onPointerMove(makePointerEvent())
+    result.current.onPointerMove(makePointerEvent().event)
 
     expect(tool.shouldHandlePointerMove).toHaveBeenCalled()
     expect(tool.onPointerMove).not.toHaveBeenCalled()
@@ -128,7 +134,7 @@ describe('useToolPointerBridge', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(true) })
     const { result } = setup(tool)
 
-    result.current.handlers.onPointerMove(makePointerEvent())
+    result.current.onPointerMove(makePointerEvent().event)
 
     expect(tool.onPointerMove).toHaveBeenCalled()
   })
@@ -137,25 +143,27 @@ describe('useToolPointerBridge', () => {
     const tool = makeTool()
     const { result } = setup(tool)
 
-    result.current.handlers.onPointerMove(makePointerEvent())
+    result.current.onPointerMove(makePointerEvent().event)
 
     expect(tool.onPointerMove).toHaveBeenCalled()
   })
 
   it('ignores pointerdown for non-primary button', () => {
     const tool = makeTool()
-    const { result, setCapture } = setup(tool)
+    const { result } = setup(tool)
+    const { event, setCapture } = makePointerEvent({ button: 2 })
 
-    result.current.handlers.onPointerDown(makePointerEvent({ button: 2 }))
+    result.current.onPointerDown(event)
 
     expect(setCapture).not.toHaveBeenCalled()
     expect(tool.onPointerDown).not.toHaveBeenCalled()
   })
 
-  it('pointerdown arms marquee and captures pointer when tool is undefined', () => {
-    const { result, setCapture } = setup(undefined)
+  it('pointerdown arms marquee and captures pointer on currentTarget when tool is undefined', () => {
+    const { result } = setup(undefined)
+    const { event, setCapture } = makePointerEvent({ pointerId: 7 })
 
-    result.current.handlers.onPointerDown(makePointerEvent({ pointerId: 7 }))
+    result.current.onPointerDown(event)
 
     expect(setCapture).toHaveBeenCalledWith(7)
   })
@@ -164,8 +172,8 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }).event)
+    result.current.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }).event)
 
     expect(store.get(selectedIdsAtom)).toEqual([])
   })
@@ -173,8 +181,8 @@ describe('useToolPointerBridge', () => {
   it('sub-threshold pointerup on canvas background is a no-op when selection is already empty', () => {
     const { result, store } = setup(undefined)
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }).event)
+    result.current.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }).event)
 
     expect(store.get(selectedIdsAtom)).toEqual([])
     expect(store.get(undoStackAtom)).toHaveLength(0)
@@ -184,8 +192,8 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }).event)
+    result.current.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }).event)
 
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
@@ -196,8 +204,8 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1', 's2'])
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }))
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 100, clientY: 100 }).event)
+    result.current.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }).event)
     expect(store.get(selectedIdsAtom)).toEqual([])
 
     store.set(undoCommand)
@@ -208,7 +216,7 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1'])
 
-    result.current.handlers.onPointerDown(makePointerEvent({ button: 2 }))
+    result.current.onPointerDown(makePointerEvent({ button: 2 }).event)
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
   })
@@ -218,7 +226,7 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(tool)
     seedSelection(store, ['s1'])
 
-    result.current.handlers.onPointerDown(makePointerEvent())
+    result.current.onPointerDown(makePointerEvent().event)
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     expect(tool.onPointerDown).toHaveBeenCalled()
@@ -227,8 +235,8 @@ describe('useToolPointerBridge', () => {
   it('pointermove updates marqueeDraftAtom.current during active marquee', () => {
     const { result, store } = setup(undefined)
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }))
-    result.current.handlers.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+    result.current.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }).event)
 
     const draft = store.get(marqueeDraftAtom)
     expect(draft?.current).toEqual({ x: 15, y: 15 })
@@ -238,16 +246,16 @@ describe('useToolPointerBridge', () => {
     const { result } = setup(undefined)
 
     expect(() => {
-      result.current.handlers.onPointerMove(makePointerEvent())
+      result.current.onPointerMove(makePointerEvent().event)
     }).not.toThrow()
   })
 
   it('past-threshold pointerup commits selection via selectShapesCommand', () => {
     const { result, store } = setup(undefined)
 
-    result.current.handlers.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }))
-    result.current.handlers.onPointerMove(makePointerEvent({ clientX: 12, clientY: 12 }))
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 12, clientY: 12 }))
+    result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+    result.current.onPointerMove(makePointerEvent({ clientX: 12, clientY: 12 }).event)
+    result.current.onPointerUp(makePointerEvent({ clientX: 12, clientY: 12 }).event)
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
     expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
@@ -260,9 +268,7 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1'])
 
-    result.current.handlers.onPointerDown(
-      makePointerEvent({ clientX: 0, clientY: 0, shiftKey: true }),
-    )
+    result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0, shiftKey: true }).event)
 
     const draft = store.get(marqueeDraftAtom)
     expect(draft?.additive).toBe(true)
@@ -273,81 +279,88 @@ describe('useToolPointerBridge', () => {
     const { result, store } = setup(undefined)
     seedSelection(store, ['s1'])
 
-    result.current.handlers.onPointerDown(
-      makePointerEvent({ clientX: 100, clientY: 100, shiftKey: true }),
+    result.current.onPointerDown(
+      makePointerEvent({ clientX: 100, clientY: 100, shiftKey: true }).event,
     )
-    result.current.handlers.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }))
+    result.current.onPointerUp(makePointerEvent({ clientX: 101, clientY: 101 }).event)
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
-  it('pointerup releases pointer capture even when tool is undefined', () => {
-    const { result, releaseCapture } = setup(undefined)
+  it('pointerup releases pointer capture on currentTarget even when tool is undefined', () => {
+    const { result } = setup(undefined)
+    const { event, releaseCapture } = makePointerEvent({ pointerId: 42 })
 
-    result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 42 }))
+    result.current.onPointerUp(event)
 
     expect(releaseCapture).toHaveBeenCalledWith(42)
   })
 
   it('pointerup does not release pointer capture when capture is not held', () => {
-    const { result, releaseCapture, hasCapture } = setup(undefined)
+    const { result } = setup(undefined)
+    const { event, releaseCapture, hasCapture } = makePointerEvent({ pointerId: 42 })
     hasCapture.mockReturnValue(false)
 
-    result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 42 }))
+    result.current.onPointerUp(event)
 
     expect(releaseCapture).not.toHaveBeenCalled()
   })
 
-  it('pointerup releases capture even when tool.onPointerUp throws', () => {
+  it('pointerup releases capture on currentTarget even when tool.onPointerUp throws', () => {
     const tool = makeTool({
       onPointerUp: vi.fn(() => {
         throw new Error('tool exploded')
       }),
     })
-    const { result, releaseCapture } = setup(tool)
+    const { result } = setup(tool)
+    const { event, releaseCapture } = makePointerEvent({ pointerId: 7 })
 
     expect(() => {
-      result.current.handlers.onPointerUp(makePointerEvent({ pointerId: 7 }))
+      result.current.onPointerUp(event)
     }).toThrow('tool exploded')
     expect(releaseCapture).toHaveBeenCalledWith(7)
   })
 
   it('contextMenu prevents default when shouldHandlePointerMove returns true', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(true) })
-    const { result } = renderHookWithStore(() => useToolPointerBridge(tool))
+    const svgRef = makeSvgRef()
+    const { result } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef))
     const { event, preventDefault } = mouseEvent()
 
-    result.current.handlers.onContextMenu(event)
+    result.current.onContextMenu(event)
 
     expect(preventDefault).toHaveBeenCalled()
   })
 
   it('contextMenu does not prevent default when tool is undefined', () => {
-    const { result } = renderHookWithStore(() => useToolPointerBridge(undefined))
+    const svgRef = makeSvgRef()
+    const { result } = renderHookWithStore(() => useToolPointerBridge(undefined, svgRef))
     const { event, preventDefault } = mouseEvent()
 
-    result.current.handlers.onContextMenu(event)
+    result.current.onContextMenu(event)
 
     expect(preventDefault).not.toHaveBeenCalled()
   })
 
   it('contextMenu does not prevent default when shouldHandlePointerMove returns false', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(false) })
-    const { result } = renderHookWithStore(() => useToolPointerBridge(tool))
+    const svgRef = makeSvgRef()
+    const { result } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef))
     const { event, preventDefault } = mouseEvent()
 
-    result.current.handlers.onContextMenu(event)
+    result.current.onContextMenu(event)
 
     expect(preventDefault).not.toHaveBeenCalled()
   })
 
   it('contextMenu does not prevent default when shouldHandlePointerMove is not defined', () => {
     const tool = makeTool()
-    const { result } = renderHookWithStore(() => useToolPointerBridge(tool))
+    const svgRef = makeSvgRef()
+    const { result } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef))
     const { event, preventDefault } = mouseEvent()
 
-    result.current.handlers.onContextMenu(event)
+    result.current.onContextMenu(event)
 
     expect(preventDefault).not.toHaveBeenCalled()
   })

@@ -32,22 +32,23 @@ Artboard and Canvas share `bg-card` and read as one raised surface; the surround
 
 `src/features/canvas/Artboard.tsx`
 
-A presentation-only component that wraps its children in a padded, styled `<div>`. It holds no state and dispatches no commands. Its single responsibility is to frame whatever it wraps as the stage.
+The gesture-origin surface. A `<div>` that frames the canvas with padding and owns the tool lifecycle, pointer bridge, pointer capture, and the active tool's cursor class. A pointer press anywhere inside the Artboard — including the padding ring — begins a background gesture: Drag-to-Draw when a draw tool is active, Drag-to-Select (marquee) when no tool is active. Coordinates map through the canvas CTM (`screenToViewBox`) and are used unclamped; out-of-viewBox values in the padding produce off-canvas geometry, consistent with resize and move.
 
 ```
-bg-card  rounded-xl  p-[calc(512px/24)]
+bg-card  rounded-xl  p-[calc(512px/24)]  cursor class from active tool
 ```
 
 - **`bg-card`** — the same surface as the canvas `<svg>`, so the frame and the canvas read as one continuous raised surface against the `bg-muted` page.
 - **`rounded-xl`** (10px) — the only DS-sanctioned use of this radius token. See [`design-tokens.md`](./design-tokens.md) → Radii.
 - No border, no shadow.
+- **Cursor class** — applied to the Artboard div so it covers the padding; the canvas SVG inherits it. `cursor-move` during a move gesture wins over the tool cursor.
+
+The Artboard creates the canvas ref and renders `CanvasStage` as its child, threading the ref as a prop. `CanvasStage` is a pure renderer of the `<svg>` and its layers — it owns no bridge, no tool lookup, and no cursor class.
 
 The app shell mounts it in `App.tsx`:
 
 ```tsx
-<Artboard>
-  <CanvasStage />
-</Artboard>
+<Artboard />
 ```
 
 ## Pixel Grid
@@ -101,14 +102,18 @@ The Canvas is the `<svg>` element and is 1:1 with the icon coordinate system. Sh
 
 **Outside the SVG** (app-space chrome):
 
-- Artboard (framing `<div>`)
+- Artboard (gesture-origin `<div>`, owns pointer bridge + cursor)
 - Future chrome: rulers, zoom HUD, pixel inspector
 
 Chrome that frames or annotates the canvas mounts as a sibling or ancestor of the `<svg>` under the Artboard — never inside it. This keeps the SVG a pure projection of the icon coordinate system.
 
+### Stop-propagation invariant for interactive chrome
+
+Because the Artboard is the gesture-origin surface, any interactive chrome mounted as a sibling of the `<svg>` inside the Artboard **must** call `e.stopPropagation()` on `pointerdown`. Without this, a click on chrome (a ruler grab handle, a zoom control) would bubble up to the Artboard and be misinterpreted as a canvas background gesture. Shapes and resize handles already follow this pattern — future chrome must do the same.
+
 ### `overflow="visible"` soft invariant
 
-The canvas SVG sets `overflow="visible"` so Pixel Grid edge dots render in full. This means the canvas no longer acts as a hard clip rectangle for off-viewBox content. Several gesture flows do produce off-viewBox geometry — the marquee rect dragged past the edge, resize handles on edge-flush shapes, and in-progress draw drafts — and that geometry is intentionally left unclipped, spilling into the Artboard padding. If a future feature needs hard clipping, apply a targeted `<clipPath>` on the affected layer rather than reverting `overflow`.
+The canvas SVG sets `overflow="visible"` so Pixel Grid edge dots render in full. This means the canvas no longer acts as a hard clip rectangle for off-viewBox content. Several gesture flows do produce off-viewBox geometry — the marquee rect dragged past the edge, resize handles on edge-flush shapes, in-progress draw drafts, and padding-origin gestures (Drag-to-Draw or Drag-to-Select started in the Artboard padding) — and that geometry is intentionally left unclipped, spilling into the Artboard padding. Padding-origin coordinates map through the canvas CTM and are used unclamped. If a future feature needs hard clipping, apply a targeted `<clipPath>` on the affected layer rather than reverting `overflow`.
 
 ## Future Chrome
 
@@ -118,4 +123,4 @@ Placeholder for surfaces that annotate or frame the canvas without being part of
 - **Zoom HUD** — current zoom level / viewport indicator.
 - **Pixel inspector** — color and coordinate readout under the pointer.
 
-All mount outside the `<svg>`, as siblings under the Artboard, respecting the Canvas-is-SVG invariant. Add documentation for each here as it lands.
+All mount outside the `<svg>`, as siblings under the Artboard, respecting the Canvas-is-SVG invariant and the stop-propagation invariant (each must call `e.stopPropagation()` on `pointerdown`). Add documentation for each here as it lands.
