@@ -59,11 +59,14 @@ test.describe('Drag-to-Move gesture', () => {
     await page.mouse.down()
     await page.mouse.move(cx + 30, cy + 20, { steps: 5 })
 
-    await expect(canvas).toHaveClass(/cursor-move/)
+    // The cursor class lives on the Artboard div (so it covers the padding);
+    // the canvas SVG inherits it. Assert the inherited computed cursor rather
+    // than a class on a specific element.
+    await expect(canvas).toHaveCSS('cursor', 'move')
 
     await page.mouse.up()
 
-    await expect(canvas).not.toHaveClass(/cursor-move/)
+    await expect(canvas).not.toHaveCSS('cursor', 'move')
   })
 
   test('selection bbox and resize handles stay visible during drag', async ({ page }) => {
