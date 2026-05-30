@@ -54,6 +54,10 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 
 **Combined Command** — A command whose `apply()` returns both `document` and `selection` in one step, e.g. `addShapeCommand` (creates a shape and selects it). One _History Entry_, atomic for Undo/Redo — pressing Undo rolls the new shape out _and_ restores the prior selection together.
 
+## Fields
+
+**NumberInput** — A labeled numeric property field component (`src/components/NumberInput.tsx`). Renders a container-owned bordered control (28px height, elevated input surface, `focus-within` ring) around a borderless decimal-mode text input with optional leading/trailing affix slots. Uses a draft-then-commit model: typing and arrow presses mutate a local buffer; a single `onCommit(n)` fires on Enter and on blur (only when the value actually changed from what the buffer was anchored to, so an external update mid-edit isn't re-committed as the user's edit), collapsing edits into one downstream history entry. The optional `onChange(n)` emits the clamped, committable value on every keystroke and arrow step for live preview, and is restored to `value` on Escape, which discards the buffer. Arrow keys step by `step` (default 1), Shift ×10 for coarse, Alt for `fineStep` (defaults to the smallest increment the `precision` can represent, else 0.1 — so an integer field's Alt step is the base step, not a fractional no-op); fine wins when both modifiers are held. All number math delegates to `src/lib/util/number.ts`. Value-neutral — knows nothing about shapes or commands.
+
 ## History
 
 **History Entry** — A record on the undo/redo stack capturing one command's effect. Fields: `label` (debug-only English string), `before` and `after` `Document` snapshots, plus `selectionBefore` and `selectionAfter` (`string[]`). Each entry covers both axes: a _Selection-Command_ leaves `before === after`, a document-only command leaves `selectionBefore === selectionAfter`, a _Combined Command_ moves both. Selection rides on the same stack as document mutations because each effective selection change is itself a user-visible Undo step (Figma-style). Defined in `src/store/atoms/history.ts`.
