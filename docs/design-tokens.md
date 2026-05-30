@@ -129,12 +129,12 @@ One knob retints the whole app:
 
 Derived scale (exposed under Tailwind):
 
-| Tailwind     | CSS var       | Formula          | Pixels | Use                                      |
-| ------------ | ------------- | ---------------- | ------ | ---------------------------------------- |
-| `rounded-sm` | `--radius-sm` | `--radius - 4px` | 2px    | Tight inner surfaces, checkboxes.        |
-| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons**, tags, badges, small inputs. |
-| `rounded-lg` | `--radius-lg` | `--radius`       | 6px    | **Cards, panels, inputs.**               |
-| `rounded-xl` | `--radius-xl` | `--radius + 4px` | 10px   | Artboard / stage surface.                |
+| Tailwind     | CSS var       | Formula          | Pixels | Use                                                       |
+| ------------ | ------------- | ---------------- | ------ | --------------------------------------------------------- |
+| `rounded-sm` | `--radius-sm` | `--radius - 4px` | 2px    | Tight inner surfaces, checkboxes.                         |
+| `rounded-md` | `--radius-md` | `--radius - 2px` | 4px    | **Buttons**, tags, badges, compact (28px / `h-7`) inputs. |
+| `rounded-lg` | `--radius-lg` | `--radius`       | 6px    | **Cards, panels**, full-size inputs.                      |
+| `rounded-xl` | `--radius-xl` | `--radius + 4px` | 10px   | Artboard / stage surface.                                 |
 
 ## Type Scale
 
@@ -172,8 +172,9 @@ The sans stack is the platform UI font: San Francisco on Apple, Segoe UI on
 Windows, Cantarell/Roboto on Linux. No webfont is shipped — the browser uses
 whatever the OS hands it. This trades cross-OS visual consistency for native
 rendering quality (notably SF's optical sizing at 11–13 px). `tabular-nums` is
-applied globally on `<body>`; numeric-leaning inputs (e.g. `primitives/Input`)
-add `font-mono` as well.
+applied globally on `<body>`, so all inputs render fixed-width figures in the
+sans stack without opting in — `font-mono` is reserved for genuinely monospace
+contexts (code, token specimens), not numeric inputs.
 
 ## Spacing
 
