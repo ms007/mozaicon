@@ -5,10 +5,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { undoStackAtom } from '@/store/atoms/history'
+import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import type { Document, RectShape } from '@/types/shapes'
 
 import { createCanvasBindings } from '../canvas/bindings'
+import { createHistoryBindings } from '../history/bindings'
 import { createToolbarBindings } from '../toolbar/bindings'
 import type { ShortcutBinding } from './registry'
 import { buildBindings } from './registry'
@@ -19,6 +22,20 @@ const emptyDoc: Document = {
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
+}
+
+function makeRect(id: string): RectShape {
+  return {
+    type: 'rect',
+    id,
+    name: 'Rect',
+    visible: true,
+    locked: false,
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+  }
 }
 
 function makeStore(doc: Document = emptyDoc) {
@@ -42,10 +59,15 @@ function fireKey(key: string, opts: Partial<KeyboardEventInit> & { target?: Even
   return event
 }
 
-function setup(bindings?: ShortcutBinding[]) {
-  const store = makeStore()
+function setup(opts?: { bindings?: ShortcutBinding[]; doc?: Document }) {
+  const store = makeStore(opts?.doc)
   const resolved =
-    bindings ?? buildBindings([...createCanvasBindings(store), ...createToolbarBindings(store)])
+    opts?.bindings ??
+    buildBindings([
+      ...createCanvasBindings(store),
+      ...createToolbarBindings(store),
+      ...createHistoryBindings(store),
+    ])
   const wrapper = ({ children }: PropsWithChildren) => <Provider store={store}>{children}</Provider>
   const { unmount } = renderHook(
     () => {
@@ -147,7 +169,7 @@ describe('useGlobalShortcuts', () => {
       { id: 'first', key: 'x', label: 'First', hint: 'X', run: first },
       { id: 'second', key: 'y', label: 'Second', hint: 'Y', run: second },
     ]
-    setup(bindings)
+    setup({ bindings })
 
     fireKey('x')
     expect(first).toHaveBeenCalledOnce()
@@ -195,5 +217,90 @@ describe('useGlobalShortcuts', () => {
 
     fireKey('r')
     expect(store.get(activeToolAtom)).toBe('rect')
+  })
+
+  describe('Delete / Backspace', () => {
+    it('pressing Delete removes all selected shapes', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a'), makeRect('b')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a', 'b'])
+
+      fireKey('Delete')
+
+      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(selectedIdsAtom)).toEqual([])
+    })
+
+    it('pressing Backspace removes all selected shapes', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a'])
+
+      fireKey('Backspace')
+
+      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(selectedIdsAtom)).toEqual([])
+    })
+
+    it('is a no-op with empty selection — no history entry', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a')] }
+      const { store } = setup({ doc })
+
+      fireKey('Delete')
+
+      expect(store.get(documentAtom).shapes).toHaveLength(1)
+      expect(store.get(undoStackAtom)).toHaveLength(0)
+    })
+
+    it('deletion is undoable and restores prior selection', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a'])
+
+      fireKey('Delete')
+      expect(store.get(documentAtom).shapes).toHaveLength(0)
+
+      fireKey('z', { ctrlKey: true })
+
+      expect(store.get(documentAtom).shapes).toHaveLength(1)
+      expect(store.get(selectedIdsAtom)).toEqual(['a'])
+    })
+
+    it('does not fire while an input is focused', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a'])
+
+      const input = document.createElement('input')
+      document.body.appendChild(input)
+      try {
+        fireKey('Backspace', { target: input })
+        expect(store.get(documentAtom).shapes).toHaveLength(1)
+      } finally {
+        input.remove()
+      }
+    })
+
+    it('deleting a subset leaves remaining shapes intact', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a'), makeRect('b'), makeRect('c')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a', 'c'])
+
+      fireKey('Delete')
+
+      const shapes = store.get(documentAtom).shapes
+      expect(shapes).toHaveLength(1)
+      expect(shapes[0].id).toBe('b')
+    })
+
+    it('pushes exactly one history entry per deletion', () => {
+      const doc = { ...emptyDoc, shapes: [makeRect('a'), makeRect('b')] }
+      const { store } = setup({ doc })
+      store.set(restoreSelectionAtom, ['a', 'b'])
+
+      fireKey('Delete')
+
+      expect(store.get(undoStackAtom)).toHaveLength(1)
+    })
   })
 })
