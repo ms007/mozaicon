@@ -2,6 +2,7 @@ import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
 import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
 import { assertNever } from '@/lib/util/assertNever'
+import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
 import { moveDraftForShapeAtom } from '@/store/atoms/move-draft'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
@@ -22,12 +23,14 @@ export function ShapeRenderer(props: ShapeRendererProps) {
 function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
+  const propStepGeo = useAtomValue(propertyStepDraftForShapeAtom(shape.id))
   const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
   const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
     shape.id,
   )
 
-  const rendered = draftGeo ? { ...shape, ...draftGeo } : shape
+  const geoOverride = draftGeo ?? propStepGeo
+  const rendered = geoOverride ? { ...shape, ...geoOverride } : shape
   const transform = moveOffset
     ? `translate(${String(moveOffset.dx)} ${String(moveOffset.dy)})`
     : undefined

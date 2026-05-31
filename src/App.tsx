@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/primitives/Tooltip'
 import { Artboard } from '@/features/canvas/Artboard'
 import { createCanvasBindings } from '@/features/canvas/bindings'
 import { createHistoryBindings } from '@/features/history/bindings'
+import { PropertiesPanel } from '@/features/properties/PropertiesPanel'
 import { buildBindings } from '@/features/shortcuts/registry'
 import { useGlobalShortcuts } from '@/features/shortcuts/useGlobalShortcuts'
 import { createToolbarBindings } from '@/features/toolbar/bindings'
@@ -30,6 +31,7 @@ export default function App() {
         <main className="flex flex-1 items-center justify-center p-8 pl-16">
           <Artboard />
         </main>
+        <PropertiesPanel />
       </div>
     </TooltipProvider>
   )

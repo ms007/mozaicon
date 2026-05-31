@@ -120,29 +120,21 @@ describe('marquee integration: full drag-past-threshold', () => {
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
-  it('command dispatch during marquee is a no-op (gesture freeze)', () => {
+  it('command dispatch during an armed marquee applies (marquee does not freeze commands)', () => {
     const store = makeStore()
     armMarquee(store, { startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } })
 
-    expect(store.get(isGestureActiveAtom)).toBe(true)
     store.set(selectShapesCommand, ['c'])
 
-    expect(store.get(selectedIdsAtom)).toEqual([])
-    expect(store.get(undoStackAtom).length).toBe(0)
+    expect(store.get(selectedIdsAtom)).toEqual(['c'])
+    expect(store.get(undoStackAtom).length).toBe(1)
   })
 })
 
 describe('marquee: isGestureActiveAtom', () => {
-  it('returns true while marqueeDraftAtom is set', () => {
+  it('does not block commands while marqueeDraftAtom is set (selection gesture)', () => {
     const store = createStore()
     armMarquee(store)
-    expect(store.get(isGestureActiveAtom)).toBe(true)
-  })
-
-  it('returns false after marqueeDraftAtom is cleared', () => {
-    const store = createStore()
-    armMarquee(store)
-    store.set(marqueeDraftAtom, null)
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 })

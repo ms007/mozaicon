@@ -10,7 +10,9 @@ import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import { draftShapeAtom } from './draw'
 import { type MarqueeDraft, marqueeDraftAtom } from './marquee'
 import { moveDraftAtom } from './move'
+import { propertyStepDraftAtom } from './propertyStep'
 import {
+  anyGestureDraftActiveAtom,
   cancelGesturesAtom,
   type DisplayContribution,
   displayedSelectionBboxFromRegistryAtom,
@@ -42,9 +44,15 @@ function withAdapters<D>(adapters: readonly GestureAdapter<D>[], fn: () => void)
 }
 
 describe('gestureRegistry', () => {
-  it('registers four adapters in Marquee > Resize > Move > Draw order', () => {
-    expect(gestureRegistry).toHaveLength(4)
-    expect(gestureRegistry.map((a) => a.name)).toEqual(['marquee', 'resize', 'move', 'draw'])
+  it('registers five adapters in Marquee > Resize > Move > Draw > PropertyStep order', () => {
+    expect(gestureRegistry).toHaveLength(5)
+    expect(gestureRegistry.map((a) => a.name)).toEqual([
+      'marquee',
+      'resize',
+      'move',
+      'draw',
+      'propertyStep',
+    ])
   })
 })
 
@@ -81,6 +89,55 @@ describe('isAnyGestureActiveAtom', () => {
       store.set(draftB, 'active')
       expect(store.get(isAnyGestureActiveAtom)).toBe(true)
     })
+  })
+
+  it('returns false when only a blocksCommands:false adapter is active', () => {
+    const draftAtom = atom<string | null>(null)
+    const nonBlocking: GestureAdapter<string> = {
+      name: 'non-blocking',
+      draftAtom,
+      blocksCommands: false,
+    }
+    withAdapters([nonBlocking], () => {
+      const store = createStore()
+      store.set(draftAtom, 'active')
+      expect(store.get(isAnyGestureActiveAtom)).toBe(false)
+    })
+  })
+
+  it('propertyStepDraftAtom does not make isAnyGestureActiveAtom true', () => {
+    const store = createStore()
+    store.set(propertyStepDraftAtom, { r1: { x: 0, y: 0, width: 10, height: 10 } })
+    expect(store.get(isAnyGestureActiveAtom)).toBe(false)
+  })
+
+  it('an armed marquee does not make isAnyGestureActiveAtom true', () => {
+    const store = createStore()
+    store.set(marqueeDraftAtom, {
+      pointerId: 1,
+      startScreen: { x: 0, y: 0 },
+      startViewBox: { x: 0, y: 0 },
+      current: { x: 0, y: 0 },
+      additive: false,
+      baseSelection: [],
+    })
+    expect(store.get(isAnyGestureActiveAtom)).toBe(false)
+  })
+})
+
+describe('anyGestureDraftActiveAtom', () => {
+  it('is true for a non-blocking gesture like an armed marquee', () => {
+    const store = createStore()
+    expect(store.get(anyGestureDraftActiveAtom)).toBe(false)
+    store.set(marqueeDraftAtom, {
+      pointerId: 1,
+      startScreen: { x: 0, y: 0 },
+      startViewBox: { x: 0, y: 0 },
+      current: { x: 0, y: 0 },
+      additive: false,
+      baseSelection: [],
+    })
+    expect(store.get(anyGestureDraftActiveAtom)).toBe(true)
   })
 })
 
@@ -382,6 +439,7 @@ describe('real adapter precedence: Marquee > Resize > Move > Draw', () => {
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 10, height: 10 } })
     store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 1 })
     store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 0, y: 0, width: 1, height: 1 }))
+    store.set(propertyStepDraftAtom, { r1: { x: 5, y: 5, width: 10, height: 10 } })
 
     store.set(cancelGesturesAtom)
 
@@ -389,6 +447,7 @@ describe('real adapter precedence: Marquee > Resize > Move > Draw', () => {
     expect(store.get(resizeDraftAtom)).toBeNull()
     expect(store.get(moveDraftAtom)).toBeNull()
     expect(store.get(draftShapeAtom)).toBeNull()
+    expect(store.get(propertyStepDraftAtom)).toBeNull()
     expect(store.get(isAnyGestureActiveAtom)).toBe(false)
   })
 

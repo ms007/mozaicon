@@ -8,6 +8,7 @@ import { selectionBboxAtom } from '@/store/atoms/selection'
 import { drawAdapter } from './draw'
 import { marqueeAdapter } from './marquee'
 import { moveAdapter } from './move'
+import { propertyStepAdapter } from './propertyStep'
 import { resizeAdapter } from './resize'
 
 export type DisplayContribution =
@@ -19,19 +20,31 @@ export type GestureAdapter<D = unknown> = {
   name: string
   draftAtom: PrimitiveAtom<D | null>
   displayBbox?: (draft: D, get: Getter) => DisplayContribution
+  blocksCommands?: boolean
 }
 
 // Order encodes display-bbox precedence: the first active adapter wins.
 // Marquee shows the live preview rect; Resize shows draft handles; Move
-// translates the static bbox; Draw shows the growing shape.
+// translates the static bbox; Draw shows the growing shape; PropertyStep
+// previews arrow-key nudges from the properties panel.
 export const gestureRegistry = [
   marqueeAdapter,
   resizeAdapter,
   moveAdapter,
   drawAdapter,
+  propertyStepAdapter,
 ] as readonly GestureAdapter[]
 
 export const isAnyGestureActiveAtom = atom((get) =>
+  gestureRegistry.some(
+    (adapter) => adapter.blocksCommands !== false && get(adapter.draftAtom) !== null,
+  ),
+)
+
+// "Is any gesture in progress at all", ignoring blocksCommands. The Escape
+// ladder uses this to cancel even non-blocking gestures (e.g. an armed
+// marquee), which isAnyGestureActiveAtom deliberately excludes.
+export const anyGestureDraftActiveAtom = atom((get) =>
   gestureRegistry.some((adapter) => get(adapter.draftAtom) !== null),
 )
 

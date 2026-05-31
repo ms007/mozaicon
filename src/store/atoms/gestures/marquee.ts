@@ -86,4 +86,9 @@ export const marqueeAdapter: GestureAdapter<MarqueeDraft> = {
   name: 'marquee',
   draftAtom: marqueeDraftAtom,
   displayBbox: marqueeDisplayBbox,
+  // A marquee never mutates the document (it only commits selection on
+  // pointerup, after clearing its own draft), so it must not block commands.
+  // Otherwise the blur-commit triggered by the same pointerdown that arms the
+  // marquee — e.g. clicking the canvas to leave a properties field — is dropped.
+  blocksCommands: false,
 }

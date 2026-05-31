@@ -2,8 +2,8 @@ import type { createStore } from 'jotai'
 
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
 import {
+  anyGestureDraftActiveAtom,
   cancelGesturesAtom as cancelDraftAtom,
-  isAnyGestureActiveAtom as isGestureActiveAtom,
 } from '@/store/atoms/gestures/registry'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
@@ -24,7 +24,7 @@ export function createCanvasBindings(store: ReturnType<typeof createStore>): Sho
       label: 'Cancel / deselect',
       hint: 'Esc',
       run: () => {
-        if (store.get(isGestureActiveAtom)) {
+        if (store.get(anyGestureDraftActiveAtom)) {
           store.set(cancelDraftAtom)
           return
         }

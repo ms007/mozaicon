@@ -62,7 +62,7 @@ describe('isGestureActiveAtom', () => {
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 
-  it('returns true when marqueeDraftAtom is set', () => {
+  it('stays false when only marqueeDraftAtom is set (marquee does not block commands)', () => {
     const store = createStore()
     store.set(marqueeDraftAtom, {
       pointerId: 1,
@@ -72,20 +72,6 @@ describe('isGestureActiveAtom', () => {
       additive: false,
       baseSelection: [],
     })
-    expect(store.get(isGestureActiveAtom)).toBe(true)
-  })
-
-  it('returns false after marqueeDraftAtom is cleared', () => {
-    const store = createStore()
-    store.set(marqueeDraftAtom, {
-      pointerId: 1,
-      startScreen: { x: 0, y: 0 },
-      startViewBox: { x: 0, y: 0 },
-      current: { x: 5, y: 5 },
-      additive: false,
-      baseSelection: [],
-    })
-    store.set(marqueeDraftAtom, null)
     expect(store.get(isGestureActiveAtom)).toBe(false)
   })
 
