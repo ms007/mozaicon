@@ -4,7 +4,12 @@ import { useCallback, useRef } from 'react'
 import { DRAG_THRESHOLD_PX, screenDistance } from '@/lib/geometry/distance'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { isSelectable } from '@/lib/selection'
-import { screenToViewBox } from '@/lib/svg/screenToViewBox'
+import {
+  createGestureSampler,
+  type FrameScheduler,
+  type GestureSampler,
+  rafScheduler,
+} from '@/lib/svg/gestureSampler'
 import { shapeAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/move-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
@@ -21,6 +26,7 @@ type DragState = {
   shiftKey: boolean
   promoted: boolean
   moveIds: string[] | null
+  draftWritten: boolean
 }
 
 function applyShapeClick(store: Store, shapeId: string, shiftKey: boolean) {
@@ -39,9 +45,10 @@ function releaseCapture(e: React.PointerEvent) {
   }
 }
 
-export function useShapeInteraction(shapeId: string) {
+export function useShapeInteraction(shapeId: string, scheduler: FrameScheduler = rafScheduler) {
   const store = useStore()
   const dragRef = useRef<DragState | null>(null)
+  const samplerRef = useRef<GestureSampler | null>(null)
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -52,10 +59,14 @@ export function useShapeInteraction(shapeId: string) {
       const shape = store.get(shapeAtom(shapeId))
       if (!shape || !isSelectable(shape)) return
 
+      const svg = (e.target as SVGElement).ownerSVGElement
+      if (!svg) return
+
       e.currentTarget.setPointerCapture(e.pointerId)
 
-      const svg = (e.target as SVGElement).ownerSVGElement
-      const vb = svg ? screenToViewBox(svg, e.clientX, e.clientY) : { x: e.clientX, y: e.clientY }
+      const sampler = createGestureSampler(svg, scheduler)
+      samplerRef.current = sampler
+      const vb = sampler.toViewBox({ x: e.clientX, y: e.clientY })
 
       dragRef.current = {
         startScreen: { x: e.clientX, y: e.clientY },
@@ -63,18 +74,22 @@ export function useShapeInteraction(shapeId: string) {
         shiftKey: e.shiftKey,
         promoted: false,
         moveIds: null,
+        draftWritten: false,
       }
     },
-    [store, shapeId],
+    [store, shapeId, scheduler],
   )
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent) => {
       const state = dragRef.current
-      if (!state) return
+      const sampler = samplerRef.current
+      if (!state || !sampler) return
 
-      if (state.promoted && store.get(moveDraftAtom) === null) {
+      if (state.promoted && state.draftWritten && store.get(moveDraftAtom) === null) {
         dragRef.current = null
+        samplerRef.current = null
+        sampler.stop()
         releaseCapture(e)
         return
       }
@@ -83,10 +98,6 @@ export function useShapeInteraction(shapeId: string) {
         const dist = screenDistance(state.startScreen, { x: e.clientX, y: e.clientY })
         if (dist < DRAG_THRESHOLD_PX) return
       }
-
-      const svg = (e.target as SVGElement).ownerSVGElement
-      if (!svg) return
-      const current = screenToViewBox(svg, e.clientX, e.clientY)
 
       if (!state.promoted) {
         const isSelected = store.get(selectedIdsAtom).includes(shapeId)
@@ -106,9 +117,16 @@ export function useShapeInteraction(shapeId: string) {
       const ids = state.moveIds
       if (!ids) return
 
-      const { dx, dy } = computeMoveDraft(state.startViewBox, current, e.shiftKey)
-
-      store.set(moveDraftAtom, { ids, dx, dy })
+      const startViewBox = state.startViewBox
+      sampler.schedule(
+        { x: e.clientX, y: e.clientY },
+        { shift: e.shiftKey, alt: e.altKey },
+        (sample) => {
+          const { dx, dy } = computeMoveDraft(startViewBox, sample.point, sample.modifiers.shift)
+          store.set(moveDraftAtom, { ids, dx, dy })
+          state.draftWritten = true
+        },
+      )
     },
     [store, shapeId],
   )
@@ -116,9 +134,12 @@ export function useShapeInteraction(shapeId: string) {
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
       const state = dragRef.current
+      const sampler = samplerRef.current
       if (!state) return
       dragRef.current = null
+      samplerRef.current = null
 
+      if (sampler) sampler.stop()
       releaseCapture(e)
 
       if (!state.promoted) {
@@ -128,11 +149,20 @@ export function useShapeInteraction(shapeId: string) {
         return
       }
 
-      const draft = store.get(moveDraftAtom)
+      const ids = state.moveIds
+      if (!ids || !sampler) return
+
+      if (state.draftWritten && store.get(moveDraftAtom) === null) {
+        return
+      }
+
+      const releasePoint = sampler.toViewBox({ x: e.clientX, y: e.clientY })
+      const { dx, dy } = computeMoveDraft(state.startViewBox, releasePoint, e.shiftKey)
+
       store.set(moveDraftAtom, null)
 
-      if (draft && (draft.dx !== 0 || draft.dy !== 0)) {
-        store.set(moveSelectionCommand, { ids: draft.ids, dx: draft.dx, dy: draft.dy })
+      if (dx !== 0 || dy !== 0) {
+        store.set(moveSelectionCommand, { ids, dx, dy })
       }
     },
     [store, shapeId],
@@ -142,6 +172,9 @@ export function useShapeInteraction(shapeId: string) {
     (e: React.PointerEvent) => {
       if (!dragRef.current) return
       dragRef.current = null
+      const sampler = samplerRef.current
+      samplerRef.current = null
+      if (sampler) sampler.stop()
       releaseCapture(e)
       store.set(moveDraftAtom, null)
     },

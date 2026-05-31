@@ -284,10 +284,6 @@ describe('createDragTool', () => {
   })
 
   // --- Click-fallback fires regardless of selection state ---
-  // Rationale: activating a draw tool signals intent to draw. A sub-threshold
-  // click should always produce the click-fallback shape. Selection-clearing
-  // on background click is handled by useToolPointerBridge when no tool is
-  // active.
 
   it('fires click-fallback on sub-threshold release even when selection is non-empty', () => {
     const ctx = makeCtx()

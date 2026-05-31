@@ -460,7 +460,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 - **Never read `documentAtom` in the canvas render path.** Always go through `shapeAtomsAtom` or derived atoms.
 - **Avoid `produce` in derived atoms** — they should be pure reads.
 - **Draft-then-commit for gestures.** Interactive gestures (resize, move) write a transient draft atom (`resizeDraftAtom`, `draftShapeAtom`) on every pointer move — these are UI state, not commands. A single undoable command fires on `pointerup`. Per-frame commands are **not** the rule; they would flood the undo stack and thrash document snapshots.
-- **Pointer-driven mutation commands** (e.g. dragging an existing shape to move it) batch via `requestAnimationFrame` so a single command dispatches per frame. Transient UI-atom updates during a drag (e.g. `draftShapeAtom` while _Drag-to-Draw_ is in progress) are not commands and don't need their own rAF loop — React batches the re-render.
+- **Frame-throttled draft writes via the Gesture Sampler.** During a pointer-driven gesture (move, resize, draw), each `pointermove` calls `gestureSampler.schedule()` instead of writing the draft atom directly. The sampler coalesces samples so at most one draft write fires per animation frame (≤1 per frame). No commands dispatch mid-gesture — the draft atom is UI state, not a command. On `pointerup` the gesture commits from the up-event coordinate: a single undoable command dispatches once, and `gestureSampler.stop()` cancels any pending frame. This avoids flooding the undo stack with per-frame entries and keeps document snapshots stable for the gesture's duration.
 - **SVGO is expensive** — run it in a Web Worker if export feels slow (> 100ms).
 
 ## Where to Start Reading the Code

@@ -25,6 +25,27 @@ function makeSvgElement() {
   return { getScreenCTM: () => null } as unknown as SVGSVGElement
 }
 
+function makeManualScheduler() {
+  let pending: FrameRequestCallback | null = null
+  return {
+    request(cb: FrameRequestCallback) {
+      pending = cb
+      return 1
+    },
+    cancel() {
+      pending = null
+    },
+    flush() {
+      const cb = pending
+      pending = null
+      cb?.(performance.now())
+    },
+    get hasPending() {
+      return pending !== null
+    },
+  }
+}
+
 function pointerEvent(overrides: Partial<React.PointerEvent> = {}) {
   const stopPropagation = vi.fn()
   const setPointerCapture = vi.fn()
@@ -36,6 +57,7 @@ function pointerEvent(overrides: Partial<React.PointerEvent> = {}) {
     button: 0,
     pointerId: 1,
     shiftKey: false,
+    altKey: false,
     clientX: 0,
     clientY: 0,
     stopPropagation,
@@ -59,8 +81,9 @@ function clickSequence(
 
 describe('useShapeInteraction — click-to-select', () => {
   it('replaces selection with shape id on plain click (pointerup)', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['other'])
@@ -75,8 +98,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('adds shape id to selection on shift-click when not selected', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s2'),
+      () => useShapeInteraction('s2', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -91,8 +115,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('removes shape id from selection on shift-click when already selected', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2'])
@@ -107,8 +132,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('calls stopPropagation on every primary pointerdown', () => {
+    const scheduler = makeManualScheduler()
     const { result } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -123,8 +149,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('shift-click removes last selected item, leaving empty selection', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -139,8 +166,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('ignores non-primary button', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -156,8 +184,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('clicking the already-selected shape is a no-op (no history entry)', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         seedSelection(s, ['s1'])
@@ -179,8 +208,9 @@ describe('useShapeInteraction — click-to-select', () => {
     { id: 'hidden', shiftKey: true, why: 'shift+hidden shape' },
     { id: 'gone', shiftKey: false, why: 'missing shape' },
   ])('clicking $why leaves selection unchanged', ({ id, shiftKey }) => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction(id),
+      () => useShapeInteraction(id, scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -195,8 +225,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('click A then click B produces two history entries; undo restores A', () => {
+    const scheduler = makeManualScheduler()
     const { result, store, rerender } = renderHookWithStore(
-      ({ id }: { id: string }) => useShapeInteraction(id),
+      ({ id }: { id: string }) => useShapeInteraction(id, scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -221,8 +252,9 @@ describe('useShapeInteraction — click-to-select', () => {
   })
 
   it('selection fires on pointerup not pointerdown', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['other'])
@@ -245,8 +277,9 @@ describe('useShapeInteraction — click-to-select', () => {
 
 describe('useShapeInteraction — drag-to-move', () => {
   it('above-threshold drag on selected shape writes moveDraftAtom', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -256,6 +289,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -263,8 +297,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('above-threshold drag on selected shape does not mutate selectedIdsAtom', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2'])
@@ -274,14 +309,16 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
   })
 
   it('above-threshold drag on unselected shape selects it before writing moveDraftAtom', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s2'),
+      () => useShapeInteraction('s2', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -291,6 +328,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(selectedIdsAtom)).toEqual(['s2'])
@@ -299,8 +337,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('above-threshold drag with shift on unselected shape toggles before writing moveDraftAtom', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s2'),
+      () => useShapeInteraction('s2', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -310,6 +349,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0, shiftKey: true }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
@@ -318,8 +358,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('move set is the full current selection when shape is already selected', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2', 'other'])
@@ -329,6 +370,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 5 }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -336,8 +378,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('pointerup clears moveDraftAtom and dispatches moveSelectionCommand', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -347,6 +390,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 5 }).event)
+      scheduler.flush()
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 5 }).event)
     })
 
@@ -358,8 +402,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('undo after move restores document and selection', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -370,6 +415,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 10 }).event)
     })
 
@@ -379,8 +425,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('sub-threshold movement does not trigger move draft', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -390,14 +437,16 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 1, clientY: 1 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 
   it('exactly-at-threshold distance triggers move', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -407,14 +456,16 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 3, clientY: 0 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).not.toBeNull()
   })
 
   it('onPointerMove without prior onPointerDown is a no-op', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -423,14 +474,16 @@ describe('useShapeInteraction — drag-to-move', () => {
 
     act(() => {
       result.current.onPointerMove(pointerEvent({ clientX: 50, clientY: 50 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 
   it('onPointerUp without prior onPointerDown is a no-op', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -447,8 +500,9 @@ describe('useShapeInteraction — drag-to-move', () => {
   })
 
   it('drag on locked shape does not set moveDraftAtom', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('locked'),
+      () => useShapeInteraction('locked', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -457,14 +511,16 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 20, clientY: 20 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 
   it('subsequent pointer-move events update draft to latest position', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -474,20 +530,23 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 10, dy: 10 })
 
     act(() => {
       result.current.onPointerMove(pointerEvent({ clientX: 5, clientY: 3 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 5, dy: 3 })
   })
 
   it('sub-threshold moves still update draft after promotion', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -497,15 +556,18 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
       result.current.onPointerMove(pointerEvent({ clientX: 1, clientY: 1 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 1, dy: 1 })
   })
 
   it('stops updating draft after external cancellation', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -515,6 +577,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).not.toBeNull()
 
@@ -522,13 +585,15 @@ describe('useShapeInteraction — drag-to-move', () => {
 
     act(() => {
       result.current.onPointerMove(pointerEvent({ clientX: 20, clientY: 20 }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 
-  it('pointerup after external cancellation does not commit', () => {
+  it('pointerup after external cancellation does not commit even at non-zero release', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -539,12 +604,13 @@ describe('useShapeInteraction — drag-to-move', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     store.set(moveDraftAtom, null)
 
     act(() => {
-      result.current.onPointerUp(pointerEvent().event)
+      result.current.onPointerUp(pointerEvent({ clientX: 20, clientY: 15 }).event)
     })
 
     expect(store.get(documentAtom)).toBe(docBefore)
@@ -553,8 +619,9 @@ describe('useShapeInteraction — drag-to-move', () => {
 
 describe('useShapeInteraction — axis-lock (Shift)', () => {
   it('Shift constrains motion to horizontal axis when |dx| >= |dy|', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -564,6 +631,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -571,8 +639,9 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
   })
 
   it('Shift constrains motion to vertical axis when |dy| > |dx|', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -582,6 +651,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 3, clientY: 10, shiftKey: true }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -589,8 +659,9 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
   })
 
   it('releasing Shift mid-gesture restores free motion', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -600,18 +671,21 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 10, dy: 0 })
 
     act(() => {
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: false }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 10, dy: 3 })
   })
 
   it('pressing Shift mid-gesture activates axis-lock', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -621,18 +695,21 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: false }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 10, dy: 3 })
 
     act(() => {
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
+      scheduler.flush()
     })
     expect(store.get(moveDraftAtom)).toEqual({ ids: ['s1'], dx: 10, dy: 0 })
   })
 
   it('Shift-constrained drag commits axis-locked delta to document', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -642,7 +719,8 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
-      result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 3 }).event)
+      scheduler.flush()
+      result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
     })
 
     const doc = store.get(documentAtom)
@@ -652,8 +730,9 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
   })
 
   it('releasing Shift before commit applies unconstrained delta to document', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
@@ -663,7 +742,9 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
+      scheduler.flush()
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 3, shiftKey: false }).event)
+      scheduler.flush()
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 3 }).event)
     })
 
@@ -676,8 +757,9 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
 
 describe('useShapeInteraction — locked-shape filter', () => {
   it('pointerdown on a locked-only target blocks promotion (moveDraftAtom stays null)', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('locked'),
+      () => useShapeInteraction('locked', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -686,14 +768,16 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 20, clientY: 20 }).event)
+      scheduler.flush()
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
   })
 
   it('locked-only target still runs click-fallback selection on pointerup', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('locked'),
+      () => useShapeInteraction('locked', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
       },
@@ -707,8 +791,9 @@ describe('useShapeInteraction — locked-shape filter', () => {
   })
 
   it('multi-selection with locked shape excludes locked from moveDraftAtom.ids', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2', 'locked'])
@@ -718,6 +803,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -726,8 +812,9 @@ describe('useShapeInteraction — locked-shape filter', () => {
   })
 
   it('multi-selection with hidden shape excludes hidden from moveDraftAtom.ids', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'hidden'])
@@ -737,6 +824,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -744,8 +832,9 @@ describe('useShapeInteraction — locked-shape filter', () => {
   })
 
   it('dragging non-locked shape in selection with only locked others moves only non-locked', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'locked'])
@@ -755,6 +844,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
     })
 
     const draft = store.get(moveDraftAtom)
@@ -762,8 +852,9 @@ describe('useShapeInteraction — locked-shape filter', () => {
   })
 
   it('commit after mixed selection moves only unlocked shapes in document', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('s1'),
+      () => useShapeInteraction('s1', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'locked'])
@@ -773,6 +864,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 5 }).event)
+      scheduler.flush()
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 5 }).event)
     })
 
@@ -786,8 +878,9 @@ describe('useShapeInteraction — locked-shape filter', () => {
   })
 
   it('all-locked selection: pointerUp after drag attempt does not create history entry', () => {
+    const scheduler = makeManualScheduler()
     const { result, store } = renderHookWithStore(
-      () => useShapeInteraction('locked'),
+      () => useShapeInteraction('locked', scheduler),
       (s) => {
         s.set(documentAtom, testDoc)
         seedSelection(s, ['locked'])
@@ -797,10 +890,59 @@ describe('useShapeInteraction — locked-shape filter', () => {
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 20, clientY: 20 }).event)
+      scheduler.flush()
       result.current.onPointerUp(pointerEvent({ clientX: 20, clientY: 20 }).event)
     })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
     expect(store.get(moveDraftAtom)).toBeNull()
+  })
+})
+
+describe('useShapeInteraction — frame coalescing', () => {
+  it('multiple pointer-move events before flush coalesce to one draft write', () => {
+    const scheduler = makeManualScheduler()
+    const { result, store } = renderHookWithStore(
+      () => useShapeInteraction('s1', scheduler),
+      (s) => {
+        s.set(documentAtom, testDoc)
+        s.set(selectShapesCommand, ['s1'])
+      },
+    )
+
+    act(() => {
+      result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      result.current.onPointerMove(pointerEvent({ clientX: 20, clientY: 15 }).event)
+      result.current.onPointerMove(pointerEvent({ clientX: 30, clientY: 25 }).event)
+      scheduler.flush()
+    })
+
+    const draft = store.get(moveDraftAtom)
+    expect(draft).toEqual({ ids: ['s1'], dx: 30, dy: 25 })
+  })
+
+  it('trailing-edge: pointerup before frame fires commits release coordinate (no snap-back)', () => {
+    const scheduler = makeManualScheduler()
+    const { result, store } = renderHookWithStore(
+      () => useShapeInteraction('s1', scheduler),
+      (s) => {
+        s.set(documentAtom, testDoc)
+        s.set(selectShapesCommand, ['s1'])
+      },
+    )
+
+    act(() => {
+      result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      // Frame is scheduled but NOT flushed — simulates pointerup racing the rAF
+      result.current.onPointerUp(pointerEvent({ clientX: 15, clientY: 12 }).event)
+    })
+
+    expect(store.get(moveDraftAtom)).toBeNull()
+    const doc = store.get(documentAtom)
+    const shape = doc.shapes.find((s) => s.id === 's1')
+    expect(shape?.x).toBe(15)
+    expect(shape?.y).toBe(12)
   })
 })

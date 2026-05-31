@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DrawTool } from '@/features/toolbar/tools/registry'
+import type { FrameScheduler } from '@/lib/svg/gestureSampler'
 import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
@@ -17,6 +18,27 @@ const testDoc = makeDoc([
   makeRect({ id: 's2', name: 'S2', x: 10, y: 10 }),
 ])
 
+function makeManualScheduler(): FrameScheduler & { flush(): void; hasPending: boolean } {
+  let pending: FrameRequestCallback | null = null
+  return {
+    request(cb: FrameRequestCallback) {
+      pending = cb
+      return 1
+    },
+    cancel() {
+      pending = null
+    },
+    flush() {
+      const cb = pending
+      pending = null
+      cb?.(performance.now())
+    },
+    get hasPending() {
+      return pending !== null
+    },
+  }
+}
+
 function makeTool(overrides: Partial<DrawTool> = {}): DrawTool {
   return {
     id: 'test-tool',
@@ -28,21 +50,22 @@ function makeTool(overrides: Partial<DrawTool> = {}): DrawTool {
   }
 }
 
-function makeSvgRef() {
-  const ref: React.RefObject<SVGSVGElement | null> = { current: null }
+function makeSvgRef(): React.RefObject<SVGSVGElement | null> & { svg: SVGSVGElement } {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.getScreenCTM = vi.fn().mockReturnValue({
     inverse: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }),
   })
-  ref.current = svg
+  const ref = { current: svg } as React.RefObject<SVGSVGElement | null> & { svg: SVGSVGElement }
+  ref.svg = svg
   return ref
 }
 
 function setup(tool: DrawTool | undefined) {
   const svgRef = makeSvgRef()
-  const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef))
+  const scheduler = makeManualScheduler()
+  const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef, scheduler))
   store.set(documentAtom, testDoc)
-  return { store, result }
+  return { store, result, scheduler }
 }
 
 function makePointerEvent(overrides: Record<string, unknown> = {}) {
@@ -104,6 +127,7 @@ describe('useToolPointerBridge', () => {
     const { result } = setup(tool)
     const { event, releaseCapture } = makePointerEvent({ pointerId: 42 })
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerUp(event)
 
     expect(releaseCapture).toHaveBeenCalledWith(42)
@@ -124,6 +148,7 @@ describe('useToolPointerBridge', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(false) })
     const { result } = setup(tool)
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerMove(makePointerEvent().event)
 
     expect(tool.shouldHandlePointerMove).toHaveBeenCalled()
@@ -132,18 +157,22 @@ describe('useToolPointerBridge', () => {
 
   it('forwards pointermove when shouldHandlePointerMove returns true', () => {
     const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(true) })
-    const { result } = setup(tool)
+    const { result, scheduler } = setup(tool)
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerMove(makePointerEvent().event)
+    scheduler.flush()
 
     expect(tool.onPointerMove).toHaveBeenCalled()
   })
 
   it('forwards pointermove when shouldHandlePointerMove is not defined', () => {
     const tool = makeTool()
-    const { result } = setup(tool)
+    const { result, scheduler } = setup(tool)
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerMove(makePointerEvent().event)
+    scheduler.flush()
 
     expect(tool.onPointerMove).toHaveBeenCalled()
   })
@@ -232,11 +261,12 @@ describe('useToolPointerBridge', () => {
     expect(tool.onPointerDown).toHaveBeenCalled()
   })
 
-  it('pointermove updates marqueeDraftAtom.current during active marquee', () => {
-    const { result, store } = setup(undefined)
+  it('pointermove updates marqueeDraftAtom.current during active marquee after frame flush', () => {
+    const { result, store, scheduler } = setup(undefined)
 
     result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
     result.current.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }).event)
+    scheduler.flush()
 
     const draft = store.get(marqueeDraftAtom)
     expect(draft?.current).toEqual({ x: 15, y: 15 })
@@ -251,10 +281,11 @@ describe('useToolPointerBridge', () => {
   })
 
   it('past-threshold pointerup commits selection via selectShapesCommand', () => {
-    const { result, store } = setup(undefined)
+    const { result, store, scheduler } = setup(undefined)
 
     result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
     result.current.onPointerMove(makePointerEvent({ clientX: 12, clientY: 12 }).event)
+    scheduler.flush()
     result.current.onPointerUp(makePointerEvent({ clientX: 12, clientY: 12 }).event)
 
     expect(store.get(marqueeDraftAtom)).toBe(null)
@@ -292,6 +323,7 @@ describe('useToolPointerBridge', () => {
     const { result } = setup(undefined)
     const { event, releaseCapture } = makePointerEvent({ pointerId: 42 })
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerUp(event)
 
     expect(releaseCapture).toHaveBeenCalledWith(42)
@@ -302,6 +334,7 @@ describe('useToolPointerBridge', () => {
     const { event, releaseCapture, hasCapture } = makePointerEvent({ pointerId: 42 })
     hasCapture.mockReturnValue(false)
 
+    result.current.onPointerDown(makePointerEvent().event)
     result.current.onPointerUp(event)
 
     expect(releaseCapture).not.toHaveBeenCalled()
@@ -315,6 +348,8 @@ describe('useToolPointerBridge', () => {
     })
     const { result } = setup(tool)
     const { event, releaseCapture } = makePointerEvent({ pointerId: 7 })
+
+    result.current.onPointerDown(makePointerEvent().event)
 
     expect(() => {
       result.current.onPointerUp(event)
@@ -363,5 +398,98 @@ describe('useToolPointerBridge', () => {
     result.current.onContextMenu(event)
 
     expect(preventDefault).not.toHaveBeenCalled()
+  })
+
+  describe('Gesture Sampler integration', () => {
+    it('marquee draft write is frame-throttled (not immediate on pointermove)', () => {
+      const { result, store } = setup(undefined)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }).event)
+
+      const draft = store.get(marqueeDraftAtom)
+      expect(draft?.current).toEqual({ x: 0, y: 0 })
+    })
+
+    it('marquee coalesces multiple pointermoves into one draft write per frame', () => {
+      const { result, store, scheduler } = setup(undefined)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 5, clientY: 5 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 10, clientY: 10 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }).event)
+      scheduler.flush()
+
+      const draft = store.get(marqueeDraftAtom)
+      expect(draft?.current).toEqual({ x: 15, y: 15 })
+    })
+
+    it('pointerup recomputes selection from release coordinate, not last frame draft', () => {
+      const { result, store } = setup(undefined)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 5, clientY: 5 }).event)
+      // Don't flush — draft.current is still at start point
+      // Release at a position that covers both shapes
+      result.current.onPointerUp(makePointerEvent({ clientX: 20, clientY: 20 }).event)
+
+      expect(store.get(marqueeDraftAtom)).toBe(null)
+      expect(store.get(selectedIdsAtom)).toEqual(['s1', 's2'])
+    })
+
+    it('sampler is discarded on pointercancel', () => {
+      const { result, store, scheduler } = setup(undefined)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 15, clientY: 15 }).event)
+      result.current.onPointerCancel(makePointerEvent().event)
+
+      // Frame fires after cancel — should not crash or update draft
+      scheduler.flush()
+      expect(store.get(marqueeDraftAtom)).toBe(null)
+    })
+
+    it('tool pointermove uses sampler for coordinate conversion (no repeated getScreenCTM)', () => {
+      const tool = makeTool({ shouldHandlePointerMove: vi.fn().mockReturnValue(true) })
+      const svgRef = makeSvgRef()
+      const scheduler = makeManualScheduler()
+      const { result } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef, scheduler))
+
+      result.current.onPointerDown(makePointerEvent().event)
+      const callsBefore = (svgRef.svg.getScreenCTM as ReturnType<typeof vi.fn>).mock.calls.length
+      result.current.onPointerMove(makePointerEvent({ clientX: 50, clientY: 50 }).event)
+      scheduler.flush()
+      const callsAfter = (svgRef.svg.getScreenCTM as ReturnType<typeof vi.fn>).mock.calls.length
+
+      expect(callsAfter - callsBefore).toBe(0)
+      expect(tool.onPointerMove).toHaveBeenCalled()
+    })
+
+    it('makeToolEvent passes sampler-converted point to tool on pointerdown', () => {
+      const tool = makeTool()
+      const svgRef = makeSvgRef()
+      const scheduler = makeManualScheduler()
+      const { result } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef, scheduler))
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 42, clientY: 99 }).event)
+
+      expect(tool.onPointerDown).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ point: { x: 42, y: 99 } }),
+      )
+    })
+
+    it('second pointerdown stops the previous sampler so stale rAF does not fire', () => {
+      const { result, store, scheduler } = setup(undefined)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 0, clientY: 0 }).event)
+      result.current.onPointerMove(makePointerEvent({ clientX: 50, clientY: 50 }).event)
+
+      result.current.onPointerDown(makePointerEvent({ clientX: 5, clientY: 5 }).event)
+      scheduler.flush()
+
+      const draft = store.get(marqueeDraftAtom)
+      expect(draft?.current).toEqual({ x: 5, y: 5 })
+    })
   })
 })

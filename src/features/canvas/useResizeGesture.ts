@@ -5,7 +5,7 @@ import type { Rect } from '@/lib/geometry/rect'
 import { scaleShape } from '@/lib/geometry/scale'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { bboxOf } from '@/lib/svg/bbox'
-import { screenToViewBox } from '@/lib/svg/screenToViewBox'
+import { createGestureSampler, type GestureSampler, rafScheduler } from '@/lib/svg/gestureSampler'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectedShapesAtom } from '@/store/atoms/selection'
 import { resizeShapeCommand } from '@/store/commands/resizeShape'
@@ -60,51 +60,60 @@ export function computeResizeDraft(
   return draft
 }
 
-function computeDraftFromEvent(
-  drag: DragState,
-  clientX: number,
-  clientY: number,
-  svg: SVGSVGElement,
-  modifiers: Modifiers,
-) {
-  const point = screenToViewBox(svg, clientX, clientY)
-  return computeResizeDraft(
-    drag.handle,
-    drag.startPoint,
-    point,
-    drag.startBbox,
-    drag.anchor,
-    drag.shapes,
-    modifiers,
-  )
-}
-
 export function useResizeGesture(svgRef: React.RefObject<SVGSVGElement | null>) {
   const store = useStore()
   const dragRef = useRef<DragState | null>(null)
+  const samplerRef = useRef<GestureSampler | null>(null)
 
   useEffect(() => {
     const handleMove = (e: PointerEvent) => {
       const drag = dragRef.current
       if (e.pointerId !== drag?.pointerId) return
 
-      const svg = svgRef.current
-      if (!svg) return
+      const sampler = samplerRef.current
+      if (!sampler) return
 
-      const modifiers = { shift: e.shiftKey, alt: e.altKey }
-      const draft = computeDraftFromEvent(drag, e.clientX, e.clientY, svg, modifiers)
-      store.set(resizeDraftAtom, draft)
+      sampler.schedule(
+        { x: e.clientX, y: e.clientY },
+        { shift: e.shiftKey, alt: e.altKey },
+        (sample) => {
+          const currentDrag = dragRef.current
+          if (!currentDrag) return
+          const draft = computeResizeDraft(
+            currentDrag.handle,
+            currentDrag.startPoint,
+            sample.point,
+            currentDrag.startBbox,
+            currentDrag.anchor,
+            currentDrag.shapes,
+            sample.modifiers,
+          )
+          store.set(resizeDraftAtom, draft)
+        },
+      )
     }
 
     const handleUp = (e: PointerEvent) => {
       const drag = dragRef.current
       if (e.pointerId !== drag?.pointerId) return
 
-      const svg = svgRef.current
-      if (!svg) return
+      const sampler = samplerRef.current
+      if (!sampler) return
 
+      sampler.stop()
+      samplerRef.current = null
+
+      const point = sampler.toViewBox({ x: e.clientX, y: e.clientY })
       const modifiers = { shift: e.shiftKey, alt: e.altKey }
-      const geometryById = computeDraftFromEvent(drag, e.clientX, e.clientY, svg, modifiers)
+      const geometryById = computeResizeDraft(
+        drag.handle,
+        drag.startPoint,
+        point,
+        drag.startBbox,
+        drag.anchor,
+        drag.shapes,
+        modifiers,
+      )
       store.set(resizeDraftAtom, null)
       store.set(resizeShapeCommand, geometryById)
 
@@ -116,6 +125,10 @@ export function useResizeGesture(svgRef: React.RefObject<SVGSVGElement | null>) 
     return () => {
       window.removeEventListener('pointermove', handleMove)
       window.removeEventListener('pointerup', handleUp)
+      if (samplerRef.current) {
+        samplerRef.current.stop()
+        samplerRef.current = null
+      }
       if (dragRef.current) {
         store.set(resizeDraftAtom, null)
         dragRef.current = null
@@ -132,11 +145,13 @@ export function useResizeGesture(svgRef: React.RefObject<SVGSVGElement | null>) 
       const svg = svgRef.current
       if (!svg) return
 
-      const point = screenToViewBox(svg, e.clientX, e.clientY)
+      const sampler = createGestureSampler(svg, rafScheduler)
+      const point = sampler.toViewBox({ x: e.clientX, y: e.clientY })
       const shapes = store.get(selectedShapesAtom)
       if (shapes.length === 0) return
 
       e.currentTarget.setPointerCapture(e.pointerId)
+      samplerRef.current = sampler
 
       dragRef.current = {
         pointerId: e.pointerId,

@@ -38,8 +38,6 @@ export function createDragTool<G>(config: DragToolConfig<G>): DrawTool {
     onPointerDown(_ctx, event) {
       if (event.buttons !== 1) return
       if (activeDrag) {
-        // Recover from stale closure: pointercancel can clear the draft atom
-        // without reaching the closure. Same pointerId proves the gesture ended.
         if (activeDrag.pointerId !== event.pointerId) return
         resetClosure()
       }
