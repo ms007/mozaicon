@@ -3,13 +3,13 @@ import { type ReactNode, useState } from 'react'
 
 import { Ellipse, Rect } from '@/icons'
 
-import { LayerItem } from './LayerItem'
+import { LayerItemView } from './LayerItemView'
 
 const noop = () => undefined
 
 const meta = {
-  title: 'Features/Layers/LayerItem',
-  component: LayerItem,
+  title: 'Features/Layers/LayerItemView',
+  component: LayerItemView,
   parameters: {
     layout: 'centered',
     a11y: {
@@ -44,7 +44,7 @@ const meta = {
       </div>
     ),
   ],
-} satisfies Meta<typeof LayerItem>
+} satisfies Meta<typeof LayerItemView>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -77,7 +77,7 @@ function EditingPlayground() {
   const [selected, setSelected] = useState(false)
 
   return (
-    <LayerItem
+    <LayerItemView
       icon={<Rect className="size-3.5" />}
       name={name}
       visible={visible}
@@ -118,7 +118,7 @@ function LayerListPlayground() {
   return (
     <div className="flex flex-col gap-0.5">
       {rows.map((row) => (
-        <LayerItem
+        <LayerItemView
           key={row.id}
           icon={row.icon}
           name={row.name}

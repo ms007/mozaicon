@@ -3,7 +3,7 @@ import { atom } from 'jotai'
 import { selectAtom } from 'jotai/utils'
 
 import { type Rect, rectEqual } from '@/lib/geometry/rect'
-import { selectionBboxAtom } from '@/store/atoms/selection'
+import { visibleSelectionBboxAtom } from '@/store/atoms/selection'
 
 import { drawAdapter } from './draw'
 import { marqueeAdapter } from './marquee'
@@ -53,7 +53,7 @@ const rawDisplayedSelectionBboxFromRegistryAtom = atom((get) => {
     const draft = get(adapter.draftAtom)
     if (draft == null) continue
 
-    if (!adapter.displayBbox) return get(selectionBboxAtom)
+    if (!adapter.displayBbox) return get(visibleSelectionBboxAtom)
 
     const contribution = adapter.displayBbox(draft, get)
     switch (contribution.kind) {
@@ -65,7 +65,7 @@ const rawDisplayedSelectionBboxFromRegistryAtom = atom((get) => {
         continue
     }
   }
-  return get(selectionBboxAtom)
+  return get(visibleSelectionBboxAtom)
 })
 
 export const displayedSelectionBboxFromRegistryAtom = selectAtom(

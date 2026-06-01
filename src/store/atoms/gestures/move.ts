@@ -4,7 +4,7 @@ import { selectAtom } from 'jotai/utils'
 import { atomFamily } from 'jotai-family'
 
 import { translateRect } from '@/lib/geometry/rect'
-import { selectionBboxAtom } from '@/store/atoms/selection'
+import { visibleSelectionBboxAtom } from '@/store/atoms/selection'
 
 import type { DisplayContribution, GestureAdapter } from './registry'
 
@@ -31,7 +31,7 @@ export const moveDraftForShapeAtom = atomFamily((id: string) =>
 )
 
 function moveDisplayBbox({ dx, dy }: MoveDraft, get: Getter): DisplayContribution {
-  const bbox = get(selectionBboxAtom)
+  const bbox = get(visibleSelectionBboxAtom)
   if (!bbox) return { kind: 'hide' }
   return { kind: 'rect', value: translateRect(bbox, dx, dy) }
 }

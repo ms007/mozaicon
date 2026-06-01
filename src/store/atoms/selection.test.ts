@@ -11,6 +11,7 @@ import {
   selectedIdsAtom,
   selectedShapesAtom,
   selectionBboxAtom,
+  visibleSelectionBboxAtom,
 } from './selection'
 
 const testDoc: Document = {
@@ -185,5 +186,38 @@ describe('selectionBboxAtom', () => {
     const after = store.get(selectionBboxAtom)
     expect(after).not.toBe(before)
     expect(after).toEqual({ x: 100, y: 0, width: 10, height: 10 })
+  })
+})
+
+describe('visibleSelectionBboxAtom', () => {
+  it('returns null when all selected shapes are hidden', () => {
+    const doc: Document = {
+      ...testDoc,
+      shapes: testDoc.shapes.map((s) => ({ ...s, visible: false })),
+    }
+    const store = makeStore(doc)
+    store.set(restoreSelectionAtom, ['r1', 'r2'])
+    expect(store.get(visibleSelectionBboxAtom)).toBeNull()
+  })
+
+  it('returns bbox of only visible selected shapes', () => {
+    const doc: Document = {
+      ...testDoc,
+      shapes: [testDoc.shapes[0], { ...testDoc.shapes[1], visible: false }],
+    }
+    const store = makeStore(doc)
+    store.set(restoreSelectionAtom, ['r1', 'r2'])
+    expect(store.get(visibleSelectionBboxAtom)).toEqual({ x: 0, y: 0, width: 10, height: 10 })
+  })
+
+  it('returns full bbox when all selected shapes are visible', () => {
+    const store = makeStore()
+    store.set(selectShapesCommand, ['r1', 'r2'])
+    expect(store.get(visibleSelectionBboxAtom)).toEqual({ x: 0, y: 0, width: 15, height: 15 })
+  })
+
+  it('returns null when selection is empty', () => {
+    const store = makeStore()
+    expect(store.get(visibleSelectionBboxAtom)).toBeNull()
   })
 })

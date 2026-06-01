@@ -29,6 +29,8 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
     shape.id,
   )
 
+  if (!shape.visible) return null
+
   const geoOverride = draftGeo ?? propStepGeo
   const rendered = geoOverride ? { ...shape, ...geoOverride } : shape
   const transform = moveOffset

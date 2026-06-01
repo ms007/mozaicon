@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 import { selectAtom } from 'jotai/utils'
 
 import { DraftLayer } from '@/features/canvas/DraftLayer'
+import { HoverHighlightOverlay } from '@/features/canvas/HoverHighlightOverlay'
 import { MarqueeHighlightOverlay } from '@/features/canvas/MarqueeHighlightOverlay'
 import { MarqueeOverlay } from '@/features/canvas/MarqueeOverlay'
 import { PixelGrid } from '@/features/canvas/PixelGrid'
@@ -32,6 +33,7 @@ export function CanvasStage({ svgRef }: { svgRef: React.RefObject<SVGSVGElement 
         <ShapeRenderer key={String(atom)} shapeAtom={atom} />
       ))}
       <DraftLayer />
+      <HoverHighlightOverlay />
       <MarqueeHighlightOverlay />
       <SelectionOverlay svgRef={svgRef} />
       <MarqueeOverlay />

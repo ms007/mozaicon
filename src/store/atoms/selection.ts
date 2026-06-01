@@ -1,5 +1,6 @@
 import { atom } from 'jotai'
 import { selectAtom } from 'jotai/utils'
+import { atomFamily } from 'jotai-family'
 
 import { rectEqual } from '@/lib/geometry/rect'
 import { bboxOfMany } from '@/lib/svg/bbox'
@@ -20,7 +21,17 @@ export const selectedShapesAtom = atom((get) => {
 
 export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 
+export const isShapeSelectedAtom = atomFamily((id: string) =>
+  atom((get) => get(selectedIdsAtom).includes(id)),
+)
+
 export const selectionBboxAtom = selectAtom(selectedShapesAtom, bboxOfMany, rectEqual)
+
+const visibleSelectedShapesAtom = atom((get) => {
+  return get(selectedShapesAtom).filter((s) => s.visible)
+})
+
+export const visibleSelectionBboxAtom = selectAtom(visibleSelectedShapesAtom, bboxOfMany, rectEqual)
 
 export function selectionEqual(a: string[], b: string[]): boolean {
   if (a === b) return true
