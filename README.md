@@ -152,4 +152,6 @@ This README is the entry point. For non-trivial work, read the matching deep-div
 
 ## License
 
-MIT
+[PolyForm Noncommercial 1.0.0](LICENSE.md) — source-available. The code may be
+viewed, forked, modified, and used for any **noncommercial** purpose. Commercial
+use by third parties is not permitted.

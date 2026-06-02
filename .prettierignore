@@ -10,3 +10,6 @@ src/components/ui
 # Sandcastle infrastructure + pnpm content-addressable store
 .sandcastle
 .pnpm-store
+
+# Canonical license text — kept verbatim, not reformatted
+LICENSE.md
