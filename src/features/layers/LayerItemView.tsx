@@ -16,6 +16,8 @@ export interface LayerItemViewProps {
   name: string
   visible: boolean
   selected: boolean
+  isDragging?: boolean
+  isOverlay?: boolean
   onSelect: (event: MouseEvent | KeyboardEvent) => void
   onToggleVisible: () => void
   onRename: (next: string) => void
@@ -26,6 +28,8 @@ export function LayerItemView({
   name,
   visible,
   selected,
+  isDragging,
+  isOverlay,
   onSelect,
   onToggleVisible,
   onRename,
@@ -86,7 +90,7 @@ export function LayerItemView({
   return (
     <div
       role="button"
-      tabIndex={0}
+      tabIndex={isOverlay ? -1 : 0}
       data-slot="layer-item"
       data-selected={selected ? 'true' : 'false'}
       data-visible={visible ? 'true' : 'false'}
@@ -105,6 +109,8 @@ export function LayerItemView({
         'transition-colors outline-none',
         'focus-visible:ring-ring focus-visible:ring-1',
         selected ? 'bg-primary-muted' : 'hover:bg-sidebar-accent',
+        isDragging && 'opacity-40',
+        isOverlay && 'bg-sidebar ring-sidebar-border shadow-md ring-1',
       )}
     >
       {/* Icon slot — 16x16 */}

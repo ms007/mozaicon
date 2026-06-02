@@ -366,6 +366,30 @@ History stacks are unbounded. Memory cost is bounded in practice by Immer's stru
 
 The `label` field on `HistoryEntry` is currently consumed only by tests and dev tooling. When it surfaces in UI later (tooltip on the undo button, history panel, post-undo toast), labels will need an i18n migration — they are hardcoded English strings today.
 
+## Layer Reorder
+
+Layer reorder — changing shape z-order via the Layers panel — is the first feature that combines a pure ordering core in `lib/` with thin intent commands that both return a re-normalised selection. The architecture separates the ordering math (pure, fully testable) from the undo/selection integration (commands).
+
+### Pure ordering core (`src/lib/order/`)
+
+Two modules, no React, no atoms:
+
+- **`block.ts`** — block-insert operations. `moveBlockBefore(shapes, ids, beforeId)` removes the operating shapes (minus locked anchors) from their current positions and inserts them as a contiguous block before `beforeId` (`null` = append to end = front). `bringToFront(shapes, ids)` and `sendToBack(shapes, ids)` are convenience wrappers. All return `{ shapes, changed }` — the `changed` flag lets commands skip no-op history entries.
+- **`nudge.ts`** — per-neighbor step. `nudge(shapes, selectedIds, direction)` walks the array (high-to-low for `'forward'`, low-to-high for `'backward'`) and swaps each movable shape past its nearest unselected neighbor. Locked shapes (even if selected) are fixed anchors and never move. A non-contiguous selection does _not_ collapse on a single step — each member moves independently relative to its own neighbor (Figma-style). Returns `{ shapes, changed }`.
+
+### Intent commands (`src/store/commands/reorderShapes.ts`)
+
+Two commands, deliberately separate rather than one overloaded payload:
+
+- **`moveShapeBlockCommand`** `{ ids, beforeId }` — used by drag-to-reorder (drop) and the Shift bring-to-front / send-to-back shortcuts. Delegates to `moveBlockBefore`.
+- **`nudgeShapeOrderCommand`** `{ ids, direction }` — used by the single-step Cmd/Ctrl+] and Cmd/Ctrl+[ shortcuts. Delegates to `nudge`.
+
+Both are **Combined Commands**: they return `{ document, selection }` so one `HistoryEntry` atomically covers the new shape order _and_ a re-normalised selection. Re-normalisation (`normalizeSelection(ids, nextDoc)`) re-sorts the selected IDs by their new positions in the reordered shapes array, preserving the invariant that `selectedIdsAtom` is always z-order-sorted. Without this, undo would restore stale selection order and downstream derivations (multi-shape property panels, the selection bbox fold) would see the wrong sequence.
+
+### Why Combined Command, not document-only + separate selection write
+
+A document-only command would leave `selectedIdsAtom` holding the old z-order sort. A follow-up selection command would push a second `HistoryEntry`, making undo require two presses to revert one logical reorder. The Combined Command pattern (already used by `addShapeCommand` and `deleteShapesCommand`) solves both problems: one entry, both axes atomically consistent, one undo press.
+
 ## Cancellation & Escape Priority
 
 ### Gesture Registry (`src/store/atoms/gestures/registry.ts`)

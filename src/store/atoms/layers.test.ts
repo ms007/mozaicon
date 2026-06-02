@@ -130,12 +130,13 @@ describe('layerIdsAtom', () => {
 })
 
 describe('layerAtom', () => {
-  it('returns { id, name, visible, type } for a known shape', () => {
+  it('returns { id, name, visible, locked, type } for a known shape', () => {
     const store = makeStore()
     expect(store.get(layerAtom('r2'))).toEqual({
       id: 'r2',
       name: 'Middle Rect',
       visible: false,
+      locked: false,
       type: 'rect',
     })
   })
@@ -159,6 +160,7 @@ describe('layerAtom', () => {
       id: 'r2',
       name: 'Renamed',
       visible: false,
+      locked: false,
       type: 'rect',
     })
     // Other layers unchanged (referential stability from Immer)

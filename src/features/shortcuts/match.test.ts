@@ -6,6 +6,7 @@ import { isEditableTarget, matches } from './match'
 function keyEvent(
   key: string,
   opts: {
+    code?: string
     ctrlKey?: boolean
     metaKey?: boolean
     shiftKey?: boolean
@@ -16,6 +17,7 @@ function keyEvent(
 ): KeyboardEvent {
   return {
     key,
+    code: opts.code ?? '',
     ctrlKey: opts.ctrlKey ?? false,
     metaKey: opts.metaKey ?? false,
     shiftKey: opts.shiftKey ?? false,
@@ -102,6 +104,46 @@ describe('matches', () => {
     expect(
       matches(keyEvent('r', { shiftKey: true }), { key: 'r', modifiers: ['mod', 'shift'] }),
     ).toBe(false)
+  })
+
+  it('matches mod+alt+] when key stays "]" (non-glyph layout)', () => {
+    expect(
+      matches(keyEvent(']', { ctrlKey: true, altKey: true }), {
+        key: ']',
+        modifiers: ['mod', 'alt'],
+      }),
+    ).toBe(true)
+  })
+
+  it('matches mod+alt+] via code when Option composes a glyph (macOS)', () => {
+    // On macOS, Option+] yields event.key === "'" but event.code === "BracketRight".
+    expect(
+      matches(keyEvent("'", { code: 'BracketRight', ctrlKey: true, altKey: true }), {
+        key: ']',
+        code: 'BracketRight',
+        modifiers: ['mod', 'alt'],
+      }),
+    ).toBe(true)
+  })
+
+  it('matches mod+alt+[ via code when Option composes a glyph (macOS)', () => {
+    expect(
+      matches(keyEvent('“', { code: 'BracketLeft', ctrlKey: true, altKey: true }), {
+        key: '[',
+        code: 'BracketLeft',
+        modifiers: ['mod', 'alt'],
+      }),
+    ).toBe(true)
+  })
+
+  it('still rejects a non-matching key even when a code is declared', () => {
+    expect(matches(keyEvent('x', { code: 'KeyX' }), { key: ']', code: 'BracketRight' })).toBe(false)
+  })
+
+  it('rejects mod+alt binding when Alt is not held', () => {
+    expect(matches(keyEvent(']', { ctrlKey: true }), { key: ']', modifiers: ['mod', 'alt'] })).toBe(
+      false,
+    )
   })
 
   it('rejects when both primary and other meta are held (non-Mac)', () => {

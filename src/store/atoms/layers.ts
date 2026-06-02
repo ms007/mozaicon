@@ -10,6 +10,7 @@ export interface LayerRecord {
   id: string
   name: string
   visible: boolean
+  locked: boolean
   type: Shape['type']
 }
 
@@ -27,14 +28,26 @@ export const layerIdsAtom = selectAtom(
 
 function toLayerRecord(shape: Shape | undefined): LayerRecord | undefined {
   if (!shape) return undefined
-  return { id: shape.id, name: shape.name, visible: shape.visible, type: shape.type }
+  return {
+    id: shape.id,
+    name: shape.name,
+    visible: shape.visible,
+    locked: shape.locked,
+    type: shape.type,
+  }
 }
 
 function layerRecordEqual(a: LayerRecord | undefined, b: LayerRecord | undefined): boolean {
   if (a === b) return true
   if (!a || !b) return false
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
-  return a.id === b.id && a.name === b.name && a.visible === b.visible && a.type === b.type
+  return (
+    a.id === b.id &&
+    a.name === b.name &&
+    a.visible === b.visible &&
+    a.locked === b.locked &&
+    a.type === b.type
+  )
   /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 }
 

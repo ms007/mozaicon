@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/primitives/Tooltip'
 import { Artboard } from '@/features/canvas/Artboard'
 import { createCanvasBindings } from '@/features/canvas/bindings'
 import { createHistoryBindings } from '@/features/history/bindings'
+import { createLayerBindings } from '@/features/layers/bindings'
 import { LayersPanel } from '@/features/layers/LayersPanel'
 import { PropertiesPanel } from '@/features/properties/PropertiesPanel'
 import { buildBindings } from '@/features/shortcuts/registry'
@@ -20,6 +21,7 @@ export default function App() {
         ...createCanvasBindings(store),
         ...createToolbarBindings(store),
         ...createHistoryBindings(store),
+        ...createLayerBindings(store),
       ]),
     [store],
   )
@@ -27,7 +29,7 @@ export default function App() {
 
   return (
     <TooltipProvider>
-      <div className="bg-muted flex min-h-svh">
+      <div className="bg-muted flex h-svh">
         <LayersPanel />
         <main className="relative flex flex-1 items-center justify-center p-8 pl-16">
           <Toolbar />

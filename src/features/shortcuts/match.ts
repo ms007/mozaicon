@@ -2,6 +2,10 @@ export type Modifier = 'mod' | 'shift' | 'alt'
 
 export interface BindingSpec {
   key: string
+  // Physical-key fallback (e.g. 'BracketLeft'). On macOS, holding Option
+  // composes a glyph so `event.key` for Option+[ becomes "“" rather than "[";
+  // matching `event.code` sidesteps the layout remap. See `matches`.
+  code?: string
   modifiers?: Modifier[]
 }
 
@@ -20,9 +24,10 @@ function detectIsMac(): boolean {
 
 const IS_MAC = detectIsMac()
 
-// Display label for the "mod" modifier — "Cmd" on macOS, "Ctrl" elsewhere —
-// surfaced via binding `hint` strings (e.g. tooltips).
+// Display labels for modifiers — "Cmd"/"Option" on macOS, "Ctrl"/"Alt"
+// elsewhere — surfaced via binding `hint` strings (e.g. tooltips).
 export const MOD_KEY_LABEL = IS_MAC ? 'Cmd' : 'Ctrl'
+export const ALT_KEY_LABEL = IS_MAC ? 'Option' : 'Alt'
 
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -35,7 +40,9 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 // modifiers must match with no modifier held; bindings with declared modifiers
 // must match exactly — extra modifiers cause a miss.
 export function matches(event: KeyboardEvent, binding: BindingSpec): boolean {
-  if (event.key.toLowerCase() !== binding.key.toLowerCase()) return false
+  const keyMatches = event.key.toLowerCase() === binding.key.toLowerCase()
+  const codeMatches = binding.code !== undefined && event.code === binding.code
+  if (!keyMatches && !codeMatches) return false
 
   const declared = binding.modifiers ?? []
   const wantMod = declared.includes('mod')
