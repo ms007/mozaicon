@@ -1,6 +1,9 @@
 .obsidian
 .DS_Store
 
+# Local planning notes
+Go-Live.md
+
 # Logs
 logs
 *.log
