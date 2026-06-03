@@ -12,7 +12,7 @@ import type { Document, RectShape } from '@/types/shapes'
 
 import { createLayerBindings } from './bindings'
 
-/* ── helpers for nudge binding tests ── */
+/* ── helpers for reorder binding tests ── */
 
 function findBinding(store: ReturnType<typeof createStore>, id: string) {
   const binding = createLayerBindings(store).find((b) => b.id === id)
@@ -41,17 +41,17 @@ const testDoc: Document = {
   shapes: [makeInlineRect('a'), makeInlineRect('b'), makeInlineRect('c')],
 }
 
-function makeNudgeStore() {
+function makeReorderStore() {
   const store = createStore()
   store.set(documentAtom, testDoc)
   return store
 }
 
-/* ── nudge bindings (issue #180): bringForward / sendBackward ── */
+/* ── reorder bindings (issue #180): bringForward / sendBackward ── */
 
-describe('nudge layer bindings', () => {
+describe('reorder layer bindings', () => {
   it('registers all four bindings without collisions', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
     const bindings = createLayerBindings(store)
 
     expect(bindings).toHaveLength(4)
@@ -65,7 +65,7 @@ describe('nudge layer bindings', () => {
   })
 
   it('bringForward binding uses mod+] key combo', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
     const forward = findBinding(store, 'layers.bringForward')
 
     expect(forward.key).toBe(']')
@@ -73,7 +73,7 @@ describe('nudge layer bindings', () => {
   })
 
   it('sendBackward binding uses mod+[ key combo', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
     const backward = findBinding(store, 'layers.sendBackward')
 
     expect(backward.key).toBe('[')
@@ -81,7 +81,7 @@ describe('nudge layer bindings', () => {
   })
 
   it('bringForward run() dispatches the reorder command', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
     store.set(restoreSelectionAtom, ['a'])
 
     findBinding(store, 'layers.bringForward').run()
@@ -91,7 +91,7 @@ describe('nudge layer bindings', () => {
   })
 
   it('sendBackward run() dispatches the reorder command', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
     store.set(restoreSelectionAtom, ['c'])
 
     findBinding(store, 'layers.sendBackward').run()
@@ -101,7 +101,7 @@ describe('nudge layer bindings', () => {
   })
 
   it('run() is a no-op when nothing is selected', () => {
-    const store = makeNudgeStore()
+    const store = makeReorderStore()
 
     findBinding(store, 'layers.bringForward').run()
 

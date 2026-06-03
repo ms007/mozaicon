@@ -1,25 +1,25 @@
 import type { Shape } from '@/types/shapes'
 
-export type NudgeDirection = 'forward' | 'backward'
+export type ReorderDirection = 'forward' | 'backward'
 
-export interface NudgeResult {
+export interface ReorderStepResult {
   shapes: Shape[]
   changed: boolean
 }
 
 /**
- * Per-neighbor z-order nudge. Each selected shape moves one step relative to
- * its nearest unselected neighbor in the given direction. Locked shapes are
+ * Per-neighbor z-order reorder step. Each selected shape moves one step relative
+ * to its nearest unselected neighbor in the given direction. Locked shapes are
  * fixed anchors and never move, even if selected. Hidden shapes are reorderable.
  *
  * Returns the reordered shapes array and a `changed` flag (false when every
  * selected shape is already at its boundary — callers use this for the no-op guard).
  */
-export function nudge(
+export function reorderStep(
   shapes: readonly Shape[],
   selectedIds: string[],
-  direction: NudgeDirection,
-): NudgeResult {
+  direction: ReorderDirection,
+): ReorderStepResult {
   if (shapes.length === 0 || selectedIds.length === 0) {
     return { shapes: shapes as Shape[], changed: false }
   }

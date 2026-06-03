@@ -9,9 +9,9 @@ import { seedSelection } from '@/test/seedSelection'
 import type { Document, RectShape } from '@/types/shapes'
 
 import { undoCommand } from './historyCommands'
-import { moveShapeBlockCommand, nudgeShapeOrderCommand } from './reorderShapes'
+import { moveShapeBlockCommand, reorderStepCommand } from './reorderShapes'
 
-/* ── helpers shared by nudge tests ── */
+/* ── helpers shared by reorder-step tests ── */
 
 function makeInlineRect(id: string, overrides: Partial<RectShape> = {}): RectShape {
   return {
@@ -35,7 +35,7 @@ const emptyDoc: Document = {
   shapes: [],
 }
 
-function makeNudgeStore(doc: Document = emptyDoc) {
+function makeReorderStore(doc: Document = emptyDoc) {
   const store = createStore()
   store.set(documentAtom, doc)
   return store
@@ -45,41 +45,41 @@ function shapeIds(store: ReturnType<typeof createStore>): string[] {
   return store.get(documentAtom).shapes.map((s) => s.id)
 }
 
-/* ── nudgeShapeOrderCommand tests (issue #180) ── */
+/* ── reorderStepCommand tests (issue #180) ── */
 
-describe('nudgeShapeOrderCommand', () => {
+describe('reorderStepCommand', () => {
   it('brings a selected shape forward by one step', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b'), makeInlineRect('c')],
     })
     store.set(restoreSelectionAtom, ['b'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['b'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['b'], direction: 'forward' })
 
     expect(shapeIds(store)).toEqual(['a', 'c', 'b'])
   })
 
   it('sends a selected shape backward by one step', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b'), makeInlineRect('c')],
     })
     store.set(restoreSelectionAtom, ['b'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['b'], direction: 'backward' })
+    store.set(reorderStepCommand, { ids: ['b'], direction: 'backward' })
 
     expect(shapeIds(store)).toEqual(['b', 'a', 'c'])
   })
 
   it('pushes exactly one history entry with correct label', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b')],
     })
     store.set(restoreSelectionAtom, ['a'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['a'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['a'], direction: 'forward' })
 
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
@@ -89,51 +89,51 @@ describe('nudgeShapeOrderCommand', () => {
   })
 
   it('re-normalizes selection to the new z-order', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b'), makeInlineRect('c'), makeInlineRect('d')],
     })
     store.set(restoreSelectionAtom, ['a', 'c'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['a', 'c'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['a', 'c'], direction: 'forward' })
 
     expect(shapeIds(store)).toEqual(['b', 'a', 'd', 'c'])
     expect(store.get(selectedIdsAtom)).toEqual(['a', 'c'])
   })
 
   it('is a no-op when shape is already frontmost — no history entry', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b')],
     })
     store.set(restoreSelectionAtom, ['b'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['b'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['b'], direction: 'forward' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
     expect(shapeIds(store)).toEqual(['a', 'b'])
   })
 
   it('is a no-op when shape is already backmost — no history entry', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b')],
     })
     store.set(restoreSelectionAtom, ['a'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['a'], direction: 'backward' })
+    store.set(reorderStepCommand, { ids: ['a'], direction: 'backward' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 
   it('undo restores both order and selection', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a'), makeInlineRect('b'), makeInlineRect('c')],
     })
     store.set(restoreSelectionAtom, ['a'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['a'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['a'], direction: 'forward' })
     expect(shapeIds(store)).toEqual(['b', 'a', 'c'])
 
     store.set(undoCommand)
@@ -143,13 +143,13 @@ describe('nudgeShapeOrderCommand', () => {
   })
 
   it('does not move locked selected shapes', () => {
-    const store = makeNudgeStore({
+    const store = makeReorderStore({
       ...emptyDoc,
       shapes: [makeInlineRect('a', { locked: true }), makeInlineRect('b')],
     })
     store.set(restoreSelectionAtom, ['a'])
 
-    store.set(nudgeShapeOrderCommand, { ids: ['a'], direction: 'forward' })
+    store.set(reorderStepCommand, { ids: ['a'], direction: 'forward' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
     expect(shapeIds(store)).toEqual(['a', 'b'])

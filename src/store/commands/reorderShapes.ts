@@ -1,13 +1,13 @@
 import { moveBlockBefore } from '@/lib/order/block'
-import { nudge, type NudgeDirection } from '@/lib/order/nudge'
+import { type ReorderDirection, reorderStep } from '@/lib/order/reorderStep'
 import { normalizeSelection } from '@/store/atoms/selection'
 
 import { createCommand } from './createCommand'
 
-export const nudgeShapeOrderCommand = createCommand<{ ids: string[]; direction: NudgeDirection }>(
+export const reorderStepCommand = createCommand<{ ids: string[]; direction: ReorderDirection }>(
   'Reorder shapes',
   (doc, { ids, direction }) => {
-    const { shapes, changed } = nudge(doc.shapes, ids, direction)
+    const { shapes, changed } = reorderStep(doc.shapes, ids, direction)
     if (!changed) return {}
 
     const nextDoc = { ...doc, shapes }

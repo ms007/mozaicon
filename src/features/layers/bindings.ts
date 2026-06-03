@@ -4,7 +4,7 @@ import { ALT_KEY_LABEL, MOD_KEY_LABEL } from '@/features/shortcuts/match'
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
 import { documentAtom } from '@/store/atoms/document'
 import { selectedIdsAtom } from '@/store/atoms/selection'
-import { moveShapeBlockCommand, nudgeShapeOrderCommand } from '@/store/commands/reorderShapes'
+import { moveShapeBlockCommand, reorderStepCommand } from '@/store/commands/reorderShapes'
 
 export function createLayerBindings(store: ReturnType<typeof createStore>): ShortcutBinding[] {
   return [
@@ -17,7 +17,7 @@ export function createLayerBindings(store: ReturnType<typeof createStore>): Shor
       run: () => {
         const ids = store.get(selectedIdsAtom)
         if (ids.length === 0) return
-        store.set(nudgeShapeOrderCommand, { ids, direction: 'forward' })
+        store.set(reorderStepCommand, { ids, direction: 'forward' })
       },
     },
     {
@@ -29,7 +29,7 @@ export function createLayerBindings(store: ReturnType<typeof createStore>): Shor
       run: () => {
         const ids = store.get(selectedIdsAtom)
         if (ids.length === 0) return
-        store.set(nudgeShapeOrderCommand, { ids, direction: 'backward' })
+        store.set(reorderStepCommand, { ids, direction: 'backward' })
       },
     },
     {
