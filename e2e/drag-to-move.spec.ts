@@ -46,7 +46,7 @@ test.describe('Drag-to-Move gesture', () => {
     expect(yRestored).toBeCloseTo(yBefore, 0)
   })
 
-  test('shows cursor-move during drag and reverts on release', async ({ page }) => {
+  test('keeps the default cursor during drag', async ({ page }) => {
     const canvas = page.locator(CANVAS_SELECTOR)
     const box = await getBox(canvas)
 
@@ -59,10 +59,9 @@ test.describe('Drag-to-Move gesture', () => {
     await page.mouse.down()
     await page.mouse.move(cx + 30, cy + 20, { steps: 5 })
 
-    // The cursor class lives on the Artboard div (so it covers the padding);
-    // the canvas SVG inherits it. Assert the inherited computed cursor rather
-    // than a class on a specific element.
-    await expect(canvas).toHaveCSS('cursor', 'move')
+    // The move gesture intentionally does not flip the cursor (see
+    // Artboard.test.tsx "keeps the default cursor during a move").
+    await expect(canvas).not.toHaveCSS('cursor', 'move')
 
     await page.mouse.up()
 

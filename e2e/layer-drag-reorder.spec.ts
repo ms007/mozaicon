@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { CANVAS_SELECTOR, drawRect, getBox } from './helpers'
+import { CANVAS_SELECTOR, drawRect, getBox, SHAPE_RECT_SELECTOR } from './helpers'
 
 function layerPanel(page: import('@playwright/test').Page) {
   return page.locator('aside[aria-label="Layers"]')
@@ -10,15 +10,17 @@ function layerItems(page: import('@playwright/test').Page) {
   return layerPanel(page).locator('[data-slot="layer-item"]')
 }
 
-async function layerNames(page: import('@playwright/test').Page): Promise<string[]> {
-  const items = layerItems(page)
-  const count = await items.count()
-  const names: string[] = []
+// Default-named shapes are all "Rect", so layer-item text can't observe order.
+// The SVG DOM order is the real z-order; the distinct x attributes identify
+// each rect.
+async function shapeOrder(page: import('@playwright/test').Page): Promise<string[]> {
+  const rects = page.locator(CANVAS_SELECTOR).locator(SHAPE_RECT_SELECTOR)
+  const count = await rects.count()
+  const xs: string[] = []
   for (let i = 0; i < count; i++) {
-    const text = await items.nth(i).innerText()
-    names.push(text.trim())
+    xs.push((await rects.nth(i).getAttribute('x')) ?? '')
   }
-  return names
+  return xs
 }
 
 async function drawThreeRects(page: import('@playwright/test').Page) {
@@ -39,8 +41,8 @@ test.describe('Layer drag-to-reorder', () => {
   test('drag a layer down to reorder z-order, undo restores order', async ({ page }) => {
     await drawThreeRects(page)
 
-    const namesBefore = await layerNames(page)
-    expect(namesBefore).toHaveLength(3)
+    const orderBefore = await shapeOrder(page)
+    expect(orderBefore).toHaveLength(3)
 
     const items = layerItems(page)
     const topItem = items.nth(0)
@@ -60,15 +62,16 @@ test.describe('Layer drag-to-reorder', () => {
     // Wait for the reorder to apply
     await page.waitForTimeout(100)
 
-    const namesAfter = await layerNames(page)
-    expect(namesAfter).not.toEqual(namesBefore)
+    const orderAfter = await shapeOrder(page)
+    expect(orderAfter).not.toEqual(orderBefore)
+    expect([...orderAfter].sort()).toEqual([...orderBefore].sort())
 
     // Undo should restore original order
     await page.keyboard.press('Control+z')
     await page.waitForTimeout(100)
 
-    const namesRestored = await layerNames(page)
-    expect(namesRestored).toEqual(namesBefore)
+    const orderRestored = await shapeOrder(page)
+    expect(orderRestored).toEqual(orderBefore)
   })
 
   test('drop indicator appears during drag', async ({ page }) => {
@@ -98,7 +101,7 @@ test.describe('Layer drag-to-reorder', () => {
   test('drop on same position produces no history entry', async ({ page }) => {
     await drawThreeRects(page)
 
-    const namesBefore = await layerNames(page)
+    const orderBefore = await shapeOrder(page)
 
     // Click the top item to select it
     const items = layerItems(page)
@@ -116,7 +119,7 @@ test.describe('Layer drag-to-reorder', () => {
     await page.waitForTimeout(100)
 
     // Order should be unchanged
-    const namesAfter = await layerNames(page)
-    expect(namesAfter).toEqual(namesBefore)
+    const orderAfter = await shapeOrder(page)
+    expect(orderAfter).toEqual(orderBefore)
   })
 })
