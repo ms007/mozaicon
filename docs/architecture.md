@@ -394,7 +394,7 @@ A document-only command would leave `selectedIdsAtom` holding the old z-order so
 
 ### Gesture Registry (`src/store/atoms/gestures/registry.ts`)
 
-The gesture registry is the single source of truth for "which gestures exist and which is active". It is an ordered list of `GestureAdapter` objects — currently Marquee → Resize → Move → Draw — each wrapping a draft atom and an optional `displayBbox` callback. The core invariant is **Active Gesture iff draft atom is non-null**: a gesture is in flight exactly when its adapter's draft atom holds a value, and at most one adapter is active at any time (each pointer-driven hook owns a single `dragRef` and the hooks all listen on the same `window` pointer events). The at-most-one-active invariant is verified by a contract test in `registry.test.ts`.
+The gesture registry is the single source of truth for "which gestures exist and which is active". It is an ordered list of `GestureAdapter` objects — currently Marquee → Resize → Move → Nudge → Draw → PropertyStep — each wrapping a draft atom and an optional `displayBbox` callback. The registry is input-source-agnostic: pointer-driven adapters (Marquee, Resize, Move, Draw) are driven by pointer-down-to-pointer-up; keyboard-driven adapters (Nudge) are driven by key-down-to-key-up across auto-repeat. Both kinds share the same `GestureAdapter` contract and contribute to the same derived atoms. The core invariant is **Active Gesture iff draft atom is non-null**: a gesture is in flight exactly when its adapter's draft atom holds a value, and at most one adapter is active at any time (pointer-driven hooks each own a single `dragRef` on shared `window` pointer events; the keyboard nudge handler is suppressed while a pointer gesture is active and vice versa). The at-most-one-active invariant is verified by a contract test in `registry.test.ts`.
 
 Three derived atoms are computed from the registry:
 
@@ -402,7 +402,7 @@ Three derived atoms are computed from the registry:
 - **`displayedSelectionBboxFromRegistryAtom`** — resolves what selection bbox to render by iterating adapters in precedence order. Each active adapter's `displayBbox` returns a `DisplayContribution`, a tagged union with three variants: `rect` (override with a concrete rect), `hide` (suppress the bbox entirely — returns `null`), `passThrough` (skip this adapter, continue to the next). If no adapter is active or all pass through, the atom falls back to `selectionBboxAtom`. Precedence order means Marquee's contribution always wins over Resize, Resize over Move, etc.
 - **`cancelGesturesAtom`** — one write sets every adapter's draft to `null`. Safe because at most one gesture is active at any time — one Cancel covers them all.
 
-Adding a new pointer-driven gesture means writing a `GestureAdapter` (draft atom + optional `displayBbox`) and inserting it at the correct precedence position in the registry list.
+Adding a new gesture — pointer-driven or keyboard-driven — means writing a `GestureAdapter` (draft atom + optional `displayBbox`) and inserting it at the correct precedence position in the registry list.
 
 `Escape` is a priority ladder, evaluated in `bindings.ts` (`canvas.escape`) with **early return after the first matching tier**:
 

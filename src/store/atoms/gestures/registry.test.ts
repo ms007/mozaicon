@@ -10,6 +10,7 @@ import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import { draftShapeAtom } from './draw'
 import { type MarqueeDraft, marqueeDraftAtom } from './marquee'
 import { moveDraftAtom } from './move'
+import { nudgeDraftAtom } from './nudge'
 import { propertyStepDraftAtom } from './propertyStep'
 import {
   anyGestureDraftActiveAtom,
@@ -44,12 +45,13 @@ function withAdapters<D>(adapters: readonly GestureAdapter<D>[], fn: () => void)
 }
 
 describe('gestureRegistry', () => {
-  it('registers five adapters in Marquee > Resize > Move > Draw > PropertyStep order', () => {
-    expect(gestureRegistry).toHaveLength(5)
+  it('registers six adapters in Marquee > Resize > Move > Nudge > Draw > PropertyStep order', () => {
+    expect(gestureRegistry).toHaveLength(6)
     expect(gestureRegistry.map((a) => a.name)).toEqual([
       'marquee',
       'resize',
       'move',
+      'nudge',
       'draw',
       'propertyStep',
     ])
@@ -438,6 +440,7 @@ describe('real adapter precedence: Marquee > Resize > Move > Draw', () => {
     store.set(marqueeDraftAtom, sampleMarquee)
     store.set(resizeDraftAtom, { r1: { x: 0, y: 0, width: 10, height: 10 } })
     store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 1 })
+    store.set(nudgeDraftAtom, { ids: ['r1'], dx: 2, dy: 2 })
     store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 0, y: 0, width: 1, height: 1 }))
     store.set(propertyStepDraftAtom, { r1: { x: 5, y: 5, width: 10, height: 10 } })
 
@@ -446,6 +449,7 @@ describe('real adapter precedence: Marquee > Resize > Move > Draw', () => {
     expect(store.get(marqueeDraftAtom)).toBeNull()
     expect(store.get(resizeDraftAtom)).toBeNull()
     expect(store.get(moveDraftAtom)).toBeNull()
+    expect(store.get(nudgeDraftAtom)).toBeNull()
     expect(store.get(draftShapeAtom)).toBeNull()
     expect(store.get(propertyStepDraftAtom)).toBeNull()
     expect(store.get(isAnyGestureActiveAtom)).toBe(false)

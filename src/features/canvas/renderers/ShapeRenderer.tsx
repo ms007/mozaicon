@@ -4,6 +4,7 @@ import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
 import { assertNever } from '@/lib/util/assertNever'
 import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
 import { moveDraftForShapeAtom } from '@/store/atoms/move-draft'
+import { nudgeDraftForShapeAtom } from '@/store/atoms/nudge-draft'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
@@ -25,6 +26,7 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
   const propStepGeo = useAtomValue(propertyStepDraftForShapeAtom(shape.id))
   const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
+  const nudgeOffset = useAtomValue(nudgeDraftForShapeAtom(shape.id))
   const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
     shape.id,
   )
@@ -33,9 +35,10 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
 
   const geoOverride = draftGeo ?? propStepGeo
   const rendered = geoOverride ? { ...shape, ...geoOverride } : shape
-  const transform = moveOffset
-    ? `translate(${String(moveOffset.dx)} ${String(moveOffset.dy)})`
-    : undefined
+  const totalDx = (moveOffset?.dx ?? 0) + (nudgeOffset?.dx ?? 0)
+  const totalDy = (moveOffset?.dy ?? 0) + (nudgeOffset?.dy ?? 0)
+  const transform =
+    totalDx !== 0 || totalDy !== 0 ? `translate(${String(totalDx)} ${String(totalDy)})` : undefined
 
   return (
     <g

@@ -8,6 +8,7 @@ import { visibleSelectionBboxAtom } from '@/store/atoms/selection'
 import { drawAdapter } from './draw'
 import { marqueeAdapter } from './marquee'
 import { moveAdapter } from './move'
+import { nudgeAdapter } from './nudge'
 import { propertyStepAdapter } from './propertyStep'
 import { resizeAdapter } from './resize'
 
@@ -25,12 +26,14 @@ export type GestureAdapter<D = unknown> = {
 
 // Order encodes display-bbox precedence: the first active adapter wins.
 // Marquee shows the live preview rect; Resize shows draft handles; Move
-// translates the static bbox; Draw shows the growing shape; PropertyStep
-// previews arrow-key nudges from the properties panel.
+// translates the static bbox; Nudge translates via arrow keys; Draw shows
+// the growing shape; PropertyStep previews arrow-key nudges from the
+// properties panel.
 export const gestureRegistry = [
   marqueeAdapter,
   resizeAdapter,
   moveAdapter,
+  nudgeAdapter,
   drawAdapter,
   propertyStepAdapter,
 ] as readonly GestureAdapter[]

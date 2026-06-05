@@ -89,32 +89,16 @@ describe('Artboard', () => {
     expect(wrapper.classList.contains('cursor-crosshair')).toBe(true)
   })
 
-  it('applies cursor-move when moveDraftAtom is non-null', () => {
+  it('keeps the default cursor during a move', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
       store.set(documentAtom, seededDoc)
       store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
     })
 
-    expect(getArtboardDiv(container)).toHaveClass('cursor-move')
+    expect(getArtboardDiv(container)).not.toHaveClass('cursor-move')
   })
 
-  it('removes cursor-move when moveDraftAtom returns to null', () => {
-    const { container, store } = renderWithStore(<Artboard />, (s) => {
-      s.set(documentAtom, seededDoc)
-      s.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
-    })
-
-    const wrapper = getArtboardDiv(container)
-    expect(wrapper).toHaveClass('cursor-move')
-
-    act(() => {
-      store.set(moveDraftAtom, null)
-    })
-
-    expect(wrapper).not.toHaveClass('cursor-move')
-  })
-
-  it('cursor-move wins over tool cursorClass during a move', () => {
+  it('keeps the tool cursorClass during a move', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
       store.set(documentAtom, seededDoc)
       store.set(activeToolAtom, 'rect')
@@ -122,8 +106,8 @@ describe('Artboard', () => {
     })
 
     const wrapper = getArtboardDiv(container)
-    expect(wrapper).toHaveClass('cursor-move')
-    expect(wrapper).not.toHaveClass('cursor-crosshair')
+    expect(wrapper).toHaveClass('cursor-crosshair')
+    expect(wrapper).not.toHaveClass('cursor-move')
   })
 
   it('pointerdown in padding arms marquee when no tool is active', () => {
