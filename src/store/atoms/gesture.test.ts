@@ -5,8 +5,8 @@ import type { RectShape } from '@/types/shapes'
 
 import { draftShapeAtom } from './draft'
 import { isGestureActiveAtom } from './gesture'
+import { moveDraftAtom } from './gestures/move'
 import { marqueeDraftAtom } from './marquee-draft'
-import { moveDraftAtom } from './move-draft'
 import { resizeDraftAtom } from './resize-draft'
 
 const draftRect: RectShape = {

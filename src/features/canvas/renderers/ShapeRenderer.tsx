@@ -2,9 +2,9 @@ import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
 import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
 import { assertNever } from '@/lib/util/assertNever'
+import { moveDraftForShapeAtom } from '@/store/atoms/gestures/move'
+import { nudgeDraftForShapeAtom } from '@/store/atoms/gestures/nudge'
 import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
-import { moveDraftForShapeAtom } from '@/store/atoms/move-draft'
-import { nudgeDraftForShapeAtom } from '@/store/atoms/nudge-draft'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 

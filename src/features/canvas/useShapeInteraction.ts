@@ -11,7 +11,7 @@ import {
   rafScheduler,
 } from '@/lib/svg/gestureSampler'
 import { shapeAtom } from '@/store/atoms/document'
-import { moveDraftAtom } from '@/store/atoms/move-draft'
+import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveSelectionCommand } from '@/store/commands/moveSelection'
 import { selectShapesCommand, toggleSelectionCommand } from '@/store/commands/selectionCommands'

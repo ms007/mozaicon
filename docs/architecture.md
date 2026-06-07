@@ -404,6 +404,8 @@ Three derived atoms are computed from the registry:
 
 Adding a new gesture — pointer-driven or keyboard-driven — means writing a `GestureAdapter` (draft atom + optional `displayBbox`) and inserting it at the correct precedence position in the registry list.
 
+**Translation gestures** have a dedicated factory: `createTranslationGesture(name)` in `src/store/atoms/gestures/createTranslationGesture.ts`. It returns a complete `TranslationGesture` surface — draft atom (`TranslationDraft | null`), per-shape draft lookup (`draftForShapeAtom`, an `atomFamily` with structural equality), `isActiveAtom`, and a `GestureAdapter` wired to `displayBbox` — so a new translation gesture (e.g. paste-drag) is a one-liner instantiation plus a registry insert. Move and Nudge are both thin wrappers over this factory (`src/store/atoms/gestures/move.ts`, `src/store/atoms/gestures/nudge.ts`). For non-translational gestures (Resize, Draw, Marquee) that produce per-shape geometry or a selection rather than a uniform delta, write a bespoke adapter directly.
+
 `Escape` is a priority ladder, evaluated in `bindings.ts` (`canvas.escape`) with **early return after the first matching tier**:
 
 1. Active gesture → `cancelDraftAtom`, return. The pending change is not a _History Entry_ yet, so there is nothing to undo — only transient drafts to clear.

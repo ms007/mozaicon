@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import type { RectShape } from '@/types/shapes'
 
 import { cancelDraftAtom, draftShapeAtom } from './draft'
+import { moveDraftAtom } from './gestures/move'
 import { marqueeDraftAtom } from './marquee-draft'
-import { moveDraftAtom } from './move-draft'
 import { resizeDraftAtom } from './resize-draft'
 
 function makeStore() {

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
-import { moveDraftAtom } from '@/store/atoms/move-draft'
+import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeRect } from '@/test/fixtures/shapes'
 import type { Document } from '@/types/shapes'
