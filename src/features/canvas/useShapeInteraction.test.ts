@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { documentAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
+import { nudgeDraftAtom } from '@/store/atoms/gestures/nudge'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -849,6 +850,34 @@ describe('useShapeInteraction — locked-shape filter', () => {
 
     const draft = store.get(moveDraftAtom)
     expect(draft).toEqual(expect.objectContaining({ ids: ['s1'] }))
+  })
+
+  it('does not promote to a move while another gesture draft is active', () => {
+    const scheduler = makeManualScheduler()
+    const { result, store } = renderHookWithStore(
+      () => useShapeInteraction('s1', scheduler),
+      (s) => {
+        s.set(documentAtom, testDoc)
+        s.set(selectShapesCommand, ['s1'])
+      },
+    )
+
+    act(() => {
+      result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
+      store.set(nudgeDraftAtom, { ids: ['s1'], dx: 1, dy: 0 })
+      result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
+    })
+
+    expect(store.get(moveDraftAtom)).toBeNull()
+
+    act(() => {
+      store.set(nudgeDraftAtom, null)
+      result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
+      scheduler.flush()
+    })
+
+    expect(store.get(moveDraftAtom)).not.toBeNull()
   })
 
   it('commit after mixed selection moves only unlocked shapes in document', () => {

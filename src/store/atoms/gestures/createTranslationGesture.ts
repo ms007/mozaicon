@@ -1,10 +1,11 @@
-import type { Atom, Getter } from 'jotai'
+import type { Atom, Getter, PrimitiveAtom } from 'jotai'
 import { atom } from 'jotai'
 import { selectAtom } from 'jotai/utils'
-import { atomFamily } from 'jotai-family'
+import { type AtomFamily, atomFamily } from 'jotai-family'
 
 import { translateRect } from '@/lib/geometry/rect'
-import { visibleSelectionBboxAtom } from '@/store/atoms/selection'
+import { bboxOfMany } from '@/lib/svg/bbox'
+import { shapeAtom } from '@/store/atoms/document'
 
 import type { DisplayContribution, GestureAdapter } from './registry'
 
@@ -15,14 +16,9 @@ export type TranslationDraft = {
 }
 
 export type TranslationGesture = {
-  draftAtom: ReturnType<typeof atom<TranslationDraft | null>>
+  draftAtom: PrimitiveAtom<TranslationDraft | null>
   isActiveAtom: Atom<boolean>
-  draftForShapeAtom: ReturnType<
-    typeof atomFamily<
-      string,
-      ReturnType<typeof selectAtom<TranslationDraft | null, { dx: number; dy: number } | null>>
-    >
-  >
+  draftForShapeAtom: AtomFamily<string, Atom<{ dx: number; dy: number } | null>>
   adapter: GestureAdapter<TranslationDraft>
 }
 
@@ -31,9 +27,6 @@ export function createTranslationGesture(name: string): TranslationGesture {
   draftAtom.debugLabel = `${name}DraftAtom`
 
   const isActiveAtom = atom((get) => get(draftAtom) !== null)
-  const capitalized = name[0].toUpperCase() + name.slice(1)
-  const verbal = capitalized.endsWith('e') ? `${capitalized.slice(0, -1)}ing` : `${capitalized}ing`
-  isActiveAtom.debugLabel = `is${verbal}Atom`
 
   const draftForShapeAtom = atomFamily((id: string) =>
     selectAtom(
@@ -47,8 +40,14 @@ export function createTranslationGesture(name: string): TranslationGesture {
     ),
   )
 
-  function displayBbox({ dx, dy }: TranslationDraft, get: Getter): DisplayContribution {
-    const bbox = get(visibleSelectionBboxAtom)
+  // Bbox of the frozen draft ids, not the live selection bbox: the two diverge
+  // when the selection contains locked shapes that the gesture excludes.
+  function displayBbox({ ids, dx, dy }: TranslationDraft, get: Getter): DisplayContribution {
+    const shapes = ids
+      .map((id) => get(shapeAtom(id)))
+      .filter((s) => s !== undefined)
+      .filter((s) => s.visible)
+    const bbox = bboxOfMany(shapes)
     if (!bbox) return { kind: 'hide' }
     return { kind: 'rect', value: translateRect(bbox, dx, dy) }
   }

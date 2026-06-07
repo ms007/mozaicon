@@ -12,6 +12,7 @@ import {
 } from '@/lib/svg/gestureSampler'
 import { shapeAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
+import { anyGestureDraftActiveAtom } from '@/store/atoms/gestures/registry'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveSelectionCommand } from '@/store/commands/moveSelection'
 import { selectShapesCommand, toggleSelectionCommand } from '@/store/commands/selectionCommands'
@@ -100,6 +101,11 @@ export function useShapeInteraction(shapeId: string, scheduler: FrameScheduler =
       }
 
       if (!state.promoted) {
+        // Another gesture's draft (e.g. an arrow-key nudge run) owns the store:
+        // promoting now would fork two concurrent drafts, and whichever commits
+        // second is silently swallowed by the command freeze.
+        if (store.get(anyGestureDraftActiveAtom)) return
+
         const isSelected = store.get(selectedIdsAtom).includes(shapeId)
         if (!isSelected) applyShapeClick(store, shapeId, state.shiftKey)
 

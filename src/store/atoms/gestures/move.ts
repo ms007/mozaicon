@@ -4,5 +4,6 @@ const move = createTranslationGesture('move')
 
 export const moveDraftAtom = move.draftAtom
 export const isMovingAtom = move.isActiveAtom
+isMovingAtom.debugLabel = 'isMovingAtom'
 export const moveDraftForShapeAtom = move.draftForShapeAtom
 export const moveAdapter = move.adapter

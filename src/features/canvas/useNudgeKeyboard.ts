@@ -9,12 +9,12 @@ import { anyGestureDraftActiveAtom } from '@/store/atoms/gestures/registry'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveSelectionCommand } from '@/store/commands/moveSelection'
 
-const ARROW_DELTAS: Partial<Record<string, { dx: number; dy: number }>> = {
-  ArrowUp: { dx: 0, dy: -1 },
-  ArrowDown: { dx: 0, dy: 1 },
-  ArrowLeft: { dx: -1, dy: 0 },
-  ArrowRight: { dx: 1, dy: 0 },
-}
+const ARROW_DELTAS = new Map<string, { dx: number; dy: number }>([
+  ['ArrowUp', { dx: 0, dy: -1 }],
+  ['ArrowDown', { dx: 0, dy: 1 }],
+  ['ArrowLeft', { dx: -1, dy: 0 }],
+  ['ArrowRight', { dx: 1, dy: 0 }],
+])
 
 export function useNudgeKeyboard(): void {
   const store = useStore()
@@ -63,7 +63,7 @@ export function useNudgeKeyboard(): void {
         return
       }
 
-      const delta = ARROW_DELTAS[e.key]
+      const delta = ARROW_DELTAS.get(e.key)
       if (!delta) return
 
       if (runIds === null) {
@@ -88,7 +88,7 @@ export function useNudgeKeyboard(): void {
     }
 
     function handleKeyUp(e: KeyboardEvent) {
-      if (!(e.key in ARROW_DELTAS)) return
+      if (!ARROW_DELTAS.has(e.key)) return
 
       pressed.delete(e.key)
 
