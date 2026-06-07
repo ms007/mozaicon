@@ -13,6 +13,13 @@ export const ShapeBase = z.object({
   strokeWidth: z.number().optional(),
 })
 
+export const Radii = z.tuple([
+  z.number().nonnegative(),
+  z.number().nonnegative(),
+  z.number().nonnegative(),
+  z.number().nonnegative(),
+])
+
 export const RectShape = ShapeBase.extend({
   type: z.literal('rect'),
   x: z.number(),
@@ -20,6 +27,7 @@ export const RectShape = ShapeBase.extend({
   width: z.number().nonnegative(),
   height: z.number().nonnegative(),
   rx: z.number().nonnegative().optional(),
+  radii: Radii.optional(),
 })
 
 export const Shape = z.discriminatedUnion('type', [RectShape])
@@ -34,6 +42,7 @@ export const Document = z.object({
 })
 
 export type ShapeBase = z.infer<typeof ShapeBase>
+export type Radii = z.infer<typeof Radii>
 export type RectShape = z.infer<typeof RectShape>
 export type Shape = z.infer<typeof Shape>
 export type Document = z.infer<typeof Document>

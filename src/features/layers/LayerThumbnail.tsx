@@ -1,3 +1,4 @@
+import { isUniform, roundedRectPath } from '@/lib/geometry/corner-radius'
 import { bboxOf } from '@/lib/svg/bbox'
 import type { Shape } from '@/types/shapes'
 
@@ -10,17 +11,23 @@ const PADDING = 1
 function renderSilhouette(shape: Shape) {
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
   switch (shape.type) {
-    case 'rect':
+    case 'rect': {
+      if (shape.radii && !isUniform(shape.radii)) {
+        const d = roundedRectPath(shape.x, shape.y, shape.width, shape.height, shape.radii)
+        return <path d={d} fill="currentColor" />
+      }
+      const rx = shape.radii ? shape.radii[0] : shape.rx
       return (
         <rect
           x={shape.x}
           y={shape.y}
           width={shape.width}
           height={shape.height}
-          rx={shape.rx}
+          rx={rx}
           fill="currentColor"
         />
       )
+    }
   }
   /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 }

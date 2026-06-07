@@ -1,5 +1,6 @@
 import { PanelSection } from '@/components/PanelSection'
 
+import { AppearanceSection } from './AppearanceSection'
 import { GeometryField } from './GeometryField'
 
 export function PropertiesPanel() {
@@ -21,6 +22,8 @@ export function PropertiesPanel() {
           <GeometryField fieldKey="height" label="H" />
         </div>
       </PanelSection>
+
+      <AppearanceSection />
     </aside>
   )
 }

@@ -45,4 +45,21 @@ describe('LayerThumbnail', () => {
     const svg = querySvg(container)
     expect(svg.getAttribute('viewBox')).toBe('1 2 12 10')
   })
+
+  it('renders a rect with uniform radii tuple as <rect>', () => {
+    const shape: RectShape = { ...rect, radii: [3, 3, 3, 3] }
+    const { container } = render(<LayerThumbnail shape={shape} />)
+    const rectEl = container.querySelector('rect')
+    expect(rectEl).toBeTruthy()
+    expect(rectEl?.getAttribute('rx')).toBe('3')
+  })
+
+  it('renders a path for per-corner radii', () => {
+    const shape: RectShape = { ...rect, radii: [1, 2, 3, 4] }
+    const { container } = render(<LayerThumbnail shape={shape} />)
+    const path = container.querySelector('path')
+    expect(path).toBeTruthy()
+    expect(path?.getAttribute('fill')).toBe('currentColor')
+    expect(container.querySelector('rect')).toBeNull()
+  })
 })

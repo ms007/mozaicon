@@ -2,6 +2,7 @@ import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
 import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
 import { assertNever } from '@/lib/util/assertNever'
+import { cornerRadiusStepDraftForShapeAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { moveDraftForShapeAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftForShapeAtom } from '@/store/atoms/gestures/nudge'
 import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
@@ -25,6 +26,7 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
   const propStepGeo = useAtomValue(propertyStepDraftForShapeAtom(shape.id))
+  const radiusStepDraft = useAtomValue(cornerRadiusStepDraftForShapeAtom(shape.id))
   const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
   const nudgeOffset = useAtomValue(nudgeDraftForShapeAtom(shape.id))
   const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
@@ -34,7 +36,10 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   if (!shape.visible) return null
 
   const geoOverride = draftGeo ?? propStepGeo
-  const rendered = geoOverride ? { ...shape, ...geoOverride } : shape
+  let rendered = geoOverride ? { ...shape, ...geoOverride } : shape
+  if (radiusStepDraft) {
+    rendered = { ...rendered, radii: radiusStepDraft }
+  }
   const totalDx = (moveOffset?.dx ?? 0) + (nudgeOffset?.dx ?? 0)
   const totalDy = (moveOffset?.dy ?? 0) + (nudgeOffset?.dy ?? 0)
   const transform =

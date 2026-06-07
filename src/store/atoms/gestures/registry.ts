@@ -5,6 +5,7 @@ import { selectAtom } from 'jotai/utils'
 import { type Rect, rectEqual } from '@/lib/geometry/rect'
 import { visibleSelectionBboxAtom } from '@/store/atoms/selection'
 
+import { cornerRadiusStepAdapter } from './cornerRadiusStep'
 import { drawAdapter } from './draw'
 import { marqueeAdapter } from './marquee'
 import { moveAdapter } from './move'
@@ -36,6 +37,7 @@ export const gestureRegistry = [
   nudgeAdapter,
   drawAdapter,
   propertyStepAdapter,
+  cornerRadiusStepAdapter,
 ] as readonly GestureAdapter[]
 
 export const isAnyGestureActiveAtom = atom((get) =>

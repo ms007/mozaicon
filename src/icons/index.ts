@@ -1,3 +1,8 @@
+import { CornerBottomLeft } from './CornerBottomLeft'
+import { CornerBottomRight } from './CornerBottomRight'
+import { CornersAll } from './CornersAll'
+import { CornerTopLeft } from './CornerTopLeft'
+import { CornerTopRight } from './CornerTopRight'
 import { Draw } from './Draw'
 import { Ellipse } from './Ellipse'
 import { Erase } from './Erase'
@@ -11,7 +16,25 @@ import { Redo } from './Redo'
 import { Sun } from './Sun'
 import { Undo } from './Undo'
 
-export { Draw, Ellipse, Erase, Eye, EyeOff, Fill, Line, Moon, Rect, Redo, Sun, Undo }
+export {
+  CornerBottomLeft,
+  CornerBottomRight,
+  CornersAll,
+  CornerTopLeft,
+  CornerTopRight,
+  Draw,
+  Ellipse,
+  Erase,
+  Eye,
+  EyeOff,
+  Fill,
+  Line,
+  Moon,
+  Rect,
+  Redo,
+  Sun,
+  Undo,
+}
 export { Icon } from './Icon'
 
 export const toolIcons = [
@@ -33,4 +56,12 @@ export const headerIcons = [
 export const utilityIcons = [
   { name: 'Eye', component: Eye },
   { name: 'EyeOff', component: EyeOff },
+] as const
+
+export const cornerIcons = [
+  { name: 'CornersAll', component: CornersAll },
+  { name: 'CornerTopLeft', component: CornerTopLeft },
+  { name: 'CornerTopRight', component: CornerTopRight },
+  { name: 'CornerBottomRight', component: CornerBottomRight },
+  { name: 'CornerBottomLeft', component: CornerBottomLeft },
 ] as const

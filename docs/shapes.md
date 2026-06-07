@@ -32,7 +32,7 @@ If any of these is missing, `pnpm check` should fail via the exhaustiveness chec
 
 ## Existing Shape Types
 
-- **`rect`** — rectangle with optional corner radius (`rx`)
+- **`rect`** — rectangle with optional corner radius (`rx` for uniform, `radii` tuple `[tl, tr, br, bl]` for per-corner). **Normalization invariant:** `rx` and `radii` are never both set — commands enforce this by clearing one when the other is written. At render time, `radii` takes precedence; uniform radii render as a native `<rect rx>`, differing radii render as a `<path>` with arc segments. All radius values are clamped to half the smaller side (SVG semantics) at render time via the `corner-radius` module in `src/lib/geometry/`.
 - **`circle`** — circle with center + radius
 - **`ellipse`** — ellipse with center + `rx`/`ry`
 - **`line`** — two-point line

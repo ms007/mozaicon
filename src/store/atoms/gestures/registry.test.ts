@@ -45,8 +45,8 @@ function withAdapters<D>(adapters: readonly GestureAdapter<D>[], fn: () => void)
 }
 
 describe('gestureRegistry', () => {
-  it('registers six adapters in Marquee > Resize > Move > Nudge > Draw > PropertyStep order', () => {
-    expect(gestureRegistry).toHaveLength(6)
+  it('registers seven adapters in Marquee > Resize > Move > Nudge > Draw > PropertyStep > CornerRadiusStep order', () => {
+    expect(gestureRegistry).toHaveLength(7)
     expect(gestureRegistry.map((a) => a.name)).toEqual([
       'marquee',
       'resize',
@@ -54,6 +54,7 @@ describe('gestureRegistry', () => {
       'nudge',
       'draw',
       'propertyStep',
+      'cornerRadiusStep',
     ])
   })
 })
