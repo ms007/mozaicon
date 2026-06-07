@@ -4,6 +4,8 @@ export interface ShortcutBinding extends BindingSpec {
   id: string
   label: string
   hint: string
+  /** When true, this binding fires even when an editable element (input, textarea, contenteditable) has focus. */
+  bypassEditable?: boolean
   run: () => void
 }
 

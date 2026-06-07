@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/primitives/Tooltip'
 import { TopBar } from '@/components/TopBar'
 import { Artboard } from '@/features/canvas/Artboard'
 import { createCanvasBindings } from '@/features/canvas/bindings'
+import { createExportBindings } from '@/features/export/bindings'
 import { createHistoryBindings } from '@/features/history/bindings'
 import { createLayerBindings } from '@/features/layers/bindings'
 import { LayersPanel } from '@/features/layers/LayersPanel'
@@ -23,6 +24,7 @@ export default function App() {
         ...createToolbarBindings(store),
         ...createHistoryBindings(store),
         ...createLayerBindings(store),
+        ...createExportBindings(store),
       ]),
     [store],
   )

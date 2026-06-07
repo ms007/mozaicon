@@ -11,6 +11,7 @@ This file is the entry point. For non-trivial changes, read the matching deep-di
 - **`docs/shapes.md`** — shape model and how to add a new shape type
 - **`docs/testing.md`** — test layers, golden-file conventions, Jotai test helpers
 - **`docs/ui-primitives.md`** — shadcn vendoring and the `primitives/` wrapper seam
+- **`docs/export.md`** — export pipeline, Export Parity invariant, naming rules, Sticky Export Target
 
 ## Tech Stack
 
@@ -132,6 +133,7 @@ Before starting, open the matching doc — it has the full walkthrough.
 | Add a shape type        | `docs/shapes.md`                  | `src/types/shapes.ts`                                                          |
 | Add a command           | `docs/architecture.md` (Commands) | `src/store/commands/` via `createCommand`                                      |
 | Add a shadcn primitive  | `docs/ui-primitives.md`           | `pnpm dlx shadcn@latest add <name>`, then wrap in `src/components/primitives/` |
+| Add an export format    | `docs/export.md`                  | `src/features/export/`                                                         |
 | Add a keyboard shortcut | —                                 | `src/features/shortcuts/registry.ts` (no ad-hoc listeners)                     |
 | Write tests             | `docs/testing.md`                 | Co-located `*.test.ts` next to source                                          |
 

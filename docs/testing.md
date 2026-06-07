@@ -220,6 +220,8 @@ it('updates fill color on input', async () => {
 
 **Rule:** Component tests should assert **observable behavior** (store state changed, text appeared), not implementation details (which atom was called).
 
+A dispatch across a feature seam counts as observable behavior: `ExportSection` calling `performExport(doc, target)` _is_ the component's contract. Mock the seam module and assert the call — what happens behind the seam (filenames, pipeline, downloads) is verified in that module's own tests (`performExport.test.ts`), not re-tested through the component.
+
 ## Layer 4: Export / Golden Files
 
 SVG export is where snapshot testing shines — the output is deterministic and meaningful.

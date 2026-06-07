@@ -65,6 +65,20 @@ describe('RectRenderer', () => {
     expect(d).toContain('A4 4')
   })
 
+  it('renders stroke and stroke-width when stroked', () => {
+    const svg = renderSvg({ ...base, stroke: '#00f', strokeWidth: 2 })
+    const rect = svg.querySelector('rect')
+    expect(rect?.getAttribute('stroke')).toBe('#00f')
+    expect(rect?.getAttribute('stroke-width')).toBe('2')
+  })
+
+  it('omits stroke attributes when stroke is none', () => {
+    const svg = renderSvg({ ...base, stroke: 'none', strokeWidth: 2 })
+    const rect = svg.querySelector('rect')
+    expect(rect?.getAttribute('stroke')).toBeNull()
+    expect(rect?.getAttribute('stroke-width')).toBeNull()
+  })
+
   it('clamps oversized radii in path mode', () => {
     const svg = renderSvg({ ...base, radii: [100, 100, 100, 0] })
     const path = svg.querySelector('path')

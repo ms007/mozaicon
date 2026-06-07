@@ -8,10 +8,11 @@ export function useGlobalShortcuts(bindings: ShortcutBinding[]): void {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.repeat) return
-      if (isEditableTarget(event.target)) return
+      const inEditable = isEditableTarget(event.target)
 
       for (const binding of bindings) {
         if (matches(event, binding)) {
+          if (inEditable && !binding.bypassEditable) continue
           event.preventDefault()
           binding.run()
           return

@@ -1,16 +1,14 @@
-import { isUniform, roundedRectPath } from '@/lib/geometry/corner-radius'
+import { chooseRectElement } from '@/lib/svg/rectElement'
+import { shapePaintAttrs } from '@/lib/svg/shapeElement'
 import type { RectShape } from '@/types/shapes'
 
 export function RectRenderer({ shape }: { shape: RectShape }) {
-  const fill = shape.fill ?? '#000'
+  const el = chooseRectElement(shape)
+  const paint = shapePaintAttrs(shape)
 
-  if (shape.radii && !isUniform(shape.radii)) {
-    const d = roundedRectPath(shape.x, shape.y, shape.width, shape.height, shape.radii)
-    return <path d={d} fill={fill} />
+  if (el.tag === 'path') {
+    return <path d={el.attrs.d} {...paint} />
   }
 
-  const rx = shape.radii ? shape.radii[0] : shape.rx
-  return (
-    <rect x={shape.x} y={shape.y} width={shape.width} height={shape.height} rx={rx} fill={fill} />
-  )
+  return <rect {...el.attrs} {...paint} />
 }

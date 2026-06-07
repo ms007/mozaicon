@@ -111,7 +111,7 @@ describe('useGlobalShortcuts', () => {
     expect(store.get(activeToolAtom)).toBe('select')
   })
 
-  it('does not dispatch when target is an editable element', () => {
+  it('does not dispatch single-key bindings when target is an editable element', () => {
     const { store } = setup()
     store.set(activeToolAtom, 'select')
 
@@ -120,6 +120,116 @@ describe('useGlobalShortcuts', () => {
     try {
       fireKey('r', { target: input })
       expect(store.get(activeToolAtom)).toBe('select')
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('dispatches bypassEditable bindings when target is an editable element', () => {
+    const handler = vi.fn()
+    const bindings: ShortcutBinding[] = [
+      {
+        id: 'chord',
+        key: 'e',
+        modifiers: ['mod', 'shift'],
+        label: 'Chord',
+        hint: 'Ctrl+Shift+E',
+        bypassEditable: true,
+        run: handler,
+      },
+    ]
+    setup({ bindings })
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    try {
+      fireKey('e', { ctrlKey: true, shiftKey: true, target: input })
+      expect(handler).toHaveBeenCalledOnce()
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('suppresses modifier-chord bindings without bypassEditable in editable elements', () => {
+    const handler = vi.fn()
+    const bindings: ShortcutBinding[] = [
+      {
+        id: 'undo',
+        key: 'z',
+        modifiers: ['mod'],
+        label: 'Undo',
+        hint: 'Ctrl+Z',
+        run: handler,
+      },
+    ]
+    setup({ bindings })
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    try {
+      const event = fireKey('z', { ctrlKey: true, target: input })
+      expect(handler).not.toHaveBeenCalled()
+      expect(event.defaultPrevented).toBe(false)
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('a suppressed non-bypass binding does not shadow a later bypassEditable one', () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    const bindings: ShortcutBinding[] = [
+      {
+        id: 'first',
+        key: 'e',
+        modifiers: ['mod', 'shift'],
+        label: 'First',
+        hint: 'Ctrl+Shift+E',
+        run: first,
+      },
+      {
+        id: 'second',
+        key: 'e',
+        modifiers: ['mod', 'shift'],
+        label: 'Second',
+        hint: 'Ctrl+Shift+E',
+        bypassEditable: true,
+        run: second,
+      },
+    ]
+    setup({ bindings })
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    try {
+      fireKey('e', { ctrlKey: true, shiftKey: true, target: input })
+      expect(first).not.toHaveBeenCalled()
+      expect(second).toHaveBeenCalledOnce()
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('does not dispatch shift-only bindings from an editable element', () => {
+    const handler = vi.fn()
+    const bindings: ShortcutBinding[] = [
+      {
+        id: 'shift-only',
+        key: 'x',
+        modifiers: ['shift'],
+        label: 'Shift only',
+        hint: 'Shift+X',
+        run: handler,
+      },
+    ]
+    setup({ bindings })
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    try {
+      const event = fireKey('x', { shiftKey: true, target: input })
+      expect(handler).not.toHaveBeenCalled()
+      expect(event.defaultPrevented).toBe(false)
     } finally {
       input.remove()
     }
