@@ -3,9 +3,11 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { toPascalComponentName } from '@/lib/naming'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import type { Document, RectShape } from '@/types/shapes'
 
-import { exportSvg } from './pipeline'
+import { exportSvg, exportTsx } from './pipeline'
 
 function loadFixture(name: string) {
   return readFileSync(resolve(__dirname, '__fixtures__', name), 'utf-8').trim()
@@ -71,5 +73,91 @@ describe('exportSvg', () => {
     const output = await exportSvg(makeDoc())
     expect(output).toContain('viewBox="0 0 24 24"')
     expect(output).toContain('xmlns="http://www.w3.org/2000/svg"')
+  })
+})
+
+describe('exportTsx', () => {
+  function namedDoc(name: string, ...shapes: RectShape[]): Document {
+    return makeDoc(shapes, { id: 'd1', name })
+  }
+
+  function exportNamed(doc: Document): Promise<string> {
+    return exportTsx(doc, toPascalComponentName(doc.name))
+  }
+
+  it('generates a component for a plain rect', async () => {
+    expect(await exportNamed(namedDoc('My Icon', baseRect))).toBe(
+      loadFixture('component-plain-rect.tsx') + '\n',
+    )
+  })
+
+  it('uses Icon fallback when document name is empty', async () => {
+    expect(await exportNamed(namedDoc('', baseRect))).toBe(
+      loadFixture('component-fallback-name.tsx') + '\n',
+    )
+  })
+
+  it('prefixes Icon for digit-starting names', async () => {
+    expect(await exportNamed(namedDoc('2x Arrow', baseRect))).toBe(
+      loadFixture('component-digit-prefix.tsx') + '\n',
+    )
+  })
+
+  it('renders uniform radii as rect with rx', async () => {
+    const shape = makeRect({ ...baseRect, radii: [4, 4, 4, 4] })
+    expect(await exportNamed(namedDoc('My Icon', shape))).toBe(
+      loadFixture('component-uniform-radii.tsx') + '\n',
+    )
+  })
+
+  it('renders non-uniform radii as path element', async () => {
+    const shape = makeRect({ ...baseRect, radii: [1, 2, 3, 4] })
+    const output = await exportNamed(namedDoc('Test', shape))
+    expect(output).toContain('<path d=')
+    expect(output).not.toContain('<rect')
+  })
+
+  it('omits hidden shapes', async () => {
+    const hidden = makeRect({ ...baseRect, visible: false })
+    const visible = makeRect({
+      ...baseRect,
+      id: 'r2',
+      x: 10,
+      y: 10,
+      width: 4,
+      height: 4,
+      fill: '#f00',
+    })
+    expect(await exportNamed(namedDoc('My Icon', hidden, visible))).toBe(
+      loadFixture('component-hidden-shapes.tsx') + '\n',
+    )
+  })
+
+  it('generates empty body when no shapes', async () => {
+    expect(await exportNamed(namedDoc('My Icon'))).toBe(loadFixture('component-empty.tsx') + '\n')
+  })
+
+  it('keeps colors literal — no currentColor rewrite', async () => {
+    const shape = makeRect({ ...baseRect, fill: '#ff6600' })
+    const output = await exportNamed(namedDoc('Test', shape))
+    expect(output).toContain('fill=')
+    expect(output).not.toContain('currentColor')
+  })
+
+  it('matches the optimized SVG structurally', async () => {
+    const doc = makeDoc([baseRect])
+    const svg = await exportSvg(doc)
+    const tsx = await exportTsx(doc, 'Test')
+    const svgRect = /<rect[^/]*/.exec(svg)?.[0] ?? ''
+    const tsxRect = /<rect[^/]*/.exec(tsx)?.[0] ?? ''
+    expect(tsxRect.replace(/=\{(\d+)\}/g, '="$1"').trimEnd()).toBe(svgRect.trimEnd())
+  })
+
+  it('does not include shape names, ids, or editor metadata', async () => {
+    const shape = makeRect({ ...baseRect, name: 'My Shape' })
+    const output = await exportNamed(namedDoc('Test', shape))
+    expect(output).not.toContain('r1')
+    expect(output).not.toContain('My Shape')
+    expect(output).not.toContain('id=')
   })
 })

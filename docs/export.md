@@ -7,19 +7,22 @@ How the export feature works end to end: pipeline, formats, naming, and the stic
 Every export flows through the same two-stage pipeline:
 
 ```
-documentAtom → serialize (serializeDocument) → optimize (SVGO) → output
+documentAtom → serialize (serializeDocument) → optimize (SVGO) → optimized SVG
+                                                                  ├→ .svg download
+                                                                  ├→ codegen → .tsx download
+                                                                  └→ rasterize → .png download
 ```
 
 1. **Serialize** (`src/features/export/serialize.ts`) — prints the document's **element tree** (see below) as a raw SVG string with the document's `viewBox`. This is a pure function of the document model — no React, no atoms.
-2. **Optimize** (`src/features/export/optimize.ts`) — passes the raw SVG through SVGO's `preset-default` for minification (collapsing groups, merging paths, stripping editor noise).
+2. **Optimize** (`src/features/export/optimize.ts`) — passes the raw SVG through SVGO's `preset-default` for minification (collapsing groups, merging paths, stripping editor noise). The `convertShapeToPath` plugin is disabled: a plain `<rect>` must stay a `<rect>` so the SVG output structurally matches the TSX export and the canvas element tree.
 
 For PNG, the optimized SVG feeds into the **rasterizer** (`src/features/export/rasterize.ts`), which loads the SVG into an `Image`, draws it onto an off-screen `<canvas>` at the requested scale, and extracts a PNG `Blob` via `canvas.toBlob`.
 
-For TSX, the **codegen** module (`src/features/export/codegen.ts`) prints the same element tree as a typed React function component (not through the SVG serializer or SVGO — TSX output is unoptimized). The component spreads `SVGProps<SVGSVGElement>` last so consumers can override attributes. Colors stay literal — no `currentColor` rewrite — to preserve Export Parity.
+For TSX, the **codegen** module (`src/features/export/codegen.ts`) parses the **optimized SVG string** (DOMParser) and reprints it as a typed React function component — kebab-case attributes become camelCase, numeric values use JSX braces. Because the input is the SVGO output, the TSX component is structurally identical to the exported SVG file (same tags, same attributes, same path data) by construction. The component spreads `SVGProps<SVGSVGElement>` last so consumers can override attributes. Colors stay literal — no `currentColor` rewrite — to preserve Export Parity.
 
 ## Element Tree
 
-`documentElements` (`src/lib/svg/shapeElement.ts`) is the single document-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which applies the fill default and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`), the JSX printer in `codegen.ts` emits them as-is.
+`documentElements` (`src/lib/svg/shapeElement.ts`) is the single document-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which applies the fill default and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`). The JSX printer in `codegen.ts` sits **after** SVGO and converts them back (`stroke-width` → `strokeWidth`).
 
 `serialize.ts` and `codegen.ts` are format printers only — adding a shape type touches the element tree once, never the printers.
 
@@ -30,7 +33,8 @@ The invariant: **exported output renders identically to the canvas content, minu
 - Editor chrome (pixel grid, selection overlay, resize handles, artboard padding) never appears in output.
 - Hidden shapes are excluded. Visible shapes serialize with their exact fill, stroke, and geometry.
 - Shape `name`, `locked`, `visible`, and `id` fields are editor metadata and are stripped during serialization.
-- The canvas renderers and the export printers share both the element-choice logic (`chooseRectElement` in `src/lib/svg/rectElement.ts`) and the paint logic (`shapePaintAttrs` in `src/lib/svg/shapeElement.ts`), so canvas and export cannot disagree about geometry or fill/stroke. Both export formats print the same element tree (`documentElements`), so they cannot disagree with each other either.
+- The canvas renderers and the export printers share both the element-choice logic (`chooseRectElement` in `src/lib/svg/rectElement.ts`) and the paint logic (`shapePaintAttrs` in `src/lib/svg/shapeElement.ts`), so canvas and export cannot disagree about geometry or fill/stroke.
+- SVG and TSX are **structurally identical**: both derive from the same optimized SVG (TSX is generated by parsing it). A `<rect>` in the SVG file is a `<rect>` in the component, with the same attributes and values. SVGO's `convertShapeToPath` is disabled to keep element tags stable across canvas, SVG, and TSX.
 
 If a future feature adds a visual effect to the canvas (shadow, guides, snap indicators), it must be excluded from the serialization path to preserve this invariant.
 
@@ -65,17 +69,17 @@ Export is disabled (all buttons greyed out) when the document has no visible sha
 
 ## Key Files
 
-| File                                    | Role                                           |
-| --------------------------------------- | ---------------------------------------------- |
-| `src/features/export/ExportSection.tsx` | UI: five export buttons, sticky target styling |
-| `src/features/export/performExport.ts`  | Shared dispatch: target → pipeline → download  |
-| `src/lib/svg/shapeElement.ts`           | Element tree: document → `ShapeElement[]`      |
-| `src/features/export/serialize.ts`      | XML printer: element tree → raw SVG string     |
-| `src/features/export/optimize.ts`       | Stage 2: raw SVG → SVGO-optimized SVG          |
-| `src/features/export/pipeline.ts`       | Combines serialize + optimize into `exportSvg` |
-| `src/features/export/codegen.ts`        | JSX printer: element tree → React component    |
-| `src/features/export/rasterize.ts`      | PNG: SVG string → Image → canvas → Blob        |
-| `src/features/export/download.ts`       | File-saver wrappers for each format            |
-| `src/features/export/bindings.ts`       | Mod+Shift+E shortcut binding                   |
-| `src/store/atoms/export.ts`             | `exportTargetAtom`, `allExportDisabledAtom`    |
-| `src/lib/naming.ts`                     | `toKebabSlug`, `toPascalComponentName`         |
+| File                                    | Role                                            |
+| --------------------------------------- | ----------------------------------------------- |
+| `src/features/export/ExportSection.tsx` | UI: five export buttons, sticky target styling  |
+| `src/features/export/performExport.ts`  | Shared dispatch: target → pipeline → download   |
+| `src/lib/svg/shapeElement.ts`           | Element tree: document → `ShapeElement[]`       |
+| `src/features/export/serialize.ts`      | XML printer: element tree → raw SVG string      |
+| `src/features/export/optimize.ts`       | Stage 2: raw SVG → SVGO-optimized SVG           |
+| `src/features/export/pipeline.ts`       | `exportSvg` (serialize + optimize), `exportTsx` |
+| `src/features/export/codegen.ts`        | JSX printer: optimized SVG → React component    |
+| `src/features/export/rasterize.ts`      | PNG: SVG string → Image → canvas → Blob         |
+| `src/features/export/download.ts`       | File-saver wrappers for each format             |
+| `src/features/export/bindings.ts`       | Mod+Shift+E shortcut binding                    |
+| `src/store/atoms/export.ts`             | `exportTargetAtom`, `allExportDisabledAtom`     |
+| `src/lib/naming.ts`                     | `toKebabSlug`, `toPascalComponentName`          |

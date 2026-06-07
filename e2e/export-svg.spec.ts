@@ -26,8 +26,7 @@ test.describe('Export SVG download', () => {
     const content = fs.readFileSync(filePath, 'utf-8')
     expect(content).toContain('<svg')
     expect(content).toContain('xmlns="http://www.w3.org/2000/svg"')
-    // SVGO's convertShapeToPath rewrites sharp-cornered rects to <path>.
-    expect(content).toContain('<path')
+    expect(content).toContain('<rect')
   })
 
   test('all export buttons are disabled when no shapes exist', async ({ page }) => {

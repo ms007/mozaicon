@@ -3,9 +3,8 @@ import { assertNever } from '@/lib/util/assertNever'
 import type { ExportTarget } from '@/store/atoms/export'
 import type { Document } from '@/types/shapes'
 
-import { generateTsx } from './codegen'
 import { downloadBlob, downloadSvg, downloadTsx } from './download'
-import { exportSvg } from './pipeline'
+import { exportSvg, exportTsx } from './pipeline'
 import { rasterize } from './rasterize'
 
 const PNG_SCALES = { png1x: 1, png2x: 2, png4x: 4 } as const
@@ -25,7 +24,7 @@ export async function performExport(doc: Document, target: ExportTarget): Promis
       }
       case 'tsx': {
         const componentName = toPascalComponentName(doc.name)
-        downloadTsx(generateTsx(doc, componentName), `${componentName}.tsx`)
+        downloadTsx(await exportTsx(doc, componentName), `${componentName}.tsx`)
         return
       }
       case 'png1x':
