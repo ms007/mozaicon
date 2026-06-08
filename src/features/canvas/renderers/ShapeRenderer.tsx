@@ -1,7 +1,7 @@
 import { type PrimitiveAtom, useAtomValue } from 'jotai'
 
 import { useShapeInteraction } from '@/features/canvas/useShapeInteraction'
-import { assertNever } from '@/lib/util/assertNever'
+import { shapeToElement } from '@/lib/svg/shapeElement'
 import { cornerRadiusStepDraftForShapeAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { moveDraftForShapeAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftForShapeAtom } from '@/store/atoms/gestures/nudge'
@@ -9,7 +9,7 @@ import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertySt
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
-import { RectRenderer } from './RectRenderer'
+import { ElementPrinter } from './ElementPrinter'
 
 type ShapeRendererProps =
   | { shapeAtom: PrimitiveAtom<Shape>; shape?: never }
@@ -59,12 +59,5 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
 }
 
 function ValueShapeRenderer({ shape }: { shape: Shape }) {
-  /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
-  switch (shape.type) {
-    case 'rect':
-      return <RectRenderer shape={shape} />
-    default:
-      return assertNever(shape.type)
-  }
-  /* eslint-enable @typescript-eslint/no-unnecessary-condition */
+  return <ElementPrinter element={shapeToElement(shape)} />
 }

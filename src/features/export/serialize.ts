@@ -9,9 +9,15 @@ function xmlAttrName(name: string): string {
   return name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)
 }
 
+type AttrValue = string | number | undefined
+
+function attrEntries(attrs: ShapeElement['attrs']): [string, AttrValue][] {
+  return Object.entries(attrs) as [string, AttrValue][]
+}
+
 function printXmlElement(el: ShapeElement): string {
   let attrs = ''
-  for (const [name, value] of Object.entries(el.attrs)) {
+  for (const [name, value] of attrEntries(el.attrs)) {
     if (value === undefined) continue
     const printed = typeof value === 'string' ? escapeAttr(value) : String(value)
     attrs += ` ${xmlAttrName(name)}="${printed}"`

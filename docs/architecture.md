@@ -60,19 +60,7 @@ export const RectShape = ShapeBase.extend({
   rx: z.number().optional(),
 })
 
-export const CircleShape = ShapeBase.extend({
-  type: z.literal('circle'),
-  cx: z.number(),
-  cy: z.number(),
-  r: z.number(),
-})
-
-export const PathShape = ShapeBase.extend({
-  type: z.literal('path'),
-  d: z.string(), // SVG path data
-})
-
-export const Shape = z.discriminatedUnion('type', [RectShape, CircleShape, PathShape])
+export const Shape = z.discriminatedUnion('type', [RectShape])
 export type Shape = z.infer<typeof Shape>
 
 export const Document = z.object({
@@ -277,9 +265,7 @@ Redo-stack clearing is guaranteed by `createCommand` itself; individual command 
 ### Example Command: Move Selection (`src/store/commands/moveSelection.ts`)
 
 ```ts
-import { produce } from 'immer'
-
-import { translatePath } from '@/lib/svg/translatePath'
+import { translateShape } from '@/lib/geometry/translate'
 
 import { createCommand } from './createCommand'
 
@@ -288,31 +274,21 @@ export const moveSelectionCommand = createCommand<{
   dx: number
   dy: number
 }>('Move selection', (doc, { ids, dx, dy }) => {
-  if (ids.length === 0 || (dx === 0 && dy === 0)) return {}
+  if (ids.length === 0) return {}
+  if (dx === 0 && dy === 0) return {}
+
   const idSet = new Set(ids)
-  const next = produce(doc, (draft) => {
-    for (const shape of draft.shapes) {
-      if (!idSet.has(shape.id)) continue
-      switch (shape.type) {
-        case 'rect':
-          shape.x += dx
-          shape.y += dy
-          break
-        case 'circle':
-          shape.cx += dx
-          shape.cy += dy
-          break
-        case 'path':
-          shape.d = translatePath(shape.d, dx, dy)
-          break
-      }
-    }
-  })
-  return next === doc ? {} : { document: next }
+  const nextShapes = doc.shapes.map((shape) =>
+    idSet.has(shape.id) ? translateShape(shape, dx, dy) : shape,
+  )
+
+  const changed = nextShapes.some((s, i) => s !== doc.shapes[i])
+  if (!changed) return {}
+  return { document: { ...doc, shapes: nextShapes } }
 })
 ```
 
-Multi-shape on purpose: a single dispatch translates every shape in the _Move Set_ by the same `{ dx, dy }` and pushes one _History Entry_. The Move Set is captured at gesture promotion and arrives here as `ids`; this command does not consult `selectedIdsAtom` itself.
+Multi-shape on purpose: a single dispatch translates every shape in the _Move Set_ by the same `{ dx, dy }` and pushes one _History Entry_. The per-shape type switch lives in `translateShape` (pure function in `lib/`), so the command stays generic. The Move Set is captured at gesture promotion and arrives here as `ids`; this command does not consult `selectedIdsAtom` itself.
 
 ### Usage in a Component
 
@@ -439,14 +415,7 @@ export function Canvas() {
 // This component re-renders ONLY when its own shape changes.
 function ShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const shape = useAtomValue(shapeAtom)
-  switch (shape.type) {
-    case 'rect':
-      return <rect {...shape} />
-    case 'circle':
-      return <circle {...shape} />
-    case 'path':
-      return <path d={shape.d} fill={shape.fill} />
-  }
+  return <ElementPrinter element={shapeToElement(shape)} />
 }
 ```
 

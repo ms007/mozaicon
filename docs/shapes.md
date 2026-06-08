@@ -19,11 +19,10 @@ Every shape must support these operations:
 | Operation     | Where                              | Required |
 | ------------- | ---------------------------------- | -------- |
 | Schema        | `src/types/shapes.ts`              | Yes      |
-| Render        | `src/features/canvas/renderers/`   | Yes      |
+| Element tree  | `src/lib/svg/shapeElement.ts`      | Yes      |
 | Bounding box  | `src/lib/svg/bbox/`                | Yes      |
 | Translate     | `src/lib/svg/transform.ts`         | Yes      |
 | Scale         | `src/lib/geometry/scale.ts`        | Yes      |
-| Serialize     | `src/features/export/serializers/` | Yes      |
 | Properties UI | `src/features/properties/editors/` | Yes      |
 | Drawing tool  | `src/features/toolbar/tools/`      | Optional |
 | Hit testing   | `src/lib/svg/hitTest.ts`           | Yes      |
@@ -33,11 +32,6 @@ If any of these is missing, `pnpm check` should fail via the exhaustiveness chec
 ## Existing Shape Types
 
 - **`rect`** — rectangle with optional corner radius (`rx` for uniform, `radii` tuple `[tl, tr, br, bl]` for per-corner). **Normalization invariant:** `rx` and `radii` are never both set — commands enforce this by clearing one when the other is written. At render time, `radii` takes precedence; uniform radii render as a native `<rect rx>`, differing radii render as a `<path>` with arc segments. All radius values are clamped to half the smaller side (SVG semantics) at render time via the `corner-radius` module in `src/lib/geometry/`.
-- **`circle`** — circle with center + radius
-- **`ellipse`** — ellipse with center + `rx`/`ry`
-- **`line`** — two-point line
-- **`path`** — arbitrary SVG path data (`d` string)
-- **`group`** — container holding child shape ids (no geometry of its own)
 
 ## Adding a New Shape Type: Walkthrough
 
@@ -55,52 +49,29 @@ export const PolygonShape = ShapeBase.extend({
 
 export const Shape = z.discriminatedUnion('type', [
   RectShape,
-  CircleShape,
-  EllipseShape,
-  LineShape,
-  PathShape,
-  GroupShape,
   PolygonShape, // <-- add here
 ])
 ```
 
 That single addition to the union is what makes the exhaustiveness checks fire everywhere else. TypeScript will now yell at every `switch(shape.type)` that doesn't handle `polygon`. Walk through the compile errors — each one is a file you need to touch.
 
-### 2. Add a Renderer
+### 2. Add an Element Translation
 
-`src/features/canvas/renderers/PolygonRenderer.tsx`:
+`src/lib/svg/shapeElement.ts` — add a case to `shapeToElement`:
 
-```tsx
-import type { Polygon } from '@/types/shapes'
-
-export function PolygonRenderer({ shape }: { shape: Polygon }) {
+```ts
+case 'polygon': {
   const points = shape.points.map((p) => `${p.x},${p.y}`).join(' ')
-  return (
-    <polygon
-      points={points}
-      fill={shape.fill ?? 'none'}
-      stroke={shape.stroke}
-      strokeWidth={shape.strokeWidth}
-    />
-  )
+  const paint = shapePaintAttrs(shape)
+  return { tag: 'polygon', attrs: { points, ...paint } }
 }
 ```
 
-Register it in `src/features/canvas/renderers/ShapeRenderer.tsx`:
-
-```tsx
-switch (shape.type) {
-  case 'rect':
-    return <RectRenderer shape={shape} />
-  case 'circle':
-    return <CircleRenderer shape={shape} />
-  // ...
-  case 'polygon':
-    return <PolygonRenderer shape={shape} />
-  default:
-    return assertNever(shape)
-}
-```
+The generic `ElementPrinter` in
+`src/features/canvas/renderers/ElementPrinter.tsx` renders any
+`ShapeElement` to JSX — no per-shape renderer component needed.
+If your shape introduces a new SVG tag, add a case to the
+`ElementPrinter` switch and extend the `ShapeElement` union.
 
 ### 3. Bounding Box
 
@@ -147,33 +118,7 @@ export function translate(shape: Shape, dx: number, dy: number): Shape {
 }
 ```
 
-### 5. Serialize for Export
-
-`src/features/export/serializers/polygon.ts`:
-
-```ts
-import type { Polygon } from '@/types/shapes'
-import { serializeStyle } from './style'
-
-export function serializePolygon(shape: Polygon): string {
-  const points = shape.points.map((p) => `${p.x},${p.y}`).join(' ')
-  return `<polygon points="${points}"${serializeStyle(shape)} />`
-}
-```
-
-Register in `src/features/export/serialize.ts`:
-
-```ts
-switch (shape.type) {
-  // ...
-  case 'polygon':
-    return serializePolygon(shape)
-  default:
-    return assertNever(shape)
-}
-```
-
-### 6. Properties Editor
+### 5. Properties Editor
 
 `src/features/properties/editors/PolygonEditor.tsx`:
 
@@ -190,7 +135,7 @@ export function PolygonEditor({ shape }: { shape: Polygon }) {
 
 Register in the editor switch (`PropertiesPanel.tsx`).
 
-### 7. Hit Testing
+### 6. Hit Testing
 
 `src/lib/svg/hitTest.ts` — use ray casting or point-in-polygon:
 
@@ -199,20 +144,20 @@ case 'polygon':
   return pointInPolygon(point, shape.points);
 ```
 
-### 8. (Optional) Drawing Tool
+### 7. (Optional) Drawing Tool
 
 If the shape is user-drawable, add a tool in `src/features/toolbar/tools/<name>.ts` and register it in `src/features/toolbar/tools/index.ts`. For drag-to-draw shapes, use the `createDragTool` factory (see [Drag-Tool Factory](#drag-tool-factory) below) — you only supply geometry math and a shape builder. See [Drawing Tools](#drawing-tools) for the full `DrawTool` interface and conventions.
 
-### 9. Tests
+### 8. Tests
 
 At minimum, add:
 
 - `src/types/shapes.test.ts` — schema validation (valid + invalid inputs)
 - `src/lib/svg/bbox.test.ts` — bbox correctness
 - `src/lib/svg/transform.test.ts` — translate preserves invariants
-- `src/features/export/serializers/polygon.test.ts` — golden SVG output
+- `src/lib/svg/shapeElement.test.ts` — element tree output (tag + attrs)
 
-### 10. Verify
+### 9. Verify
 
 ```bash
 pnpm check

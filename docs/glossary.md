@@ -10,6 +10,16 @@ Shared vocabulary for the Mozaicon project. Terms are grouped by topic. Data-mod
 
 **Pixel Grid** — The integer-position dot overlay rendered as the deepest layer inside the Canvas. Implemented as an O(1) SVG `<pattern>` + covering `<rect>`, viewBox-aware via a focused `selectAtom`. The grid is a spatial reference for pixel-perfect placement — it is not part of the document model and does not appear in export. Boundary against shape geometry (the grid is reference, not data) and _Artboard_ (the grid lives inside the `<svg>`, not in app-space chrome). See [`canvas-chrome.md`](./canvas-chrome.md).
 
+## Rendering
+
+**Element Tree** — The single document-to-SVG translation layer (`src/lib/svg/shapeElement.ts`). `documentElements(doc)` filters to visible shapes and maps each through `shapeToElement`, producing a `ShapeElement[]` — a discriminated union of `{ tag, attrs }` records with camelCase attribute keys combining geometry and paint. Adding a shape type means adding one case to `shapeToElement`; the three downstream printers consume the tree without per-shape changes:
+
+- **Canvas ElementPrinter** (`src/features/canvas/renderers/ElementPrinter.tsx`) — maps a `ShapeElement` to JSX by spreading typed attributes onto the corresponding intrinsic (`<rect>`, `<path>`, …). If a new shape introduces a new SVG tag, the printer's switch needs an additional case and the `ShapeElement` union needs a new variant.
+- **XML printer** (`src/features/export/serialize.ts`) — walks the element tree and emits raw SVG XML, kebab-casing attribute names (`strokeWidth` → `stroke-width`).
+- **JSX printer** (`src/features/export/codegen.ts`) — sits after SVGO optimization; parses the optimized SVG string and reprints it as a typed React component with camelCase attributes. Because it consumes the SVGO output (not the element tree directly), adding a shape type doesn't touch this printer.
+
+The public `shapeToElement` seam is the shape-specific boundary: everything upstream (schema, geometry) is per-shape; everything downstream (printers, pipeline, download) is generic. Export Parity is maintained by construction — canvas and export share the same element-choice logic (`chooseRectElement`) and paint logic (`shapePaintAttrs`).
+
 ## Interaction
 
 **Gesture** — A transient, draft-sourced interaction on the canvas with a `null → populated → null` lifecycle. The draft atom is `null` at rest, populated while the gesture is in flight, and cleared back to `null` on commit or cancel. A gesture falls into one of two kinds based on input source: a _Pointer Gesture_ is driven by pointer-down-to-pointer-up (optionally promoted past a drag threshold) — _Drag-to-Draw_, _Drag-to-Select_ (marquee), _Drag-to-Move_, and Resize; a _Keyboard Gesture_ is driven by key-down-to-key-up (optionally across auto-repeat) — _Nudge_. Both kinds share the same contract: one draft atom, one _Gesture Adapter_ in the _Gesture Registry_, same `isAnyGestureActiveAtom` freeze. **Non-gestures:** tool-mode switches (e.g. choosing the rect tool), hover affordances (e.g. cursor changes, handle highlights), and overlays that contribute additional visuals during a gesture (snap guides, smart-distance indicators). These may read gesture state but do not own a draft atom and are not entries in the registry.

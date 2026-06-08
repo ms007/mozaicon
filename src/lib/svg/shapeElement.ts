@@ -17,17 +17,38 @@ export function shapePaintAttrs(shape: ShapeBase): PaintAttrs {
   return { fill, stroke: shape.stroke, strokeWidth: shape.strokeWidth }
 }
 
-export interface ShapeElement {
-  tag: 'rect' | 'path'
-  attrs: Record<string, string | number | undefined>
+export interface RectElementAttrs {
+  x: number
+  y: number
+  width: number
+  height: number
+  rx?: number
+  fill: string
+  stroke?: string
+  strokeWidth?: number
 }
 
-function shapeToElement(shape: Shape): ShapeElement {
+export interface PathElementAttrs {
+  d: string
+  fill: string
+  stroke?: string
+  strokeWidth?: number
+}
+
+export type ShapeElement =
+  | { tag: 'rect'; attrs: RectElementAttrs }
+  | { tag: 'path'; attrs: PathElementAttrs }
+
+export function shapeToElement(shape: Shape): ShapeElement {
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
   switch (shape.type) {
     case 'rect': {
       const el = chooseRectElement(shape)
-      return { tag: el.tag, attrs: { ...el.attrs, ...shapePaintAttrs(shape) } }
+      const paint = shapePaintAttrs(shape)
+      if (el.tag === 'path') {
+        return { tag: 'path', attrs: { ...el.attrs, ...paint } }
+      }
+      return { tag: 'rect', attrs: { ...el.attrs, ...paint } }
     }
     default:
       return assertNever(shape.type)
