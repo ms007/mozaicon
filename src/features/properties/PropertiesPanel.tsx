@@ -26,7 +26,7 @@ export function PropertiesPanel() {
 
       <AppearanceSection />
 
-      <div className="mt-auto">
+      <div className="mt-auto mb-2">
         <ExportSection />
       </div>
     </aside>
