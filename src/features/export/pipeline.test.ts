@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { toPascalComponentName } from '@/lib/naming'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document, RectShape } from '@/types/shapes'
@@ -22,12 +23,16 @@ describe('exportSvg', () => {
   })
 
   it('optimizes a rect with uniform radii', async () => {
-    const doc = makeDoc([makeRect({ ...baseRect, radii: [4, 4, 4, 4] })])
+    const doc = makeDoc([
+      makeRect({ ...baseRect, corners: { ...DEFAULT_CORNERS, radii: [4, 4, 4, 4] } }),
+    ])
     expect(await exportSvg(doc)).toBe(loadFixture('optimized-uniform-radii.svg'))
   })
 
   it('optimizes a rect with non-uniform radii', async () => {
-    const doc = makeDoc([makeRect({ ...baseRect, radii: [1, 2, 3, 4] })])
+    const doc = makeDoc([
+      makeRect({ ...baseRect, corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }),
+    ])
     expect(await exportSvg(doc)).toBe(loadFixture('optimized-non-uniform-radii.svg'))
   })
 
@@ -69,6 +74,16 @@ describe('exportSvg', () => {
     expect(output).not.toContain('id=')
   })
 
+  it('optimizes a smoothed rect', async () => {
+    const doc = makeDoc([
+      makeRect({
+        ...baseRect,
+        corners: { radii: [4, 4, 4, 4], style: 'smooth', smoothing: 60 },
+      }),
+    ])
+    expect(await exportSvg(doc)).toBe(loadFixture('optimized-smooth-corners.svg'))
+  })
+
   it('handles an empty document', async () => {
     const output = await exportSvg(makeDoc())
     expect(output).toContain('viewBox="0 0 24 24"')
@@ -104,14 +119,20 @@ describe('exportTsx', () => {
   })
 
   it('renders uniform radii as rect with rx', async () => {
-    const shape = makeRect({ ...baseRect, radii: [4, 4, 4, 4] })
+    const shape = makeRect({
+      ...baseRect,
+      corners: { ...DEFAULT_CORNERS, radii: [4, 4, 4, 4] },
+    })
     expect(await exportNamed(namedDoc('My Icon', shape))).toBe(
       loadFixture('component-uniform-radii.tsx') + '\n',
     )
   })
 
   it('renders non-uniform radii as path element', async () => {
-    const shape = makeRect({ ...baseRect, radii: [1, 2, 3, 4] })
+    const shape = makeRect({
+      ...baseRect,
+      corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] },
+    })
     const output = await exportNamed(namedDoc('Test', shape))
     expect(output).toContain('<path d=')
     expect(output).not.toContain('<rect')
@@ -151,6 +172,31 @@ describe('exportTsx', () => {
     const svgRect = /<rect[^/]*/.exec(svg)?.[0] ?? ''
     const tsxRect = /<rect[^/]*/.exec(tsx)?.[0] ?? ''
     expect(tsxRect.replace(/=\{(\d+)\}/g, '="$1"').trimEnd()).toBe(svgRect.trimEnd())
+  })
+
+  it('smoothed rect uses same path element in SVG and TSX exports', async () => {
+    const shape = makeRect({
+      ...baseRect,
+      corners: { radii: [4, 4, 4, 4], style: 'smooth', smoothing: 60 },
+    })
+    const doc = makeDoc([shape])
+    const svg = await exportSvg(doc)
+    const tsx = await exportTsx(doc, 'Test')
+    const svgPath = /<path[^/]*/.exec(svg)?.[0] ?? ''
+    const tsxPath = /<path[^/]*/.exec(tsx)?.[0] ?? ''
+    expect(svgPath).toContain('d=')
+    expect(tsxPath).toContain('d=')
+    expect(tsxPath.trimEnd()).toBe(svgPath.trimEnd())
+  })
+
+  it('renders a smoothed rect as path', async () => {
+    const shape = makeRect({
+      ...baseRect,
+      corners: { radii: [4, 4, 4, 4], style: 'smooth', smoothing: 60 },
+    })
+    expect(await exportNamed(namedDoc('My Icon', shape))).toBe(
+      loadFixture('component-smooth-corners.tsx') + '\n',
+    )
   })
 
   it('does not include shape names, ids, or editor metadata', async () => {

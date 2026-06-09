@@ -1,16 +1,21 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Document } from '@/types/shapes'
+import type { Corners, Document, RectShape } from '@/types/shapes'
 
 import { setCornerRadiusCommand } from './setCornerRadius'
 
-const baseRect = {
+function corners(radii: [number, number, number, number]): Corners {
+  return { ...DEFAULT_CORNERS, radii }
+}
+
+const baseRect: RectShape = {
   id: 'r1',
-  type: 'rect' as const,
+  type: 'rect',
   name: 'Rect',
   visible: true,
   locked: false,
@@ -18,6 +23,7 @@ const baseRect = {
   y: 2,
   width: 10,
   height: 8,
+  corners: DEFAULT_CORNERS,
 }
 
 const docWithRect: Document = {
@@ -43,49 +49,46 @@ describe('setCornerRadiusCommand', () => {
     store.set(setCornerRadiusCommand, { radius: 3 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBe(3)
-    expect(shape.radii).toBeUndefined()
+    expect(shape.corners.radii).toEqual([3, 3, 3, 3])
 
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Set corner radius')
   })
 
-  it('undo restores the previous radii', () => {
+  it('undo restores the previous corners', () => {
     const store = makeStore()
     const before = store.get(documentAtom)
 
     store.set(setCornerRadiusCommand, { radius: 3 })
-    expect(store.get(documentAtom).shapes[0].rx).toBe(3)
+    expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([3, 3, 3, 3])
 
     const entry = store.get(undoStackAtom)[0]
     expect(entry.before).toBe(before)
   })
 
-  it('sets a single corner and stores radii tuple, removes rx', () => {
+  it('sets a single corner and stores per-corner radii', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, rx: 2 }],
+      shapes: [{ ...baseRect, corners: corners([2, 2, 2, 2]) }],
     })
 
     store.set(setCornerRadiusCommand, { corner: 0, radius: 4 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.radii).toEqual([4, 2, 2, 2])
-    expect(shape.rx).toBeUndefined()
+    expect(shape.corners.radii).toEqual([4, 2, 2, 2])
   })
 
-  it('normalizes per-corner back to rx when all corners equal', () => {
+  it('normalizes per-corner back to uniform when all corners equal', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, radii: [2, 3, 2, 2] }],
+      shapes: [{ ...baseRect, corners: corners([2, 3, 2, 2]) }],
     })
 
     store.set(setCornerRadiusCommand, { corner: 1, radius: 2 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBe(2)
-    expect(shape.radii).toBeUndefined()
+    expect(shape.corners.radii).toEqual([2, 2, 2, 2])
   })
 
   it('clamps radius to half the smaller side', () => {
@@ -94,13 +97,13 @@ describe('setCornerRadiusCommand', () => {
     store.set(setCornerRadiusCommand, { radius: 100 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBe(4)
+    expect(shape.corners.radii).toEqual([4, 4, 4, 4])
   })
 
   it('is a no-op when setting the same uniform radius', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, rx: 3 }],
+      shapes: [{ ...baseRect, corners: corners([3, 3, 3, 3]) }],
     })
 
     store.set(setCornerRadiusCommand, { radius: 3 })
@@ -111,7 +114,7 @@ describe('setCornerRadiusCommand', () => {
   it('is a no-op when setting the same single corner', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, radii: [4, 2, 2, 2] }],
+      shapes: [{ ...baseRect, corners: corners([4, 2, 2, 2]) }],
     })
 
     store.set(setCornerRadiusCommand, { corner: 0, radius: 4 })
@@ -125,7 +128,7 @@ describe('setCornerRadiusCommand', () => {
     store.set(setCornerRadiusCommand, { radius: 3 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBe(3)
+    expect(shape.corners.radii).toEqual([3, 3, 3, 3])
   })
 
   it('applies to multiple selected rects', () => {
@@ -138,8 +141,8 @@ describe('setCornerRadiusCommand', () => {
     store.set(setCornerRadiusCommand, { radius: 5 })
 
     const shapes = store.get(documentAtom).shapes
-    expect(shapes[0].rx).toBe(4)
-    expect(shapes[1].rx).toBe(2)
+    expect(shapes[0].corners.radii).toEqual([4, 4, 4, 4])
+    expect(shapes[1].corners.radii).toEqual([2, 2, 2, 2])
   })
 
   it('does not push history when no rects are selected', () => {
@@ -153,26 +156,24 @@ describe('setCornerRadiusCommand', () => {
   it('clamps negative radius to zero', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, rx: 3 }],
+      shapes: [{ ...baseRect, corners: corners([3, 3, 3, 3]) }],
     })
 
     store.set(setCornerRadiusCommand, { radius: -5 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBeUndefined()
-    expect(shape.radii).toBeUndefined()
+    expect(shape.corners.radii).toEqual([0, 0, 0, 0])
   })
 
-  it('setting uniform radius 0 removes rx', () => {
+  it('setting uniform radius 0 sets all radii to zero', () => {
     const store = makeStore({
       ...docWithRect,
-      shapes: [{ ...baseRect, rx: 3 }],
+      shapes: [{ ...baseRect, corners: corners([3, 3, 3, 3]) }],
     })
 
     store.set(setCornerRadiusCommand, { radius: 0 })
 
     const shape = store.get(documentAtom).shapes[0]
-    expect(shape.rx).toBeUndefined()
-    expect(shape.radii).toBeUndefined()
+    expect(shape.corners.radii).toEqual([0, 0, 0, 0])
   })
 })

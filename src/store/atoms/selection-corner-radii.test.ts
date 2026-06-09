@@ -1,12 +1,17 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Corners, Document, RectShape } from '@/types/shapes'
 
 import { selectionCornerRadiiAtom } from './selection-corner-radii'
 import { MIXED } from './selection-geometry'
+
+function corners(radii: [number, number, number, number]): Corners {
+  return { ...DEFAULT_CORNERS, radii }
+}
 
 const baseRect: RectShape = {
   id: 'r1',
@@ -18,6 +23,7 @@ const baseRect: RectShape = {
   y: 0,
   width: 10,
   height: 8,
+  corners: DEFAULT_CORNERS,
 }
 
 const baseDoc: Document = {
@@ -43,10 +49,10 @@ describe('selectionCornerRadiiAtom', () => {
     expect(result.hasRects).toBe(false)
   })
 
-  it('returns uniform corners for a rect with rx', () => {
+  it('returns uniform corners for a rect with uniform radii', () => {
     const store = makeStore({
       ...baseDoc,
-      shapes: [{ ...baseRect, rx: 3 }],
+      shapes: [{ ...baseRect, corners: corners([3, 3, 3, 3]) }],
     })
 
     const result = store.get(selectionCornerRadiiAtom)
@@ -57,7 +63,7 @@ describe('selectionCornerRadiiAtom', () => {
     expect(result.bl).toBe(3)
   })
 
-  it('returns 0 for all corners when rect has no rx or radii', () => {
+  it('returns 0 for all corners when rect has default corners', () => {
     const store = makeStore()
 
     const result = store.get(selectionCornerRadiiAtom)
@@ -68,10 +74,10 @@ describe('selectionCornerRadiiAtom', () => {
     expect(result.bl).toBe(0)
   })
 
-  it('returns per-corner values from radii tuple', () => {
+  it('returns per-corner values from corners radii', () => {
     const store = makeStore({
       ...baseDoc,
-      shapes: [{ ...baseRect, radii: [1, 2, 3, 4] }],
+      shapes: [{ ...baseRect, corners: corners([1, 2, 3, 4]) }],
     })
 
     const result = store.get(selectionCornerRadiiAtom)
@@ -86,8 +92,8 @@ describe('selectionCornerRadiiAtom', () => {
     const doc: Document = {
       ...baseDoc,
       shapes: [
-        { ...baseRect, rx: 2 },
-        { ...baseRect, id: 'r2', rx: 5 },
+        { ...baseRect, corners: corners([2, 2, 2, 2]) },
+        { ...baseRect, id: 'r2', corners: corners([5, 5, 5, 5]) },
       ],
     }
     const store = makeStore(doc, ['r1', 'r2'])
@@ -104,8 +110,8 @@ describe('selectionCornerRadiiAtom', () => {
     const doc: Document = {
       ...baseDoc,
       shapes: [
-        { ...baseRect, rx: 3 },
-        { ...baseRect, id: 'r2', rx: 3 },
+        { ...baseRect, corners: corners([3, 3, 3, 3]) },
+        { ...baseRect, id: 'r2', corners: corners([3, 3, 3, 3]) },
       ],
     }
     const store = makeStore(doc, ['r1', 'r2'])
@@ -121,8 +127,8 @@ describe('selectionCornerRadiiAtom', () => {
     const doc: Document = {
       ...baseDoc,
       shapes: [
-        { ...baseRect, radii: [2, 3, 2, 2] },
-        { ...baseRect, id: 'r2', radii: [2, 5, 2, 2] },
+        { ...baseRect, corners: corners([2, 3, 2, 2]) },
+        { ...baseRect, id: 'r2', corners: corners([2, 5, 2, 2]) },
       ],
     }
     const store = makeStore(doc, ['r1', 'r2'])
@@ -137,7 +143,7 @@ describe('selectionCornerRadiiAtom', () => {
   it('ignores non-rect shapes in the selection', () => {
     const store = makeStore({
       ...baseDoc,
-      shapes: [{ ...baseRect, rx: 3 }],
+      shapes: [{ ...baseRect, corners: corners([3, 3, 3, 3]) }],
     })
 
     const result = store.get(selectionCornerRadiiAtom)
@@ -146,7 +152,6 @@ describe('selectionCornerRadiiAtom', () => {
   })
 
   it('returns hasRects=false when selection contains only non-rect shapes', () => {
-    // Currently only rects exist in the schema, so test with no rects selected
     const store = makeStore(baseDoc, [])
     const result = store.get(selectionCornerRadiiAtom)
     expect(result.hasRects).toBe(false)

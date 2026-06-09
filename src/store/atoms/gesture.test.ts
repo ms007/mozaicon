@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { RectShape } from '@/types/shapes'
 
 import { draftShapeAtom } from './draft'
@@ -20,6 +21,7 @@ const draftRect: RectShape = {
   width: 8,
   height: 6,
   fill: '#000',
+  corners: DEFAULT_CORNERS,
 }
 
 describe('isGestureActiveAtom', () => {

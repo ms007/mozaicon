@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 import type { Document, RectShape } from '@/types/shapes'
 
@@ -34,7 +35,14 @@ describe('serializeDocument', () => {
   it('serializes a rect with uniform radii as rect with rx', () => {
     expect(
       serializeDocument(
-        doc({ ...baseRect, x: 2, y: 2, width: 20, height: 20, radii: [4, 4, 4, 4] }),
+        doc({
+          ...baseRect,
+          x: 2,
+          y: 2,
+          width: 20,
+          height: 20,
+          corners: { ...DEFAULT_CORNERS, radii: [4, 4, 4, 4] },
+        }),
       ),
     ).toBe(loadFixture('uniform-radii.svg'))
   })
@@ -42,7 +50,14 @@ describe('serializeDocument', () => {
   it('serializes a rect with non-uniform radii as path', () => {
     expect(
       serializeDocument(
-        doc({ ...baseRect, x: 2, y: 2, width: 20, height: 20, radii: [1, 2, 3, 4] }),
+        doc({
+          ...baseRect,
+          x: 2,
+          y: 2,
+          width: 20,
+          height: 20,
+          corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] },
+        }),
       ),
     ).toBe(loadFixture('non-uniform-radii.svg'))
   })
@@ -97,6 +112,21 @@ describe('serializeDocument', () => {
       doc({ ...baseRect, fill: '#aaa' }, { ...baseRect, id: 'r2', fill: '#bbb' }),
     )
     expect(output.indexOf('#aaa')).toBeLessThan(output.indexOf('#bbb'))
+  })
+
+  it('serializes a smoothed rect as path', () => {
+    expect(
+      serializeDocument(
+        doc({
+          ...baseRect,
+          x: 2,
+          y: 2,
+          width: 20,
+          height: 20,
+          corners: { radii: [4, 4, 4, 4], style: 'smooth', smoothing: 60 },
+        }),
+      ),
+    ).toBe(loadFixture('smooth-corners.svg'))
   })
 
   it('produces empty body when all shapes are hidden', () => {

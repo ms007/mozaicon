@@ -31,7 +31,30 @@ If any of these is missing, `pnpm check` should fail via the exhaustiveness chec
 
 ## Existing Shape Types
 
-- **`rect`** — rectangle with optional corner radius (`rx` for uniform, `radii` tuple `[tl, tr, br, bl]` for per-corner). **Normalization invariant:** `rx` and `radii` are never both set — commands enforce this by clearing one when the other is written. At render time, `radii` takes precedence; uniform radii render as a native `<rect rx>`, differing radii render as a `<path>` with arc segments. All radius values are clamped to half the smaller side (SVG semantics) at render time via the `corner-radius` module in `src/lib/geometry/`.
+- **`rect`** — rectangle with a `corners` value object (see below). At render time the element seam (`chooseRectElement` in `src/lib/svg/rectElement.ts`) picks either a native `<rect>` or a `<path>` depending on the corners configuration. `DEFAULT_CORNERS` (all zeros, `rounded`, smoothing 0) is exported from the `corner-radius` module in `src/lib/geometry/`.
+
+### The `corners` Value Object
+
+Every rect carries a `corners` field with three sub-fields:
+
+| Field       | Type                         | Description                                                                     |
+| ----------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| `radii`     | `[tl, tr, br, bl]` (4-tuple) | Per-corner radius in viewBox units. Clamped to half the smaller side at render. |
+| `style`     | `'rounded' \| 'smooth'`      | Corner interpolation mode. See _Corner Style_ in `docs/glossary.md`.            |
+| `smoothing` | `0–100`                      | Superellipse blending factor; only takes effect when `style` is `'smooth'`.     |
+
+Schema: `Corners` in `src/types/shapes.ts` (Zod). Types: `Corners`, `CornerStyle`, `Radii` via `z.infer<>`.
+
+### Rect-vs-Path Routing
+
+`chooseRectElement` decides which SVG element represents a rect on the canvas and in export:
+
+| Condition                                    | Element  | Why                                                    |
+| -------------------------------------------- | -------- | ------------------------------------------------------ |
+| Uniform radii **and** style is `'rounded'`   | `<rect>` | Native `<rect rx>` is simpler and preserves semantics. |
+| Non-uniform radii **or** style is `'smooth'` | `<path>` | Needs per-corner arcs or superellipse Bézier curves.   |
+
+When the style is `'smooth'`, the smoothing value is forwarded to `cornerPath` to produce superellipse Bézier curves. When the style is `'rounded'`, smoothing is forced to 0 regardless of the stored value — switching from smooth back to rounded immediately produces arc-only corners. This routing is shared by the canvas renderer, the SVG export serializer, and the TSX codegen (via the element tree), so all three always agree on which element a rect becomes. See _Export Parity_ in `docs/export.md`.
 
 ## Adding a New Shape Type: Walkthrough
 

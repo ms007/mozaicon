@@ -1,0 +1,7 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`cornerPath > golden-file snapshots > smooth per-corner [2,4,6,3] smoothing=100 on 24×24 1`] = `"M2 0L20 0C24 0 24 0 24 4L24 18C24 24 24 24 18 24L3 24C0 24 0 24 0 21L0 2C0 0 0 0 2 0Z"`;
+
+exports[`cornerPath > golden-file snapshots > smooth uniform r=4 smoothing=50 on 20×20 1`] = `"M4 0L16 0C19.1046 0 20 0.8954 20 4L20 16C20 19.1046 19.1046 20 16 20L4 20C0.8954 20 0 19.1046 0 16L0 4C0 0.8954 0.8954 0 4 0Z"`;
+
+exports[`cornerPath > golden-file snapshots > smooth uniform r=5 smoothing=100 on 20×20 1`] = `"M5 0L15 0C20 0 20 0 20 5L20 15C20 20 20 20 15 20L5 20C0 20 0 20 0 15L0 5C0 0 0 0 5 0Z"`;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { Document, RectShape, Shape } from './shapes'
+import { Corners, Document, RectShape, Shape } from './shapes'
+
+const validCorners = { radii: [0, 0, 0, 0] as const, style: 'rounded' as const, smoothing: 0 }
 
 const validRect = {
   id: 'r1',
@@ -12,7 +14,50 @@ const validRect = {
   y: 0,
   width: 10,
   height: 10,
+  corners: validCorners,
 }
+
+describe('Corners schema', () => {
+  it('accepts a well-formed corners object', () => {
+    expect(Corners.parse(validCorners)).toEqual(validCorners)
+  })
+
+  it('accepts per-corner radii with smooth style', () => {
+    const c = { radii: [1, 2, 3, 4], style: 'smooth', smoothing: 50 }
+    expect(Corners.parse(c)).toEqual(c)
+  })
+
+  it('rejects negative radii', () => {
+    expect(Corners.safeParse({ ...validCorners, radii: [-1, 0, 0, 0] }).success).toBe(false)
+  })
+
+  it('rejects unknown style', () => {
+    expect(Corners.safeParse({ ...validCorners, style: 'beveled' }).success).toBe(false)
+  })
+
+  it('rejects smoothing below 0', () => {
+    expect(Corners.safeParse({ ...validCorners, smoothing: -1 }).success).toBe(false)
+  })
+
+  it('rejects smoothing above 100', () => {
+    expect(Corners.safeParse({ ...validCorners, smoothing: 101 }).success).toBe(false)
+  })
+
+  it('accepts smoothing at boundaries (0 and 100)', () => {
+    expect(Corners.safeParse({ ...validCorners, smoothing: 0 }).success).toBe(true)
+    expect(Corners.safeParse({ ...validCorners, smoothing: 100 }).success).toBe(true)
+  })
+
+  it('rejects missing radii', () => {
+    expect(Corners.safeParse({ style: 'rounded', smoothing: 0 }).success).toBe(false)
+  })
+
+  it('rejects radii with wrong arity', () => {
+    expect(Corners.safeParse({ radii: [0, 0, 0], style: 'rounded', smoothing: 0 }).success).toBe(
+      false,
+    )
+  })
+})
 
 describe('RectShape schema', () => {
   it('accepts a well-formed rect', () => {
@@ -20,7 +65,7 @@ describe('RectShape schema', () => {
   })
 
   it('accepts optional style fields', () => {
-    const styled = { ...validRect, fill: '#000', stroke: '#fff', strokeWidth: 2, rx: 1 }
+    const styled = { ...validRect, fill: '#000', stroke: '#fff', strokeWidth: 2 }
     expect(RectShape.parse(styled)).toEqual(styled)
   })
 
@@ -34,6 +79,7 @@ describe('RectShape schema', () => {
       x: 0,
       y: 0,
       height: 10,
+      corners: validCorners,
     }
     expect(RectShape.safeParse(missingWidth).success).toBe(false)
   })
@@ -58,9 +104,10 @@ describe('RectShape schema', () => {
     expect(RectShape.safeParse(bad).success).toBe(false)
   })
 
-  it('rejects negative rx', () => {
-    const bad = { ...validRect, rx: -0.5 }
-    expect(RectShape.safeParse(bad).success).toBe(false)
+  it('rejects a rect without corners', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- destructuring to strip field
+    const { corners: _corners, ...noCorners } = validRect
+    expect(RectShape.safeParse(noCorners).success).toBe(false)
   })
 
   it('accepts zero width and height (degenerate point)', () => {
@@ -89,6 +136,7 @@ describe('Shape discriminated union', () => {
       y: 0,
       width: 10,
       height: 10,
+      corners: validCorners,
     }
     expect(Shape.safeParse(noType).success).toBe(false)
   })

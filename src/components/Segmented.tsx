@@ -41,7 +41,7 @@ export function Segmented({
       }}
       aria-label={ariaLabel}
       className={cn(
-        'bg-secondary text-muted-foreground relative grid w-full auto-cols-fr grid-flow-col gap-0 rounded-lg p-0.5',
+        'bg-secondary text-muted-foreground relative grid h-7 w-full auto-cols-fr grid-flow-col gap-0 rounded-md p-0.5',
         className,
       )}
     >
@@ -49,7 +49,7 @@ export function Segmented({
         aria-hidden
         data-slot="segmented-pill"
         className={cn(
-          'bg-background text-foreground pointer-events-none absolute inset-y-0.5 rounded-md shadow-xs',
+          'bg-background text-foreground pointer-events-none absolute inset-y-0.5 rounded-sm shadow-xs',
           'transition-[left,width] duration-200 ease-out',
           activeIndex < 0 && 'opacity-0',
         )}
@@ -60,7 +60,7 @@ export function Segmented({
           key={option.value}
           value={option.value}
           className={cn(
-            'relative z-10 h-7 w-full min-w-0 cursor-pointer bg-transparent px-3 text-sm',
+            'relative z-10 h-6 w-full min-w-0 cursor-pointer bg-transparent px-3 text-sm',
             'data-[state=on]:text-foreground data-[state=on]:bg-transparent',
           )}
         >

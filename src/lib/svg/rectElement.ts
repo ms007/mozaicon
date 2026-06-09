@@ -1,4 +1,5 @@
-import { isUniform, roundedRectPath } from '@/lib/geometry/corner-radius'
+import { cornerPath } from '@/lib/geometry/corner-path'
+import { isUniform } from '@/lib/geometry/corner-radius'
 import type { RectShape } from '@/types/shapes'
 
 export type RectElement =
@@ -6,12 +7,21 @@ export type RectElement =
   | { tag: 'path'; attrs: { d: string } }
 
 export function chooseRectElement(shape: RectShape): RectElement {
-  if (shape.radii && !isUniform(shape.radii)) {
-    const d = roundedRectPath(shape.x, shape.y, shape.width, shape.height, shape.radii)
+  const { radii, style, smoothing } = shape.corners
+  const isSmooth = style === 'smooth'
+  if (!isUniform(radii) || isSmooth) {
+    const d = cornerPath(
+      shape.x,
+      shape.y,
+      shape.width,
+      shape.height,
+      radii,
+      isSmooth ? smoothing : 0,
+    )
     return { tag: 'path', attrs: { d } }
   }
 
-  const rx = shape.radii ? shape.radii[0] : shape.rx
+  const rx = radii[0] || undefined
   return {
     tag: 'rect',
     attrs: { x: shape.x, y: shape.y, width: shape.width, height: shape.height, rx },

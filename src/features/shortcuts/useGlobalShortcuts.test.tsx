@@ -3,6 +3,7 @@ import { createStore, Provider } from 'jotai'
 import { type PropsWithChildren } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
@@ -35,6 +36,7 @@ function makeRect(id: string): RectShape {
     y: 0,
     width: 10,
     height: 10,
+    corners: DEFAULT_CORNERS,
   }
 }
 
@@ -307,6 +309,7 @@ describe('useGlobalShortcuts', () => {
       width: 5,
       height: 5,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     }
     const { store } = setup()
     store.set(activeToolAtom, 'rect')

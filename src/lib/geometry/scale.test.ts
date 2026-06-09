@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { RectShape } from '@/types/shapes'
 
 import { scaleShape } from './scale'
@@ -14,6 +15,7 @@ const baseRect: RectShape = {
   y: 4,
   width: 8,
   height: 6,
+  corners: DEFAULT_CORNERS,
 }
 
 describe('scaleShape', () => {

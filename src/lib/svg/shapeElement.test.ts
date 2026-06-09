@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { makeDoc, makeRect } from '@/test/fixtures/shapes'
 
 import { documentElements, shapePaintAttrs, shapeToElement } from './shapeElement'
 
 const base = makeRect({ width: 20, height: 10 })
+
+function withRadii(radii: [number, number, number, number]) {
+  return { ...base, corners: { ...DEFAULT_CORNERS, radii } }
+}
 
 describe('shapePaintAttrs', () => {
   it('falls back to the default fill when fill is omitted', () => {
@@ -46,20 +51,14 @@ describe('shapeToElement', () => {
     })
   })
 
-  it('returns a rect tag with rx for legacy rx field', () => {
-    const el = shapeToElement({ ...base, rx: 3 })
-    expect(el.tag).toBe('rect')
-    expect(el.attrs).toMatchObject({ rx: 3 })
-  })
-
   it('returns a rect tag with rx for uniform radii', () => {
-    const el = shapeToElement({ ...base, radii: [4, 4, 4, 4] })
+    const el = shapeToElement(withRadii([4, 4, 4, 4]))
     expect(el.tag).toBe('rect')
     expect(el.attrs).toMatchObject({ rx: 4 })
   })
 
   it('returns a path tag for non-uniform radii', () => {
-    const el = shapeToElement({ ...base, radii: [1, 2, 3, 4] })
+    const el = shapeToElement(withRadii([1, 2, 3, 4]))
     expect(el.tag).toBe('path')
     expect(el.attrs).toHaveProperty('d')
     expect(el.attrs).not.toHaveProperty('x')
@@ -94,8 +93,7 @@ describe('shapeToElement', () => {
 
   it('applies paint attrs to path elements too', () => {
     const el = shapeToElement({
-      ...base,
-      radii: [1, 2, 3, 4],
+      ...withRadii([1, 2, 3, 4]),
       fill: '#f00',
       stroke: '#0f0',
       strokeWidth: 1,
@@ -127,7 +125,7 @@ describe('documentElements', () => {
   })
 
   it('emits a path element for non-uniform radii', () => {
-    const doc = makeDoc([{ ...base, radii: [1, 2, 3, 4] }])
+    const doc = makeDoc([withRadii([1, 2, 3, 4])])
     const [el] = documentElements(doc)
     expect(el.tag).toBe('path')
     expect(el.attrs).toHaveProperty('d')

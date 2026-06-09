@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import type { Document } from '@/types/shapes'
 
@@ -23,6 +24,7 @@ const testDoc: Document = {
       width: 10,
       height: 8,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r2',
@@ -35,6 +37,7 @@ const testDoc: Document = {
       width: 10,
       height: 12,
       fill: '#f00',
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r3',
@@ -47,6 +50,7 @@ const testDoc: Document = {
       width: 4,
       height: 4,
       fill: '#0f0',
+      corners: DEFAULT_CORNERS,
     },
   ],
 }
@@ -119,6 +123,7 @@ describe('selectionGeometryAtom', () => {
           y: 0,
           width: 0,
           height: 0,
+          corners: DEFAULT_CORNERS,
         },
       ],
     })
@@ -147,6 +152,7 @@ describe('selectionGeometryAtom', () => {
           y: 0.000001,
           width: 3.14159,
           height: 2.71828,
+          corners: DEFAULT_CORNERS,
         },
       ],
     })

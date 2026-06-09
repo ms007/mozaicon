@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
@@ -24,6 +25,7 @@ function makeInlineRect(id: string, overrides: Partial<RectShape> = {}): RectSha
     y: 0,
     width: 10,
     height: 10,
+    corners: DEFAULT_CORNERS,
     ...overrides,
   }
 }

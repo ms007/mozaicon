@@ -51,13 +51,19 @@ const ShapeBase = z.object({
   strokeWidth: z.number().optional(),
 })
 
+export const Corners = z.object({
+  radii: Radii, // [tl, tr, br, bl], clamped to half the smaller side at render
+  style: CornerStyle, // 'rounded' | 'smooth'
+  smoothing: z.number().min(0).max(100), // shape-wide squircle amount
+})
+
 export const RectShape = ShapeBase.extend({
   type: z.literal('rect'),
   x: z.number(),
   y: z.number(),
   width: z.number(),
   height: z.number(),
-  rx: z.number().optional(),
+  corners: Corners,
 })
 
 export const Shape = z.discriminatedUnion('type', [RectShape])

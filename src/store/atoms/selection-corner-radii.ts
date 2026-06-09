@@ -22,8 +22,7 @@ function cornerValue(rects: readonly RectShape[], index: 0 | 1 | 2 | 3): FieldVa
 }
 
 function rectCorner(shape: RectShape, index: 0 | 1 | 2 | 3): number {
-  if (shape.radii) return shape.radii[index]
-  return shape.rx ?? 0
+  return shape.corners.radii[index]
 }
 
 export const selectionCornerRadiiAtom = atom<SelectionCornerRadii>((get) => {

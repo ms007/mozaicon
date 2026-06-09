@@ -1,3 +1,4 @@
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { Document, RectShape, Shape } from '@/types/shapes'
 
 const baseRect: RectShape = {
@@ -10,6 +11,7 @@ const baseRect: RectShape = {
   y: 0,
   width: 10,
   height: 10,
+  corners: DEFAULT_CORNERS,
 }
 
 export function makeRect(overrides: Partial<RectShape> = {}): RectShape {

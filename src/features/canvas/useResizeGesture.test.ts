@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { Rect } from '@/lib/geometry/rect'
 import type { RectShape } from '@/types/shapes'
 
@@ -16,6 +17,7 @@ const rect: RectShape = {
   y: 0,
   width: 100,
   height: 50,
+  corners: DEFAULT_CORNERS,
 }
 
 const bbox: Rect = { x: 0, y: 0, width: 100, height: 50 }

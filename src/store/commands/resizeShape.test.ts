@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import type { Document } from '@/types/shapes'
@@ -24,6 +25,7 @@ const docWithRect: Document = {
       height: 6,
       fill: '#000',
       strokeWidth: 2,
+      corners: DEFAULT_CORNERS,
     },
   ],
 }
@@ -116,6 +118,7 @@ describe('resizeShapeCommand', () => {
           y: 10,
           width: 4,
           height: 4,
+          corners: DEFAULT_CORNERS,
         },
       ],
     }
@@ -161,6 +164,7 @@ describe('resizeShapeCommand', () => {
           y: 10,
           width: 4,
           height: 4,
+          corners: DEFAULT_CORNERS,
         },
       ],
     }

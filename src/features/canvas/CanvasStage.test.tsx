@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { CanvasStage } from '@/features/canvas/CanvasStage'
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
@@ -23,6 +24,7 @@ const seededDoc: Document = {
       width: 16,
       height: 16,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     },
   ],
 }
@@ -93,6 +95,7 @@ describe('CanvasStage', () => {
         width: 8,
         height: 6,
         fill: '#000',
+        corners: DEFAULT_CORNERS,
       })
     })
 

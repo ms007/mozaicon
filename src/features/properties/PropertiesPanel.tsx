@@ -1,7 +1,7 @@
 import { PanelSection } from '@/components/PanelSection'
 import { ExportSection } from '@/features/export/ExportSection'
 
-import { AppearanceSection } from './AppearanceSection'
+import { CornersSection } from './CornersSection'
 import { GeometryField } from './GeometryField'
 
 export function PropertiesPanel() {
@@ -24,7 +24,7 @@ export function PropertiesPanel() {
         </div>
       </PanelSection>
 
-      <AppearanceSection />
+      <CornersSection />
 
       <div className="mt-auto mb-2">
         <ExportSection />

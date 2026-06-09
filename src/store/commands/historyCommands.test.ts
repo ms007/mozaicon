@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { canRedoAtom, canUndoAtom, redoStackAtom } from '@/store/atoms/history'
@@ -81,6 +82,7 @@ describe('undoCommand', () => {
           y: 0,
           width: 5,
           height: 5,
+          corners: DEFAULT_CORNERS,
         },
       ],
     })
@@ -104,6 +106,7 @@ describe('undoCommand', () => {
       y: 0,
       width: 5,
       height: 5,
+      corners: DEFAULT_CORNERS,
     })
 
     store.set(undoCommand)
@@ -154,6 +157,7 @@ describe('redoCommand', () => {
           y: 0,
           width: 5,
           height: 5,
+          corners: DEFAULT_CORNERS,
         },
       ],
     })
@@ -179,6 +183,7 @@ describe('redoCommand', () => {
       y: 0,
       width: 5,
       height: 5,
+      corners: DEFAULT_CORNERS,
     })
 
     store.set(redoCommand)
@@ -212,6 +217,7 @@ describe('canUndoAtom / canRedoAtom', () => {
       y: 0,
       width: 5,
       height: 5,
+      corners: DEFAULT_CORNERS,
     })
     expect(store.get(canUndoAtom)).toBe(false)
   })
@@ -230,6 +236,7 @@ describe('canUndoAtom / canRedoAtom', () => {
       y: 0,
       width: 5,
       height: 5,
+      corners: DEFAULT_CORNERS,
     })
     expect(store.get(canRedoAtom)).toBe(false)
   })

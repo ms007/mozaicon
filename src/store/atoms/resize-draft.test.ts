@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
@@ -26,6 +27,7 @@ const testDoc: Document = {
       width: 4,
       height: 4,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r2',
@@ -38,6 +40,7 @@ const testDoc: Document = {
       width: 6,
       height: 6,
       fill: '#f00',
+      corners: DEFAULT_CORNERS,
     },
   ],
 }

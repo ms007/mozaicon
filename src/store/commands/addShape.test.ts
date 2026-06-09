@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { canRedoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
@@ -43,6 +44,25 @@ describe('addShapeCommand', () => {
     })
     expect(shapes[0].id).toBeTypeOf('string')
     expect(shapes[0].id.length).toBeGreaterThan(0)
+  })
+
+  it('normalizes an out-of-range corners payload before inserting', () => {
+    const store = makeStore()
+
+    store.set(addShapeCommand, {
+      type: 'rect',
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      corners: { radii: [999, 999, 999, 999], style: 'smooth', smoothing: 500 },
+    })
+
+    expect(store.get(documentAtom).shapes[0].corners).toEqual({
+      radii: [5, 5, 5, 5],
+      style: 'smooth',
+      smoothing: 100,
+    })
   })
 
   it('assigns a unique id to each dispatched shape', () => {
@@ -149,6 +169,7 @@ describe('addShapeCommand', () => {
           height: 10,
           visible: true,
           locked: false,
+          corners: DEFAULT_CORNERS,
         },
       ],
     })

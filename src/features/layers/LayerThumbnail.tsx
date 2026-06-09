@@ -1,5 +1,5 @@
-import { isUniform, roundedRectPath } from '@/lib/geometry/corner-radius'
 import { bboxOf } from '@/lib/svg/bbox'
+import { chooseRectElement } from '@/lib/svg/rectElement'
 import type { Shape } from '@/types/shapes'
 
 interface LayerThumbnailProps {
@@ -12,20 +12,11 @@ function renderSilhouette(shape: Shape) {
   /* eslint-disable @typescript-eslint/no-unnecessary-condition -- exhaustive guard for future Shape variants */
   switch (shape.type) {
     case 'rect': {
-      if (shape.radii && !isUniform(shape.radii)) {
-        const d = roundedRectPath(shape.x, shape.y, shape.width, shape.height, shape.radii)
-        return <path d={d} fill="currentColor" />
-      }
-      const rx = shape.radii ? shape.radii[0] : shape.rx
-      return (
-        <rect
-          x={shape.x}
-          y={shape.y}
-          width={shape.width}
-          height={shape.height}
-          rx={rx}
-          fill="currentColor"
-        />
+      const element = chooseRectElement(shape)
+      return element.tag === 'path' ? (
+        <path d={element.attrs.d} fill="currentColor" />
+      ) : (
+        <rect {...element.attrs} fill="currentColor" />
       )
     }
   }

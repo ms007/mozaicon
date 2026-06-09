@@ -1,6 +1,7 @@
 import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { renderHookWithStore } from '@/test/renderWithStore'
@@ -43,6 +44,7 @@ describe('useToolLifecycle', () => {
       width: 10,
       height: 10,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     })
 
     act(() => {
@@ -67,6 +69,7 @@ describe('useToolLifecycle', () => {
       width: 10,
       height: 10,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     })
 
     act(() => {
@@ -90,6 +93,7 @@ describe('useToolLifecycle', () => {
       width: 10,
       height: 10,
       fill: '#000',
+      corners: DEFAULT_CORNERS,
     })
 
     act(() => {

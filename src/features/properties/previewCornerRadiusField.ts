@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 
-import { clampRadii, effectiveRadii } from '@/lib/geometry/corner-radius'
+import { clampRadii } from '@/lib/geometry/corner-radius'
 import { cornerRadiusStepDraftAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { selectedShapesAtom } from '@/store/atoms/selection'
 import type { Radii } from '@/types/shapes'
@@ -19,7 +19,7 @@ export const previewCornerRadiusFieldAtom = atom(
       if (shape.type !== 'rect') continue
       /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 
-      const radii = effectiveRadii(shape)
+      const radii = shape.corners.radii
       let next: Radii
 
       if (payload.field === 'uniform') {

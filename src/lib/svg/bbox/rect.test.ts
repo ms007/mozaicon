@@ -23,8 +23,8 @@ describe('bboxOfRect', () => {
     })
   })
 
-  it('ignores rx (border radius does not affect bbox)', () => {
-    expect(bboxOfRect(makeRect({ x: 1, y: 1, width: 8, height: 6, rx: 3 }))).toEqual({
+  it('ignores corners (border radius does not affect bbox)', () => {
+    expect(bboxOfRect(makeRect({ x: 1, y: 1, width: 8, height: 6 }))).toEqual({
       x: 1,
       y: 1,
       width: 8,

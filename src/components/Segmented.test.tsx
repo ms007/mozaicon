@@ -68,6 +68,12 @@ describe('Segmented', () => {
     expect(pill().className).toContain('opacity-0')
   })
 
+  it('renders at the 28px compact-input height (h-7)', () => {
+    const { container } = render(<Segmented options={UNIT_OPTIONS} value="px" onChange={noop} />)
+    const root = container.firstElementChild as HTMLElement
+    expect(root.className).toContain('h-7')
+  })
+
   it('selects the next segment via keyboard arrow navigation (inherited from ToggleGroup)', async () => {
     const onChange = vi.fn()
     render(<Segmented options={UNIT_OPTIONS} value="px" onChange={onChange} />)

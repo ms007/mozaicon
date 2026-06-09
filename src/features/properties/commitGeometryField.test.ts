@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { marqueeDraftAtom } from '@/store/atoms/gestures/marquee'
 import { propertyStepDraftAtom } from '@/store/atoms/gestures/propertyStep'
@@ -26,6 +27,7 @@ const testDoc: Document = {
       y: 3,
       width: 10,
       height: 8,
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r2',
@@ -37,6 +39,7 @@ const testDoc: Document = {
       y: 7,
       width: 10,
       height: 12,
+      corners: DEFAULT_CORNERS,
     },
   ],
 }

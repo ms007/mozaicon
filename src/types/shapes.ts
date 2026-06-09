@@ -20,14 +20,21 @@ export const Radii = z.tuple([
   z.number().nonnegative(),
 ])
 
+export const CornerStyle = z.enum(['rounded', 'smooth'])
+
+export const Corners = z.object({
+  radii: Radii,
+  style: CornerStyle,
+  smoothing: z.number().min(0).max(100),
+})
+
 export const RectShape = ShapeBase.extend({
   type: z.literal('rect'),
   x: z.number(),
   y: z.number(),
   width: z.number().nonnegative(),
   height: z.number().nonnegative(),
-  rx: z.number().nonnegative().optional(),
-  radii: Radii.optional(),
+  corners: Corners,
 })
 
 export const Shape = z.discriminatedUnion('type', [RectShape])
@@ -43,6 +50,8 @@ export const Document = z.object({
 
 export type ShapeBase = z.infer<typeof ShapeBase>
 export type Radii = z.infer<typeof Radii>
+export type CornerStyle = z.infer<typeof CornerStyle>
+export type Corners = z.infer<typeof Corners>
 export type RectShape = z.infer<typeof RectShape>
 export type Shape = z.infer<typeof Shape>
 export type Document = z.infer<typeof Document>

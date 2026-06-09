@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { createStore, Provider } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import type { Document } from '@/types/shapes'
 
@@ -29,6 +30,7 @@ const twoShapeDoc: Document = {
       y: 0,
       width: 10,
       height: 10,
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'b',
@@ -40,6 +42,7 @@ const twoShapeDoc: Document = {
       y: 5,
       width: 8,
       height: 8,
+      corners: DEFAULT_CORNERS,
     },
   ],
 }

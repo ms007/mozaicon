@@ -38,7 +38,7 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const geoOverride = draftGeo ?? propStepGeo
   let rendered = geoOverride ? { ...shape, ...geoOverride } : shape
   if (radiusStepDraft) {
-    rendered = { ...rendered, radii: radiusStepDraft }
+    rendered = { ...rendered, corners: { ...rendered.corners, radii: radiusStepDraft } }
   }
   const totalDx = (moveOffset?.dx ?? 0) + (nudgeOffset?.dx ?? 0)
   const totalDy = (moveOffset?.dy ?? 0) + (nudgeOffset?.dy ?? 0)

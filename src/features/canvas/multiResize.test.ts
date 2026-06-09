@@ -1,6 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { Rect } from '@/lib/geometry/rect'
 import { scaleShape } from '@/lib/geometry/scale'
 import type { Vec2 } from '@/lib/geometry/vec2'
@@ -25,6 +26,7 @@ const r1: RectShape = {
   height: 4,
   fill: '#000',
   strokeWidth: 1,
+  corners: DEFAULT_CORNERS,
 }
 
 const r2: RectShape = {
@@ -39,6 +41,7 @@ const r2: RectShape = {
   height: 6,
   fill: '#f00',
   strokeWidth: 2,
+  corners: DEFAULT_CORNERS,
 }
 
 const twoRectDoc: Document = {

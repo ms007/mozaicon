@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import type { RectShape } from '@/types/shapes'
 
 import { reorderStep } from './reorderStep'
@@ -15,6 +16,7 @@ function makeRect(id: string, overrides: Partial<RectShape> = {}): RectShape {
     y: 0,
     width: 10,
     height: 10,
+    corners: DEFAULT_CORNERS,
     ...overrides,
   }
 }

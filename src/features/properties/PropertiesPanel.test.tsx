@@ -2,6 +2,7 @@ import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
+import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { documentAtom } from '@/store/atoms/document'
 import { cornerRadiusStepDraftAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { propertyStepDraftAtom } from '@/store/atoms/gestures/propertyStep'
@@ -28,6 +29,7 @@ const testDoc: Document = {
       y: 3,
       width: 10,
       height: 8,
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r2',
@@ -39,6 +41,7 @@ const testDoc: Document = {
       y: 5,
       width: 10,
       height: 12,
+      corners: DEFAULT_CORNERS,
     },
     {
       id: 'r3',
@@ -50,6 +53,7 @@ const testDoc: Document = {
       y: 9,
       width: 4,
       height: 4,
+      corners: DEFAULT_CORNERS,
     },
   ],
 }
@@ -124,6 +128,7 @@ describe('PropertiesPanel', () => {
             y: 0,
             width: 0,
             height: 0,
+            corners: DEFAULT_CORNERS,
           },
         ],
       }
@@ -150,6 +155,7 @@ describe('PropertiesPanel', () => {
             y: 0.000001,
             width: 3.14159,
             height: 2.71828,
+            corners: DEFAULT_CORNERS,
           },
         ],
       }
@@ -517,6 +523,7 @@ describe('PropertiesPanel', () => {
             y: 0,
             width: 1,
             height: 1,
+            corners: DEFAULT_CORNERS,
           },
         ],
       }
@@ -577,16 +584,16 @@ describe('PropertiesPanel', () => {
     })
   })
 
-  describe('Appearance section', () => {
+  describe('Corners section', () => {
     it('renders when the selection contains a rect', () => {
       renderPanel(testDoc, ['r1'])
-      expect(screen.getByText('Appearance')).toBeInTheDocument()
+      expect(screen.getByText('Corners')).toBeInTheDocument()
       expect(field('Corner Radius')).toBeInTheDocument()
     })
 
     it('is hidden when nothing is selected', () => {
       renderPanel()
-      expect(screen.queryByText('Appearance')).not.toBeInTheDocument()
+      expect(screen.queryByText('Corners')).not.toBeInTheDocument()
     })
 
     it('shows 5 textboxes with a rect selected (4 geometry + 1 radius)', () => {
@@ -603,7 +610,7 @@ describe('PropertiesPanel', () => {
     it('shows the rx value for a rect with uniform radius', () => {
       const doc: Document = {
         ...testDoc,
-        shapes: [{ ...testDoc.shapes[0], rx: 4 }],
+        shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [4, 4, 4, 4] } }],
       }
       renderPanel(doc, ['r1'])
       expect(field('Corner Radius')).toHaveValue('4')
@@ -618,7 +625,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       const shape = store.get(documentAtom).shapes[0]
-      expect(shape).toMatchObject({ rx: 3 })
+      expect(shape.corners.radii).toEqual([3, 3, 3, 3])
       expect(store.get(undoStackAtom)).toHaveLength(stackBefore + 1)
     })
 
@@ -630,14 +637,16 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       const shapes = store.get(documentAtom).shapes
-      expect(shapes[0]).toMatchObject({ id: 'r1', rx: 3 })
-      expect(shapes[1]).toMatchObject({ id: 'r2', rx: 3 })
+      expect(shapes[0].id).toBe('r1')
+      expect(shapes[0].corners.radii).toEqual([3, 3, 3, 3])
+      expect(shapes[1].id).toBe('r2')
+      expect(shapes[1].corners.radii).toEqual([3, 3, 3, 3])
     })
 
     it('shows "Mixed" when corners differ within a rect', () => {
       const doc: Document = {
         ...testDoc,
-        shapes: [{ ...testDoc.shapes[0], radii: [1, 2, 3, 4] }],
+        shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
       renderPanel(doc, ['r1'])
       expect(field('Corner Radius')).toHaveValue('')
@@ -648,8 +657,8 @@ describe('PropertiesPanel', () => {
       const doc: Document = {
         ...testDoc,
         shapes: [
-          { ...testDoc.shapes[0], rx: 2 },
-          { ...testDoc.shapes[1], rx: 5 },
+          { ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [2, 2, 2, 2] } },
+          { ...testDoc.shapes[1], corners: { ...DEFAULT_CORNERS, radii: [5, 5, 5, 5] } },
           testDoc.shapes[2],
         ],
       }
@@ -661,7 +670,7 @@ describe('PropertiesPanel', () => {
     it('typing into a Mixed uniform field sets all four corners', async () => {
       const doc: Document = {
         ...testDoc,
-        shapes: [{ ...testDoc.shapes[0], radii: [1, 2, 3, 4] }],
+        shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
       const { store } = renderPanel(doc, ['r1'])
 
@@ -669,8 +678,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       const shape = store.get(documentAtom).shapes[0]
-      expect(shape).toMatchObject({ rx: 4 })
-      expect(shape).not.toHaveProperty('radii')
+      expect(shape.corners.radii).toEqual([4, 4, 4, 4])
     })
 
     it('expand toggle reveals 4 per-corner inputs', async () => {
@@ -705,13 +713,13 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       const shape = store.get(documentAtom).shapes[0]
-      expect(shape).toMatchObject({ radii: [3, 0, 0, 0] })
+      expect(shape.corners.radii).toEqual([3, 0, 0, 0])
     })
 
     it('per-corner fields show correct values for non-uniform radii', async () => {
       const doc: Document = {
         ...testDoc,
-        shapes: [{ ...testDoc.shapes[0], radii: [1, 2, 3, 4] }],
+        shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
       renderPanel(doc, ['r1'])
 
@@ -732,7 +740,7 @@ describe('PropertiesPanel', () => {
 
       expect(field('Corner Radius')).toHaveValue('0')
       const shape = store.get(documentAtom).shapes[0]
-      expect(shape.rx).toBeUndefined()
+      expect(shape.corners.radii).toEqual([0, 0, 0, 0])
     })
 
     it('re-syncs the field to the command-clamped value after Enter (max = min(w,h)/2)', async () => {
@@ -743,7 +751,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       expect(field('Corner Radius')).toHaveValue('4')
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ rx: 4 })
+      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
     })
 
     it('reverts on Escape without committing', async () => {
@@ -766,7 +774,7 @@ describe('PropertiesPanel', () => {
       await userEvent.tab()
 
       const shape = store.get(documentAtom).shapes[0]
-      expect(shape).toMatchObject({ rx: 4 })
+      expect(shape.corners.radii).toEqual([4, 4, 4, 4])
     })
 
     it('is undoable via the undo command', async () => {
@@ -776,14 +784,14 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '4')
       await userEvent.keyboard('{Enter}')
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ rx: 4 })
+      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
       expect(store.get(canUndoAtom)).toBe(true)
 
       act(() => {
         store.set(undoCommand)
       })
 
-      expect(store.get(documentAtom).shapes[0].rx).toBeUndefined()
+      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([0, 0, 0, 0])
     })
 
     it('arrow-key steps the uniform radius with preview', async () => {

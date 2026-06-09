@@ -1,38 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import type { Radii, RectShape } from '@/types/shapes'
+import type { Radii } from '@/types/shapes'
 
-import { clampRadii, effectiveRadii, isUniform, roundedRectPath } from './corner-radius'
-
-const baseRect: RectShape = {
-  id: 'r1',
-  type: 'rect',
-  name: 'Rect',
-  visible: true,
-  locked: false,
-  x: 0,
-  y: 0,
-  width: 20,
-  height: 10,
-}
-
-describe('effectiveRadii', () => {
-  it('returns the radii tuple when present', () => {
-    expect(effectiveRadii({ ...baseRect, radii: [1, 2, 3, 4] })).toEqual([1, 2, 3, 4])
-  })
-
-  it('expands rx into a uniform tuple', () => {
-    expect(effectiveRadii({ ...baseRect, rx: 5 })).toEqual([5, 5, 5, 5])
-  })
-
-  it('returns all-zero when neither rx nor radii is set', () => {
-    expect(effectiveRadii(baseRect)).toEqual([0, 0, 0, 0])
-  })
-
-  it('prefers radii over rx when both are present', () => {
-    expect(effectiveRadii({ ...baseRect, rx: 2, radii: [1, 2, 3, 4] })).toEqual([1, 2, 3, 4])
-  })
-})
+import { clampRadii, clampSmoothing, isUniform, normalizeCorners } from './corner-radius'
 
 describe('clampRadii', () => {
   it('returns radii unchanged when all fit', () => {
@@ -71,6 +41,38 @@ describe('clampRadii', () => {
   })
 })
 
+describe('clampSmoothing', () => {
+  it('passes values within 0–100 through unchanged', () => {
+    expect(clampSmoothing(0)).toBe(0)
+    expect(clampSmoothing(60)).toBe(60)
+    expect(clampSmoothing(100)).toBe(100)
+  })
+
+  it('clamps out-of-range values to the 0–100 bounds', () => {
+    expect(clampSmoothing(-10)).toBe(0)
+    expect(clampSmoothing(200)).toBe(100)
+  })
+
+  it('falls back to 0 for non-finite values', () => {
+    expect(clampSmoothing(NaN)).toBe(0)
+    expect(clampSmoothing(Infinity)).toBe(0)
+  })
+})
+
+describe('normalizeCorners', () => {
+  it('clamps radii to half the smaller side and smoothing to 0–100', () => {
+    expect(
+      normalizeCorners({ radii: [100, 100, 100, 100], style: 'smooth', smoothing: 500 }, 10, 10),
+    ).toEqual({ radii: [5, 5, 5, 5], style: 'smooth', smoothing: 100 })
+  })
+
+  it('preserves the style and leaves valid values untouched', () => {
+    expect(
+      normalizeCorners({ radii: [2, 0, 4, 0], style: 'rounded', smoothing: 30 }, 20, 20),
+    ).toEqual({ radii: [2, 0, 4, 0], style: 'rounded', smoothing: 30 })
+  })
+})
+
 describe('isUniform', () => {
   it('returns true when all four values are equal', () => {
     expect(isUniform([3, 3, 3, 3])).toBe(true)
@@ -83,44 +85,5 @@ describe('isUniform', () => {
   it('returns false when any value differs', () => {
     expect(isUniform([3, 3, 3, 4])).toBe(false)
     expect(isUniform([1, 2, 3, 4])).toBe(false)
-  })
-})
-
-describe('roundedRectPath', () => {
-  it('generates a rectangle path with zero radii', () => {
-    const d = roundedRectPath(0, 0, 10, 8, [0, 0, 0, 0])
-    expect(d).toBe('M0 0H10V8H0Z')
-  })
-
-  it('generates arcs for uniform nonzero radii', () => {
-    const d = roundedRectPath(0, 0, 20, 10, [3, 3, 3, 3])
-    expect(d).toContain('A3 3')
-    expect(d).toMatch(/^M3 0/)
-    expect(d).toMatch(/Z$/)
-  })
-
-  it('generates different arcs for each corner', () => {
-    const d = roundedRectPath(0, 0, 20, 20, [1, 2, 3, 4])
-    expect(d).toContain('A1 1')
-    expect(d).toContain('A2 2')
-    expect(d).toContain('A3 3')
-    expect(d).toContain('A4 4')
-  })
-
-  it('applies position offset', () => {
-    const d = roundedRectPath(5, 10, 20, 20, [2, 2, 2, 2])
-    expect(d).toMatch(/^M7 10/)
-  })
-
-  it('clamps radii to half the smaller side', () => {
-    const dClamped = roundedRectPath(0, 0, 10, 10, [100, 100, 100, 100])
-    const dMax = roundedRectPath(0, 0, 10, 10, [5, 5, 5, 5])
-    expect(dClamped).toBe(dMax)
-  })
-
-  it('omits arcs for zero-radius corners', () => {
-    const d = roundedRectPath(0, 0, 20, 20, [0, 5, 0, 5])
-    const arcCount = (d.match(/A/g) ?? []).length
-    expect(arcCount).toBe(2)
   })
 })
