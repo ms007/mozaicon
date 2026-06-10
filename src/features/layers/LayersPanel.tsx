@@ -11,8 +11,8 @@ import { useAtomValue, useStore } from 'jotai'
 import { useCallback, useMemo, useState } from 'react'
 
 import { PanelSection } from '@/components/PanelSection'
-import { shapeAtom } from '@/store/atoms/document'
 import { layerIdsAtom } from '@/store/atoms/layers'
+import { shapeAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveShapeBlockCommand } from '@/store/commands/reorderShapes'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
@@ -94,45 +94,40 @@ export function LayersPanel() {
   }, [])
 
   return (
-    <aside
-      aria-label="Layers"
-      className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-60 flex-col border-r p-3"
-    >
-      <PanelSection title="Layers" className="min-h-0 flex-1">
-        {ids.length === 0 ? (
-          <p className="text-muted-foreground py-6 text-center text-sm">No layers yet</p>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-          >
-            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-              <div
-                className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
-                role="listbox"
-                aria-label="Layer list"
-              >
-                {ids.map((id, index) => {
-                  const dropEdge =
-                    dropIndicatorIndex === index
-                      ? 'top'
-                      : dropIndicatorIndex === ids.length && index === ids.length - 1
-                        ? 'bottom'
-                        : undefined
-                  return <LayerItem key={id} id={id} dropEdge={dropEdge} />
-                })}
-              </div>
-            </SortableContext>
-            <DragOverlay dropAnimation={null}>
-              {activeId ? <DragOverlayContent activeId={activeId} count={movingIds.size} /> : null}
-            </DragOverlay>
-          </DndContext>
-        )}
-      </PanelSection>
-    </aside>
+    <PanelSection title="Layers" className="min-h-0 flex-1">
+      {ids.length === 0 ? (
+        <p className="text-muted-foreground py-6 text-center text-sm">No layers yet</p>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            <div
+              className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
+              role="listbox"
+              aria-label="Layer list"
+            >
+              {ids.map((id, index) => {
+                const dropEdge =
+                  dropIndicatorIndex === index
+                    ? 'top'
+                    : dropIndicatorIndex === ids.length && index === ids.length - 1
+                      ? 'bottom'
+                      : undefined
+                return <LayerItem key={id} id={id} dropEdge={dropEdge} />
+              })}
+            </div>
+          </SortableContext>
+          <DragOverlay dropAnimation={null}>
+            {activeId ? <DragOverlayContent activeId={activeId} count={movingIds.size} /> : null}
+          </DragOverlay>
+        </DndContext>
+      )}
+    </PanelSection>
   )
 }

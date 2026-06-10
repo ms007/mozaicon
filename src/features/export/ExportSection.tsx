@@ -2,8 +2,8 @@ import { useAtom, useAtomValue, useStore } from 'jotai'
 
 import { PanelSection } from '@/components/PanelSection'
 import { Button } from '@/components/primitives/Button'
-import { documentAtom } from '@/store/atoms/document'
 import { allExportDisabledAtom, type ExportTarget, exportTargetAtom } from '@/store/atoms/export'
+import { activeIconAtom } from '@/store/atoms/project'
 
 import { performExport } from './performExport'
 
@@ -22,7 +22,7 @@ export function ExportSection() {
 
   const handleClick = (target: ExportTarget) => {
     setStickyTarget(target)
-    void performExport(store.get(documentAtom), target)
+    void performExport(store.get(activeIconAtom), target)
   }
 
   return (

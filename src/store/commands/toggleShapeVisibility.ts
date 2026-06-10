@@ -10,6 +10,6 @@ export const toggleShapeVisibilityCommand = createCommand<{ id: string }>(
     const nextShapes = doc.shapes.slice()
     nextShapes[idx] = { ...shape, visible: !shape.visible }
 
-    return { document: { ...doc, shapes: nextShapes } }
+    return { icon: { ...doc, shapes: nextShapes } }
   },
 )

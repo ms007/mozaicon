@@ -1,22 +1,22 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { activeToolAtom } from '@/store/atoms/tool'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { createToolbarBindings } from './bindings'
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -39,6 +39,6 @@ describe('toolbar bindings', () => {
     bindings[0].run()
 
     expect(store.get(activeToolAtom)).toBe('rect')
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 })

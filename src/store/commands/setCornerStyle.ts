@@ -18,6 +18,6 @@ export const setCornerStyleCommand = createCommand<CornerStyle>(
 
     const changed = nextShapes.some((s, i) => s !== doc.shapes[i])
     if (!changed) return {}
-    return { document: { ...doc, shapes: nextShapes } }
+    return { icon: { ...doc, shapes: nextShapes } }
   },
 )

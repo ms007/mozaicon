@@ -2,12 +2,12 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-import { documentAtom } from './document'
 import { layerAtom, layerIdsAtom } from './layers'
+import { activeIconAtom } from './project'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -51,9 +51,9 @@ const testDoc: Document = {
   ],
 }
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -77,7 +77,7 @@ describe('layerIdsAtom', () => {
     const store = makeStore()
     expect(store.get(layerIdsAtom)).toEqual(['r3', 'r2', 'r1'])
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       draft.shapes.splice(1, 1)
     })
     expect(store.get(layerIdsAtom)).toEqual(['r3', 'r1'])
@@ -87,7 +87,7 @@ describe('layerIdsAtom', () => {
     const store = makeStore()
     const before = store.get(layerIdsAtom)
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const s = draft.shapes.find((s) => s.id === 'r1')
       if (s) s.x = 99
     })
@@ -117,7 +117,7 @@ describe('layerIdsAtom', () => {
     })
     expect(store.get(layerIdsAtom)).toEqual(['a'])
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       draft.shapes.push({
         id: 'b',
         name: 'B',
@@ -157,7 +157,7 @@ describe('layerAtom', () => {
     const before1 = store.get(layerAtom('r1'))
     const before3 = store.get(layerAtom('r3'))
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const s = draft.shapes.find((s) => s.id === 'r2')
       if (s) s.name = 'Renamed'
     })
@@ -178,7 +178,7 @@ describe('layerAtom', () => {
     const store = makeStore()
     const before = store.get(layerAtom('r1'))
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const s = draft.shapes.find((s) => s.id === 'r1')
       if (s) s.x = 99
     })
@@ -190,7 +190,7 @@ describe('layerAtom', () => {
     const store = makeStore()
     expect(store.get(layerAtom('r2'))).toBeDefined()
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       draft.shapes = draft.shapes.filter((s) => s.id !== 'r2')
     })
     expect(store.get(layerAtom('r2'))).toBeUndefined()
@@ -198,7 +198,7 @@ describe('layerAtom', () => {
 
   it('reflects a visibility change', () => {
     const store = makeStore()
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const s = draft.shapes.find((s) => s.id === 'r1')
       if (s) s.visible = false
     })

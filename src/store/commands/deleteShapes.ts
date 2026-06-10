@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 
-import { documentAtom, shapeAtom } from '@/store/atoms/document'
+import { activeIconAtom, shapeAtom } from '@/store/atoms/project'
 import { normalizeSelection } from '@/store/atoms/selection'
 
 import { createCommand } from './createCommand'
@@ -16,15 +16,15 @@ const _deleteCommand = createCommand<{ ids: string[] }>('Delete shapes', (doc, {
   const nextDoc = { ...doc, shapes: next }
   const selection = normalizeSelection([], nextDoc)
 
-  return { document: nextDoc, selection }
+  return { icon: nextDoc, selection }
 })
 
 export const deleteShapesCommand = atom(null, (get, set, payload: { ids: string[] }) => {
-  const docBefore = get(documentAtom)
+  const iconBefore = get(activeIconAtom)
   set(_deleteCommand, payload)
-  const docAfter = get(documentAtom)
+  const iconAfter = get(activeIconAtom)
 
-  if (docBefore === docAfter) return
+  if (iconBefore === iconAfter) return
 
   for (const id of payload.ids) {
     shapeAtom.remove(id)

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { CANVAS_SELECTOR, drawRect, getBox, SHAPE_RECT_SELECTOR } from './helpers'
 
 function layerPanel(page: import('@playwright/test').Page) {
-  return page.locator('aside[aria-label="Layers"]')
+  return page.getByRole('listbox', { name: 'Layer list' })
 }
 
 function layerItems(page: import('@playwright/test').Page) {

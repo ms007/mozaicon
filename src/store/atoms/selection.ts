@@ -4,9 +4,9 @@ import { atomFamily } from 'jotai-family'
 
 import { rectEqual } from '@/lib/geometry/rect'
 import { bboxOfMany } from '@/lib/svg/bbox'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-import { shapeAtom } from './document'
+import { shapeAtom } from './project'
 
 const EMPTY: string[] = []
 
@@ -42,7 +42,7 @@ export function selectionEqual(a: string[], b: string[]): boolean {
   return true
 }
 
-export function normalizeSelection(ids: string[], doc: Document): string[] {
+export function normalizeSelection(ids: string[], doc: Icon): string[] {
   if (ids.length === 0) return EMPTY
   const wanted = new Set(ids)
   const result: string[] = []
@@ -55,20 +55,17 @@ export function normalizeSelection(ids: string[], doc: Document): string[] {
   return result.length === 0 ? EMPTY : result
 }
 
-// `doc` is passed explicitly (not read via get(documentAtom)) so callers can
-// normalize against a post-mutation document before that document is written
-// to the store — needed by add-and-select commands where the new id is not yet
-// in documentAtom at commit time.
-export const commitSelectionAtom = atom(
-  null,
-  (get, set, payload: { ids: string[]; doc: Document }) => {
-    const before = get(_selectedIdsAtom)
-    const normalized = normalizeSelection(payload.ids, payload.doc)
-    const changed = !selectionEqual(normalized, before)
-    if (changed) set(_selectedIdsAtom, normalized)
-    return { changed, ids: normalized }
-  },
-)
+// `doc` is passed explicitly (not read via get(activeIconAtom)) so callers can
+// normalize against a post-mutation icon before that icon is written to the
+// store — needed by add-and-select commands where the new id is not yet in
+// activeIconAtom at commit time.
+export const commitSelectionAtom = atom(null, (get, set, payload: { ids: string[]; doc: Icon }) => {
+  const before = get(_selectedIdsAtom)
+  const normalized = normalizeSelection(payload.ids, payload.doc)
+  const changed = !selectionEqual(normalized, before)
+  if (changed) set(_selectedIdsAtom, normalized)
+  return { changed, ids: normalized }
+})
 
 export const restoreSelectionAtom = atom(null, (_get, set, ids: string[]) => {
   set(_selectedIdsAtom, ids)

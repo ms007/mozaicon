@@ -2,24 +2,24 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { canRedoAtom, redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { addShapeCommand } from './addShape'
 import { redoCommand, undoCommand } from './historyCommands'
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -29,7 +29,7 @@ describe('addShapeCommand', () => {
 
     store.set(addShapeCommand, { type: 'rect', x: 4, y: 4, width: 16, height: 16, fill: '#000' })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({
       type: 'rect',
@@ -58,7 +58,7 @@ describe('addShapeCommand', () => {
       corners: { radii: [999, 999, 999, 999], style: 'smooth', smoothing: 500 },
     })
 
-    expect(store.get(documentAtom).shapes[0].corners).toEqual({
+    expect(store.get(activeIconAtom).shapes[0].corners).toEqual({
       radii: [5, 5, 5, 5],
       style: 'smooth',
       smoothing: 100,
@@ -71,7 +71,7 @@ describe('addShapeCommand', () => {
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
-    const [a, b] = store.get(documentAtom).shapes
+    const [a, b] = store.get(activeIconAtom).shapes
     expect(a.id).not.toBe(b.id)
   })
 
@@ -83,17 +83,23 @@ describe('addShapeCommand', () => {
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Add shape')
-    expect(undo[0].before.shapes).toHaveLength(0)
-    expect(undo[0].after.shapes).toHaveLength(1)
+    expect(undo[0].before.icons[0].shapes).toHaveLength(0)
+    expect(undo[0].after.icons[0].shapes).toHaveLength(1)
   })
 
   it('clears the redo stack on dispatch', () => {
     const store = makeStore()
+    const fakeProject = {
+      id: 'proj-1',
+      icons: [emptyDoc],
+      activeIconId: emptyDoc.id,
+      nextIconNumber: 2,
+    }
     store.set(redoStackAtom, [
       {
         label: 'stale',
-        before: emptyDoc,
-        after: emptyDoc,
+        before: fakeProject,
+        after: fakeProject,
         selectionBefore: [],
         selectionAfter: [],
       },
@@ -117,17 +123,17 @@ describe('addShapeCommand', () => {
       fill: '#000',
     })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes[0].id).toBe('my-id')
   })
 
   it('does not mutate the prior document reference', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
-    const after = store.get(documentAtom)
+    const after = store.get(activeIconAtom)
     expect(after).not.toBe(before)
     expect(before.shapes).toHaveLength(0)
   })
@@ -137,7 +143,7 @@ describe('addShapeCommand', () => {
 
     store.set(addShapeCommand, { type: 'rect', x: 0, y: 0, width: 1, height: 1 })
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('Rect')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('Rect')
   })
 
   it('allows overriding the default name', () => {
@@ -152,7 +158,7 @@ describe('addShapeCommand', () => {
       name: 'My Custom Rect',
     })
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('My Custom Rect')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('My Custom Rect')
   })
 
   it('appends after existing shapes without replacing them', () => {
@@ -176,7 +182,7 @@ describe('addShapeCommand', () => {
 
     store.set(addShapeCommand, { type: 'rect', x: 1, y: 1, width: 2, height: 2 })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(2)
     expect(shapes[0].id).toBe('existing')
     expect(shapes[1].type).toBe('rect')
@@ -195,7 +201,7 @@ describe('addShapeCommand', () => {
       locked: true,
     })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.visible).toBe(false)
     expect(shape.locked).toBe(true)
   })
@@ -225,12 +231,12 @@ describe('addShapeCommand', () => {
     store.set(restoreSelectionAtom, ['prev-sel'])
 
     store.set(addShapeCommand, { type: 'rect', id: 'added', x: 0, y: 0, width: 5, height: 5 })
-    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(1)
     expect(store.get(selectedIdsAtom)).toEqual(['added'])
 
     store.set(undoCommand)
 
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(store.get(selectedIdsAtom)).toEqual(['prev-sel'])
   })
 
@@ -239,13 +245,13 @@ describe('addShapeCommand', () => {
 
     store.set(addShapeCommand, { type: 'rect', id: 'r1', x: 0, y: 0, width: 5, height: 5 })
     store.set(undoCommand)
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(store.get(selectedIdsAtom)).toEqual([])
 
     store.set(redoCommand)
 
-    expect(store.get(documentAtom).shapes).toHaveLength(1)
-    expect(store.get(documentAtom).shapes[0].id).toBe('r1')
+    expect(store.get(activeIconAtom).shapes).toHaveLength(1)
+    expect(store.get(activeIconAtom).shapes[0].id).toBe('r1')
     expect(store.get(selectedIdsAtom)).toEqual(['r1'])
   })
 })

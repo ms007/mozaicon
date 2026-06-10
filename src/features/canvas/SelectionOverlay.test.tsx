@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest'
 
 import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { CANVAS_SIZE } from '@/store/atoms/canvas'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeRect } from '@/test/fixtures/shapes'
 import { renderWithStore, type TestStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -34,7 +34,7 @@ function renderOverlay(seed?: (store: TestStore) => void) {
 describe('SelectionOverlay', () => {
   it('renders nothing when the selection is empty', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
     })
 
     expect(container.querySelectorAll('rect')).toHaveLength(0)
@@ -42,7 +42,7 @@ describe('SelectionOverlay', () => {
 
   it('renders a rect matching the selection bbox with the expected SVG attributes', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -61,7 +61,7 @@ describe('SelectionOverlay', () => {
 
   it('renders the union bbox when multiple shapes are selected', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1', 'r2'])
     })
 
@@ -77,7 +77,7 @@ describe('SelectionOverlay', () => {
 
   it('tracks the draft shape bbox during drag-to-draw, with resize handles visible', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(draftShapeAtom, makeRect({ id: '__draft__', x: 3, y: 5, width: 9, height: 7 }))
     })
 
@@ -94,7 +94,7 @@ describe('SelectionOverlay', () => {
 describe('ResizeHandles', () => {
   it('renders no handles when the selection is empty', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
     })
 
     expect(container.querySelectorAll('[data-handle]')).toHaveLength(0)
@@ -103,7 +103,7 @@ describe('ResizeHandles', () => {
 
   it('renders exactly 8 visible circles and 8 hit-area circles for a single selection', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -115,7 +115,7 @@ describe('ResizeHandles', () => {
 
   it('renders 8 handles around the union bbox for multi-shape selection', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1', 'r2'])
     })
 
@@ -124,7 +124,7 @@ describe('ResizeHandles', () => {
 
   it('positions corner handles at bbox corners and edge handles at midpoints', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -158,7 +158,7 @@ describe('ResizeHandles', () => {
 
   it('applies correct resize cursors per handle position', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -177,7 +177,7 @@ describe('ResizeHandles', () => {
 
   it('visible handles have fill-background, stroke-primary, and non-scaling-stroke', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -190,7 +190,7 @@ describe('ResizeHandles', () => {
 
   it('hit-area circles have double the visual radius and are transparent', () => {
     const { container } = renderOverlay((store) => {
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 
@@ -210,12 +210,12 @@ describe('ResizeHandles', () => {
     const scale48 = CANVAS_SIZE / 48
 
     const { container: c1 } = renderOverlay((store) => {
-      store.set(documentAtom, { ...testDoc, viewBox: [0, 0, 24, 24] })
+      store.set(activeIconAtom, { ...testDoc, viewBox: [0, 0, 24, 24] })
       store.set(selectShapesCommand, ['r1'])
     })
 
     const { container: c2 } = renderOverlay((store) => {
-      store.set(documentAtom, { ...testDoc, viewBox: [0, 0, 48, 48] })
+      store.set(activeIconAtom, { ...testDoc, viewBox: [0, 0, 48, 48] })
       store.set(selectShapesCommand, ['r1'])
     })
 

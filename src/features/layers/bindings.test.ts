@@ -3,13 +3,13 @@ import { describe, expect, it } from 'vitest'
 
 import { buildBindings } from '@/features/shortcuts/registry'
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { createLayerBindings } from './bindings'
 
@@ -36,7 +36,7 @@ function makeInlineRect(id: string): RectShape {
   }
 }
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -45,7 +45,7 @@ const testDoc: Document = {
 
 function makeReorderStore() {
   const store = createStore()
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   return store
 }
 
@@ -88,7 +88,7 @@ describe('reorder layer bindings', () => {
 
     findBinding(store, 'layers.bringForward').run()
 
-    expect(store.get(documentAtom).shapes.map((s) => s.id)).toEqual(['b', 'a', 'c'])
+    expect(store.get(activeIconAtom).shapes.map((s) => s.id)).toEqual(['b', 'a', 'c'])
     expect(store.get(undoStackAtom)).toHaveLength(1)
   })
 
@@ -98,7 +98,7 @@ describe('reorder layer bindings', () => {
 
     findBinding(store, 'layers.sendBackward').run()
 
-    expect(store.get(documentAtom).shapes.map((s) => s.id)).toEqual(['a', 'c', 'b'])
+    expect(store.get(activeIconAtom).shapes.map((s) => s.id)).toEqual(['a', 'c', 'b'])
     expect(store.get(undoStackAtom)).toHaveLength(1)
   })
 
@@ -120,12 +120,12 @@ const d = makeRect({ id: 'd', name: 'D' })
 const aLocked = makeRect({ id: 'a', name: 'A', locked: true })
 
 function ids(store: ReturnType<typeof createStore>): string[] {
-  return store.get(documentAtom).shapes.map((s) => s.id)
+  return store.get(activeIconAtom).shapes.map((s) => s.id)
 }
 
 function setup(shapes = [a, b, c, d]) {
   const store = createStore()
-  store.set(documentAtom, makeDoc(shapes))
+  store.set(activeIconAtom, makeIcon(shapes))
   const bindings = createLayerBindings(store)
   const bringToFront = bindings.find((b) => b.id === 'layers.bringToFront')
   if (!bringToFront) throw new Error('No bringToFront binding found')

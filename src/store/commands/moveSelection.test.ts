@@ -1,25 +1,25 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
-import type { Document } from '@/types/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { undoCommand } from './historyCommands'
 import { moveSelectionCommand } from './moveSelection'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'a', name: 'A', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', name: 'B', x: 10, y: 10, width: 5, height: 5 }),
   makeRect({ id: 'c', name: 'C', x: 20, y: 20, width: 5, height: 5 }),
 ])
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -29,7 +29,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['a'], dx: 5, dy: 3 })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const shape = doc.shapes.find((s) => s.id === 'a')
     expect(shape).toBeDefined()
     expect(shape?.x).toBe(5)
@@ -41,7 +41,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['a', 'b'], dx: 2, dy: 2 })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     const b = doc.shapes.find((s) => s.id === 'b')
     expect(a?.x).toBe(2)
@@ -52,11 +52,11 @@ describe('moveSelectionCommand', () => {
 
   it('does not modify shapes not in ids', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(moveSelectionCommand, { ids: ['a'], dx: 5, dy: 5 })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const c = doc.shapes.find((s) => s.id === 'c')
     const cBefore = before.shapes.find((s) => s.id === 'c')
     expect(c).toBe(cBefore)
@@ -98,12 +98,12 @@ describe('moveSelectionCommand', () => {
 
   it('undo restores shape positions', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(moveSelectionCommand, { ids: ['a', 'b'], dx: 10, dy: 10 })
     store.set(undoCommand)
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
   })
 
   it('undo restores selection', () => {
@@ -121,7 +121,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['b'], dx: -3, dy: -7 })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const b = doc.shapes.find((s) => s.id === 'b')
     expect(b?.x).toBe(7)
     expect(b?.y).toBe(3)
@@ -132,7 +132,7 @@ describe('moveSelectionCommand', () => {
 
     store.set(moveSelectionCommand, { ids: ['a'], dx: 0.5, dy: 1.5 })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0.5)
     expect(a?.y).toBe(1.5)

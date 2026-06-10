@@ -32,4 +32,13 @@ describe('PanelSection', () => {
     const { container } = render(<PanelSection title="Wrap">content</PanelSection>)
     expect(container.querySelector('section')).toBeInTheDocument()
   })
+
+  it('renders headerAction when provided', () => {
+    render(
+      <PanelSection title="Icons" headerAction={<button data-testid="add-btn">+</button>}>
+        content
+      </PanelSection>,
+    )
+    expect(screen.getByTestId('add-btn')).toBeInTheDocument()
+  })
 })

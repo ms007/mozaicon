@@ -2,7 +2,7 @@ import type { createStore } from 'jotai'
 
 import { ALT_KEY_LABEL, MOD_KEY_LABEL } from '@/features/shortcuts/match'
 import type { ShortcutBinding } from '@/features/shortcuts/registry'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveShapeBlockCommand, reorderStepCommand } from '@/store/commands/reorderShapes'
 
@@ -56,7 +56,7 @@ export function createLayerBindings(store: ReturnType<typeof createStore>): Shor
         const ids = store.get(selectedIdsAtom)
         if (ids.length === 0) return
         const idSet = new Set(ids)
-        const shapes = store.get(documentAtom).shapes
+        const shapes = store.get(activeIconAtom).shapes
         const movingSet = new Set(
           shapes.filter((s) => idSet.has(s.id) && !s.locked).map((s) => s.id),
         )

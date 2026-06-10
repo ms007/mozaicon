@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { cancelDraftAtom, draftShapeAtom } from '@/store/atoms/draft'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -71,7 +71,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 2, y: 2, width: 8, height: 6 })
   })
@@ -100,7 +100,7 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     // stub clickFallbackGeometry produces w:2, h:2
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5, width: 2, height: 2 })
@@ -122,7 +122,7 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 10 }, { x: 200, y: 200 }, { pointerId: 99 }))
     expect(tool.shouldHandlePointerMove?.(ctx)).toBe(true)
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 
   // --- No-op write skip on identical geometry ---
@@ -210,7 +210,7 @@ describe('createDragTool', () => {
     tool.onPointerUp(ctx, ev({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
     const selection = ctx.store.get(selectedIdsAtom)
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(selection).toEqual([shapes[0].id])
   })
 
@@ -248,7 +248,7 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
-    const shape = ctx.store.get(documentAtom).shapes[0]
+    const shape = ctx.store.get(activeIconAtom).shapes[0]
     expect(shape.fill).toBe('#ff0000')
     expect(shape.stroke).toBe('#00ff00')
     expect(shape.strokeWidth).toBe(3)
@@ -280,7 +280,7 @@ describe('createDragTool', () => {
   it('up without active drag is a no-op', () => {
     const ctx = makeCtx()
     tool.onPointerUp(ctx, ev({ x: 10, y: 10 }, { x: 200, y: 200 }))
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 
   // --- Click-fallback fires regardless of selection state ---
@@ -292,7 +292,7 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5, width: 2, height: 2 })
     expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
@@ -307,8 +307,8 @@ describe('createDragTool', () => {
     tool.onPointerDown(ctx, ev({ x: 5, y: 5 }, { x: 100, y: 100 }))
     tool.onPointerUp(ctx, ev({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(1)
-    expect(ctx.store.get(documentAtom).shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5 })
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(1)
+    expect(ctx.store.get(activeIconAtom).shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5 })
   })
 
   it('still triggers drag-to-draw when selection exists and drag exceeds threshold', () => {
@@ -319,7 +319,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 2, y: 2, width: 8, height: 6 })
   })
@@ -334,7 +334,7 @@ describe('createDragTool', () => {
 
     tool.onPointerUp(ctx, ev({ x: 2.1, y: 2.1 }, { x: 101, y: 100 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ width: 2, height: 2 })
     expect(ctx.store.get(selectedIdsAtom)).toEqual([shapes[0].id])
@@ -353,7 +353,7 @@ describe('createDragTool', () => {
     // Release near start — screen distance below threshold
     tool.onPointerUp(ctx, ev({ x: 2.1, y: 2.1 }, { x: 101, y: 100 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     // Gets click-fallback geometry (w:2, h:2), not the dragged geometry
     expect(shapes[0]).toMatchObject({ width: 2, height: 2 })
@@ -415,7 +415,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 15, y: 15 }, { x: 400, y: 400 }))
     tool.onPointerUp(ctx, ev({ x: 15, y: 15 }, { x: 400, y: 400 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(2)
     expect(shapes[0]).toMatchObject({ x: 1, y: 1, width: 4, height: 4 })
     expect(shapes[1]).toMatchObject({ x: 10, y: 10, width: 5, height: 5 })
@@ -447,7 +447,7 @@ describe('createDragTool', () => {
 
     const undo = ctx.store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
-    const committedId = ctx.store.get(documentAtom).shapes[0].id
+    const committedId = ctx.store.get(activeIconAtom).shapes[0].id
     expect(undo[0].selectionAfter).toEqual([committedId])
   })
 
@@ -459,12 +459,12 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(1)
-    expect(ctx.store.get(selectedIdsAtom)).toEqual([ctx.store.get(documentAtom).shapes[0].id])
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(1)
+    expect(ctx.store.get(selectedIdsAtom)).toEqual([ctx.store.get(activeIconAtom).shapes[0].id])
 
     ctx.store.set(undoCommand)
 
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(ctx.store.get(selectedIdsAtom)).toEqual(['pre-existing'])
   })
 
@@ -494,7 +494,7 @@ describe('createDragTool', () => {
 
     tool.onPointerUp(ctx, ev({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(tool.shouldHandlePointerMove?.(ctx)).toBe(false)
   })
 
@@ -509,7 +509,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 28, y: 26 }, { x: 400, y: 400 }))
     tool.onPointerUp(ctx, ev({ x: 28, y: 26 }, { x: 400, y: 400 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ x: 20, y: 20, width: 8, height: 6 })
   })
@@ -528,7 +528,7 @@ describe('createDragTool', () => {
     tool.onPointerMove(ctx, ev({ x: 18, y: 16 }, { x: 400, y: 400 }))
     tool.onPointerUp(ctx, ev({ x: 18, y: 16 }, { x: 400, y: 400 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ x: 10, y: 10, width: 8, height: 6 })
   })

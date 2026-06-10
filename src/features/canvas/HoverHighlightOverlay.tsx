@@ -1,8 +1,8 @@
 import { useAtomValue } from 'jotai'
 
 import { bboxOf } from '@/lib/svg/bbox'
-import { shapeAtom } from '@/store/atoms/document'
 import { effectiveHoveredShapeIdAtom } from '@/store/atoms/hover'
+import { shapeAtom } from '@/store/atoms/project'
 
 export function HoverHighlightOverlay() {
   const id = useAtomValue(effectiveHoveredShapeIdAtom)

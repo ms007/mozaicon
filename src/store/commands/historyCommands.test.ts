@@ -2,16 +2,16 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { canRedoAtom, canUndoAtom, redoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { createCommand } from './createCommand'
 import { redoCommand, undoCommand } from './historyCommands'
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'A',
   viewBox: [0, 0, 24, 24],
@@ -19,12 +19,12 @@ const emptyDoc: Document = {
 }
 
 const renameCommand = createCommand<string>('Rename', (doc, name) => ({
-  document: { ...doc, name },
+  icon: { ...doc, name },
 }))
 
 function makeStore() {
   const store = createStore()
-  store.set(documentAtom, emptyDoc)
+  store.set(activeIconAtom, emptyDoc)
   return store
 }
 
@@ -35,7 +35,7 @@ describe('undoCommand', () => {
 
     store.set(undoCommand)
 
-    expect(store.get(documentAtom).name).toBe('A')
+    expect(store.get(activeIconAtom).name).toBe('A')
     expect(store.get(canUndoAtom)).toBe(false)
     expect(store.get(canRedoAtom)).toBe(true)
     expect(store.get(redoStackAtom)[0].label).toBe('Rename')
@@ -43,11 +43,11 @@ describe('undoCommand', () => {
 
   it('is a no-op when the undo stack is empty', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(undoCommand)
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
     expect(store.get(canUndoAtom)).toBe(false)
     expect(store.get(canRedoAtom)).toBe(false)
   })
@@ -58,10 +58,10 @@ describe('undoCommand', () => {
     store.set(renameCommand, 'C')
 
     store.set(undoCommand)
-    expect(store.get(documentAtom).name).toBe('B')
+    expect(store.get(activeIconAtom).name).toBe('B')
 
     store.set(undoCommand)
-    expect(store.get(documentAtom).name).toBe('A')
+    expect(store.get(activeIconAtom).name).toBe('A')
   })
 
   it('restores selection on undo', () => {
@@ -69,7 +69,7 @@ describe('undoCommand', () => {
       selection: ids,
     }))
     const store = makeStore()
-    store.set(documentAtom, {
+    store.set(activeIconAtom, {
       ...emptyDoc,
       shapes: [
         {
@@ -111,7 +111,7 @@ describe('undoCommand', () => {
 
     store.set(undoCommand)
 
-    expect(store.get(documentAtom).name).toBe('B')
+    expect(store.get(activeIconAtom).name).toBe('B')
   })
 })
 
@@ -123,7 +123,7 @@ describe('redoCommand', () => {
 
     store.set(redoCommand)
 
-    expect(store.get(documentAtom).name).toBe('B')
+    expect(store.get(activeIconAtom).name).toBe('B')
     expect(store.get(canUndoAtom)).toBe(true)
     expect(store.get(canRedoAtom)).toBe(false)
   })
@@ -131,11 +131,11 @@ describe('redoCommand', () => {
   it('is a no-op when the redo stack is empty', () => {
     const store = makeStore()
     store.set(renameCommand, 'B')
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(redoCommand)
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
     expect(store.get(canRedoAtom)).toBe(false)
   })
 
@@ -144,7 +144,7 @@ describe('redoCommand', () => {
       selection: ids,
     }))
     const store = makeStore()
-    store.set(documentAtom, {
+    store.set(activeIconAtom, {
       ...emptyDoc,
       shapes: [
         {
@@ -188,7 +188,7 @@ describe('redoCommand', () => {
 
     store.set(redoCommand)
 
-    expect(store.get(documentAtom).name).toBe('A')
+    expect(store.get(activeIconAtom).name).toBe('A')
   })
 })
 

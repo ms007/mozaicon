@@ -1,8 +1,8 @@
 import { useAtomValue } from 'jotai'
 
 import { bboxOf } from '@/lib/svg/bbox'
-import { shapeAtom } from '@/store/atoms/document'
 import { highlightedShapeIdsAtom } from '@/store/atoms/marquee-draft'
+import { shapeAtom } from '@/store/atoms/project'
 
 export function MarqueeHighlightOverlay() {
   const ids = useAtomValue(highlightedShapeIdsAtom)

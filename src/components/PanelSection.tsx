@@ -6,14 +6,18 @@ interface PanelSectionProps {
   title: string
   children: ReactNode
   className?: string
+  headerAction?: ReactNode
 }
 
-export function PanelSection({ title, children, className }: PanelSectionProps) {
+export function PanelSection({ title, children, className, headerAction }: PanelSectionProps) {
   return (
     <section className={cn('flex flex-col', className)}>
-      <h2 className="text-muted-foreground mb-1.5 text-xs font-medium tracking-wide uppercase">
-        {title}
-      </h2>
+      <div className="mb-1.5 flex items-center justify-between">
+        <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+          {title}
+        </h2>
+        {headerAction}
+      </div>
       {children}
     </section>
   )

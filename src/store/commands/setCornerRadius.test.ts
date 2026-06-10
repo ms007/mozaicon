@@ -2,10 +2,10 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom, projectAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Corners, Document, RectShape } from '@/types/shapes'
+import type { Corners, Icon, RectShape } from '@/types/shapes'
 
 import { setCornerRadiusCommand } from './setCornerRadius'
 
@@ -26,16 +26,16 @@ const baseRect: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const docWithRect: Document = {
+const docWithRect: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [baseRect],
 }
 
-function makeStore(doc: Document = docWithRect, selectedIds: string[] = ['r1']) {
+function makeStore(doc: Icon = docWithRect, selectedIds: string[] = ['r1']) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   if (selectedIds.length > 0) {
     store.set(commitSelectionAtom, { ids: selectedIds, doc })
   }
@@ -48,7 +48,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: 3 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([3, 3, 3, 3])
 
     const undo = store.get(undoStackAtom)
@@ -58,10 +58,10 @@ describe('setCornerRadiusCommand', () => {
 
   it('undo restores the previous corners', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(projectAtom)
 
     store.set(setCornerRadiusCommand, { radius: 3 })
-    expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([3, 3, 3, 3])
+    expect(store.get(activeIconAtom).shapes[0].corners.radii).toEqual([3, 3, 3, 3])
 
     const entry = store.get(undoStackAtom)[0]
     expect(entry.before).toBe(before)
@@ -75,7 +75,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { corner: 0, radius: 4 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([4, 2, 2, 2])
   })
 
@@ -87,7 +87,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { corner: 1, radius: 2 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([2, 2, 2, 2])
   })
 
@@ -96,7 +96,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: 100 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([4, 4, 4, 4])
   })
 
@@ -127,12 +127,12 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: 3 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([3, 3, 3, 3])
   })
 
   it('applies to multiple selected rects', () => {
-    const twoRectDoc: Document = {
+    const twoRectDoc: Icon = {
       ...docWithRect,
       shapes: [baseRect, { ...baseRect, id: 'r2', width: 6, height: 4 }],
     }
@@ -140,7 +140,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: 5 })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes[0].corners.radii).toEqual([4, 4, 4, 4])
     expect(shapes[1].corners.radii).toEqual([2, 2, 2, 2])
   })
@@ -161,7 +161,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: -5 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([0, 0, 0, 0])
   })
 
@@ -173,7 +173,7 @@ describe('setCornerRadiusCommand', () => {
 
     store.set(setCornerRadiusCommand, { radius: 0 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.radii).toEqual([0, 0, 0, 0])
   })
 })

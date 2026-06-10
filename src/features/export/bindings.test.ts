@@ -1,10 +1,10 @@
 import { createStore } from 'jotai'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { type ExportTarget, exportTargetAtom } from '@/store/atoms/export'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
-import type { Document } from '@/types/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { createExportBindings } from './bindings'
 import { performExport } from './performExport'
@@ -13,15 +13,15 @@ vi.mock('./performExport', () => ({
   performExport: vi.fn().mockResolvedValue(undefined),
 }))
 
-const docWithShapes = makeDoc([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
-const emptyDoc = makeDoc([], { name: 'Empty' })
-const allHiddenDoc = makeDoc([makeRect({ id: 's1', name: 'R1', visible: false })], {
+const docWithShapes = makeIcon([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
+const emptyDoc = makeIcon([], { name: 'Empty' })
+const allHiddenDoc = makeIcon([makeRect({ id: 's1', name: 'R1', visible: false })], {
   name: 'Hidden',
 })
 
-function setup(doc: Document = docWithShapes) {
+function setup(doc: Icon = docWithShapes) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   const bindings = createExportBindings(store)
   const trigger = bindings.find((b) => b.id === 'export.trigger')
   if (!trigger) throw new Error('No export.trigger binding found')

@@ -2,14 +2,14 @@ import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { Artboard } from '@/features/canvas/Artboard'
-import { documentAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { activeToolAtom } from '@/store/atoms/tool'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderWithStore } from '@/test/renderWithStore'
 
-const seededDoc = makeDoc([makeRect({ id: 'r1', name: 'Rect 1' })])
+const seededDoc = makeIcon([makeRect({ id: 'r1', name: 'Rect 1' })])
 
 function firePointer(el: Element, type: string, overrides: Record<string, unknown> = {}) {
   const event = new PointerEvent(type, {
@@ -45,7 +45,7 @@ function mockCapture(el: HTMLDivElement) {
 describe('Artboard', () => {
   it('applies surface token classes', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const wrapper = getArtboardDiv(container)
@@ -54,7 +54,7 @@ describe('Artboard', () => {
 
   it('does not apply border or shadow classes', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const wrapper = getArtboardDiv(container)
@@ -64,7 +64,7 @@ describe('Artboard', () => {
 
   it('renders CanvasStage as a child', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     expect(container.querySelector('svg[aria-label="Icon canvas"]')).not.toBeNull()
@@ -72,7 +72,7 @@ describe('Artboard', () => {
 
   it('applies no tool cursor when no tool is active', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const wrapper = getArtboardDiv(container)
@@ -81,7 +81,7 @@ describe('Artboard', () => {
 
   it('applies crosshair cursor when a draw tool is active', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
       store.set(activeToolAtom, 'rect')
     })
 
@@ -91,7 +91,7 @@ describe('Artboard', () => {
 
   it('keeps the default cursor during a move', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
       store.set(moveDraftAtom, { ids: ['r1'], dx: 1, dy: 2 })
     })
 
@@ -100,7 +100,7 @@ describe('Artboard', () => {
 
   it('keeps the tool cursorClass during a move', () => {
     const { container } = renderWithStore(<Artboard />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
       store.set(activeToolAtom, 'rect')
       store.set(moveDraftAtom, { ids: ['r1'], dx: 0, dy: 0 })
     })
@@ -112,7 +112,7 @@ describe('Artboard', () => {
 
   it('pointerdown in padding arms marquee when no tool is active', () => {
     const { container, store } = renderWithStore(<Artboard />, (s) => {
-      s.set(documentAtom, seededDoc)
+      s.set(activeIconAtom, seededDoc)
     })
 
     const wrapper = getArtboardDiv(container)
@@ -128,7 +128,7 @@ describe('Artboard', () => {
 
   it('pointerdown in padding takes capture when draw tool is active', () => {
     const { container } = renderWithStore(<Artboard />, (s) => {
-      s.set(documentAtom, seededDoc)
+      s.set(activeIconAtom, seededDoc)
       s.set(activeToolAtom, 'rect')
     })
 
@@ -144,7 +144,7 @@ describe('Artboard', () => {
 
   it('pointerdown on a shape does not reach the Artboard handler', () => {
     const { container } = renderWithStore(<Artboard />, (s) => {
-      s.set(documentAtom, seededDoc)
+      s.set(activeIconAtom, seededDoc)
     })
 
     const wrapper = getArtboardDiv(container)

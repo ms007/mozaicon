@@ -1,12 +1,12 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
 import { createTranslationGesture } from './createTranslationGesture'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'r1', x: 2, y: 2, width: 4, height: 4 }),
   makeRect({ id: 'r2', x: 10, y: 10, width: 6, height: 6 }),
   makeRect({ id: 'hidden', x: 20, y: 20, width: 2, height: 2, visible: false }),
@@ -104,7 +104,7 @@ describe('createTranslationGesture', () => {
     it('translates the bbox of the draft shapes by dx/dy', () => {
       const { adapter } = createTranslationGesture('t')
       const store = createStore()
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
 
       const result = adapter.displayBbox?.({ ids: ['r1'], dx: 3, dy: 7 }, store.get)
       expect(result).toEqual({ kind: 'rect', value: { x: 5, y: 9, width: 4, height: 4 } })
@@ -113,7 +113,7 @@ describe('createTranslationGesture', () => {
     it('follows the draft ids, not other shapes in the document', () => {
       const { adapter } = createTranslationGesture('t')
       const store = createStore()
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
 
       const result = adapter.displayBbox?.({ ids: ['r2'], dx: 1, dy: 1 }, store.get)
       expect(result).toEqual({ kind: 'rect', value: { x: 11, y: 11, width: 6, height: 6 } })
@@ -122,7 +122,7 @@ describe('createTranslationGesture', () => {
     it('ignores hidden shapes in the draft ids', () => {
       const { adapter } = createTranslationGesture('t')
       const store = createStore()
-      store.set(documentAtom, testDoc)
+      store.set(activeIconAtom, testDoc)
 
       const result = adapter.displayBbox?.({ ids: ['r1', 'hidden'], dx: 0, dy: 0 }, store.get)
       expect(result).toEqual({ kind: 'rect', value: { x: 2, y: 2, width: 4, height: 4 } })

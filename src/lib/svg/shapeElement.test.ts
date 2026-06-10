@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
-import { documentElements, shapePaintAttrs, shapeToElement } from './shapeElement'
+import { iconElements, shapePaintAttrs, shapeToElement } from './shapeElement'
 
 const base = makeRect({ width: 20, height: 10 })
 
@@ -104,10 +104,10 @@ describe('shapeToElement', () => {
   })
 })
 
-describe('documentElements', () => {
+describe('iconElements', () => {
   it('merges geometry and paint attributes per element', () => {
-    const doc = makeDoc([{ ...base, fill: '#f00', stroke: '#000', strokeWidth: 1 }])
-    expect(documentElements(doc)).toEqual([
+    const doc = makeIcon([{ ...base, fill: '#f00', stroke: '#000', strokeWidth: 1 }])
+    expect(iconElements(doc)).toEqual([
       {
         tag: 'rect',
         attrs: {
@@ -125,28 +125,28 @@ describe('documentElements', () => {
   })
 
   it('emits a path element for non-uniform radii', () => {
-    const doc = makeDoc([withRadii([1, 2, 3, 4])])
-    const [el] = documentElements(doc)
+    const doc = makeIcon([withRadii([1, 2, 3, 4])])
+    const [el] = iconElements(doc)
     expect(el.tag).toBe('path')
     expect(el.attrs).toHaveProperty('d')
     expect(el.attrs.fill).toBe('#000')
   })
 
   it('filters hidden shapes', () => {
-    const doc = makeDoc([
+    const doc = makeIcon([
       { ...base, visible: false },
       { ...base, id: 'r2', fill: '#f00' },
     ])
-    const els = documentElements(doc)
+    const els = iconElements(doc)
     expect(els).toHaveLength(1)
     expect(els[0].attrs.fill).toBe('#f00')
   })
 
   it('preserves shape order', () => {
-    const doc = makeDoc([
+    const doc = makeIcon([
       { ...base, fill: '#aaa' },
       { ...base, id: 'r2', fill: '#bbb' },
     ])
-    expect(documentElements(doc).map((el) => el.attrs.fill)).toEqual(['#aaa', '#bbb'])
+    expect(iconElements(doc).map((el) => el.attrs.fill)).toEqual(['#aaa', '#bbb'])
   })
 })

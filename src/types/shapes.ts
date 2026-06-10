@@ -39,7 +39,7 @@ export const RectShape = ShapeBase.extend({
 
 export const Shape = z.discriminatedUnion('type', [RectShape])
 
-export const Document = z.object({
+export const Icon = z.object({
   id: z.string(),
   name: z.string(),
   viewBox: z
@@ -48,10 +48,18 @@ export const Document = z.object({
   shapes: z.array(Shape),
 })
 
+export const Project = z.object({
+  id: z.string(),
+  icons: z.array(Icon),
+  activeIconId: z.string(),
+  nextIconNumber: z.number().int().positive(),
+})
+
 export type ShapeBase = z.infer<typeof ShapeBase>
 export type Radii = z.infer<typeof Radii>
 export type CornerStyle = z.infer<typeof CornerStyle>
 export type Corners = z.infer<typeof Corners>
 export type RectShape = z.infer<typeof RectShape>
 export type Shape = z.infer<typeof Shape>
-export type Document = z.infer<typeof Document>
+export type Icon = z.infer<typeof Icon>
+export type Project = z.infer<typeof Project>

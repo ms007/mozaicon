@@ -1,13 +1,13 @@
 import { atom } from 'jotai'
 
-import type { Document } from '@/types/shapes'
+import type { Project } from '@/types/shapes'
 
 import { isGestureActiveAtom } from './gesture'
 
 export type HistoryEntry = {
   label: string
-  before: Document
-  after: Document
+  before: Project
+  after: Project
   selectionBefore: string[]
   selectionAfter: string[]
 }

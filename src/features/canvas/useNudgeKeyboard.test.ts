@@ -1,33 +1,33 @@
 import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftAtom } from '@/store/atoms/gestures/nudge'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { useNudgeKeyboard } from './useNudgeKeyboard'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5 }),
 ])
 
-const lockedDoc = makeDoc([
+const lockedDoc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5, locked: true }),
 ])
 
-const hiddenDoc = makeDoc([
+const hiddenDoc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5, visible: false }),
 ])
 
-const allLockedDoc = makeDoc([
+const allLockedDoc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5, locked: true }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5, locked: true }),
 ])
@@ -43,13 +43,13 @@ function fireKey(type: 'keydown' | 'keyup', key: string, extra: Partial<Keyboard
   target.dispatchEvent(event)
 }
 
-function setup(selectedIds: string[] = ['a'], doc: Document = testDoc) {
+function setup(selectedIds: string[] = ['a'], doc: Icon = testDoc) {
   const { store } = renderHookWithStore(
     () => {
       useNudgeKeyboard()
     },
     (s) => {
-      s.set(documentAtom, doc)
+      s.set(activeIconAtom, doc)
       if (selectedIds.length > 0) {
         s.set(restoreSelectionAtom, selectedIds)
       }
@@ -67,7 +67,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowRight')
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(1)
     expect(a?.y).toBe(0)
@@ -81,7 +81,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowUp')
     })
 
-    let a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    let a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(-1)
 
@@ -90,7 +90,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowDown')
     })
 
-    a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.y).toBe(0)
 
     act(() => {
@@ -98,7 +98,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowLeft')
     })
 
-    a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(-1)
   })
 
@@ -112,7 +112,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowRight')
     })
 
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(3)
 
     const undo = store.get(undoStackAtom)
@@ -129,7 +129,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowDown')
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     const b = doc.shapes.find((s) => s.id === 'b')
     expect(a?.y).toBe(2)
@@ -254,7 +254,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
@@ -281,7 +281,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
@@ -302,7 +302,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
@@ -324,7 +324,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
@@ -363,7 +363,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(1)
     expect(a?.y).toBe(1)
     expect(store.get(undoStackAtom)).toHaveLength(1)
@@ -378,7 +378,7 @@ describe('useNudgeKeyboard', () => {
         fireKey('keyup', 'ArrowRight', { shiftKey: true })
       })
 
-      const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+      const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
       expect(a?.x).toBe(10)
       expect(a?.y).toBe(0)
     })
@@ -391,7 +391,7 @@ describe('useNudgeKeyboard', () => {
         fireKey('keyup', 'ArrowDown', { altKey: true })
       })
 
-      const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+      const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
       expect(a?.x).toBe(0)
       expect(a?.y).toBeCloseTo(0.1)
     })
@@ -406,7 +406,7 @@ describe('useNudgeKeyboard', () => {
         fireKey('keyup', 'ArrowRight')
       })
 
-      const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+      const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
       expect(a?.x).toBeCloseTo(11.1)
       expect(store.get(undoStackAtom)).toHaveLength(1)
     })
@@ -419,7 +419,7 @@ describe('useNudgeKeyboard', () => {
         fireKey('keyup', 'ArrowLeft', { shiftKey: true, altKey: true })
       })
 
-      const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+      const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
       expect(a?.x).toBe(-10)
     })
 
@@ -456,7 +456,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
@@ -477,7 +477,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
@@ -503,7 +503,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(0)
     expect(store.get(undoStackAtom)).toHaveLength(0)
@@ -537,7 +537,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowRight')
     })
 
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(1)
     expect(store.get(undoStackAtom)).toHaveLength(1)
   })
@@ -561,7 +561,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowDown')
     })
 
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(1)
     expect(store.get(undoStackAtom)).toHaveLength(1)
@@ -599,7 +599,7 @@ describe('useNudgeKeyboard', () => {
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(0)
     expect(a?.y).toBe(0)
   })
@@ -612,7 +612,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowRight')
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     const b = doc.shapes.find((s) => s.id === 'b')
     expect(a?.x).toBe(1)
@@ -628,7 +628,7 @@ describe('useNudgeKeyboard', () => {
       fireKey('keyup', 'ArrowRight')
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const a = doc.shapes.find((s) => s.id === 'a')
     const b = doc.shapes.find((s) => s.id === 'b')
     expect(a?.x).toBe(1)
@@ -646,7 +646,7 @@ describe('useNudgeKeyboard', () => {
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     expect(doc.shapes.find((s) => s.id === 'a')?.x).toBe(0)
     expect(doc.shapes.find((s) => s.id === 'b')?.x).toBe(10)
   })
@@ -687,7 +687,7 @@ describe('useNudgeKeyboard', () => {
     })
 
     expect(store.get(nudgeDraftAtom)).toBeNull()
-    const a = store.get(documentAtom).shapes.find((s) => s.id === 'a')
+    const a = store.get(activeIconAtom).shapes.find((s) => s.id === 'a')
     expect(a?.x).toBe(2)
   })
 })

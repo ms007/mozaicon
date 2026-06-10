@@ -3,9 +3,9 @@ import { useEffect } from 'react'
 
 import { isEditableTarget } from '@/features/shortcuts/match'
 import { isSelectable } from '@/lib/selection'
-import { shapeAtom } from '@/store/atoms/document'
 import { nudgeDraftAtom } from '@/store/atoms/gestures/nudge'
 import { anyGestureDraftActiveAtom } from '@/store/atoms/gestures/registry'
+import { shapeAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { moveSelectionCommand } from '@/store/commands/moveSelection'
 

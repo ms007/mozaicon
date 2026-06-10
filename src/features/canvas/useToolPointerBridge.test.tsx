@@ -2,18 +2,18 @@ import { describe, expect, it, vi } from 'vitest'
 
 import type { DrawTool } from '@/features/toolbar/tools/registry'
 import type { FrameScheduler } from '@/lib/svg/gestureSampler'
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
 import { seedSelection } from '@/test/seedSelection'
 
 import { useToolPointerBridge } from './useToolPointerBridge'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 's1', name: 'S1' }),
   makeRect({ id: 's2', name: 'S2', x: 10, y: 10 }),
 ])
@@ -64,7 +64,7 @@ function setup(tool: DrawTool | undefined) {
   const svgRef = makeSvgRef()
   const scheduler = makeManualScheduler()
   const { result, store } = renderHookWithStore(() => useToolPointerBridge(tool, svgRef, scheduler))
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   return { store, result, scheduler }
 }
 

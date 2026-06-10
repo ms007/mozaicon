@@ -2,10 +2,10 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom, shapeAtom } from '@/store/atoms/document'
 import { redoStackAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom, shapeAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { deleteShapesCommand } from './deleteShapes'
 import { redoCommand, undoCommand } from './historyCommands'
@@ -25,16 +25,16 @@ function makeRect(id: string): RectShape {
   }
 }
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -45,7 +45,7 @@ describe('deleteShapesCommand', () => {
 
     store.set(deleteShapesCommand, { ids: ['a'] })
 
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 
   it('clears selection after deletion', () => {
@@ -66,7 +66,7 @@ describe('deleteShapesCommand', () => {
 
     store.set(deleteShapesCommand, { ids: ['a', 'b', 'c'] })
 
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(store.get(selectedIdsAtom)).toEqual([])
   })
 
@@ -79,7 +79,7 @@ describe('deleteShapesCommand', () => {
 
     store.set(deleteShapesCommand, { ids: ['a', 'c'] })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0].id).toBe('b')
     expect(store.get(selectedIdsAtom)).toEqual([])
@@ -94,8 +94,8 @@ describe('deleteShapesCommand', () => {
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Delete shapes')
-    expect(undo[0].before.shapes).toHaveLength(1)
-    expect(undo[0].after.shapes).toHaveLength(0)
+    expect(undo[0].before.icons[0].shapes).toHaveLength(1)
+    expect(undo[0].after.icons[0].shapes).toHaveLength(0)
     expect(undo[0].selectionBefore).toEqual(['a'])
     expect(undo[0].selectionAfter).toEqual([])
   })
@@ -108,12 +108,12 @@ describe('deleteShapesCommand', () => {
     store.set(restoreSelectionAtom, ['a', 'b'])
 
     store.set(deleteShapesCommand, { ids: ['a', 'b'] })
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(store.get(selectedIdsAtom)).toEqual([])
 
     store.set(undoCommand)
 
-    expect(store.get(documentAtom).shapes).toHaveLength(2)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(2)
     expect(store.get(selectedIdsAtom)).toEqual(['a', 'b'])
   })
 
@@ -123,11 +123,11 @@ describe('deleteShapesCommand', () => {
 
     store.set(deleteShapesCommand, { ids: ['a'] })
     store.set(undoCommand)
-    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(1)
 
     store.set(redoCommand)
 
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(store.get(selectedIdsAtom)).toEqual([])
   })
 
@@ -138,7 +138,7 @@ describe('deleteShapesCommand', () => {
     store.set(deleteShapesCommand, { ids: [] })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(1)
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
   })
 
@@ -149,7 +149,7 @@ describe('deleteShapesCommand', () => {
     store.set(deleteShapesCommand, { ids: ['nonexistent'] })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(documentAtom).shapes).toHaveLength(1)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(1)
     expect(store.get(selectedIdsAtom)).toEqual(['a'])
   })
 
@@ -165,11 +165,17 @@ describe('deleteShapesCommand', () => {
 
   it('clears the redo stack on dispatch', () => {
     const store = makeStore({ ...emptyDoc, shapes: [makeRect('a')] })
+    const fakeProject = {
+      id: 'proj-1',
+      icons: [emptyDoc],
+      activeIconId: emptyDoc.id,
+      nextIconNumber: 2,
+    }
     store.set(redoStackAtom, [
       {
         label: 'stale',
-        before: emptyDoc,
-        after: emptyDoc,
+        before: fakeProject,
+        after: fakeProject,
         selectionBefore: [],
         selectionAfter: [],
       },

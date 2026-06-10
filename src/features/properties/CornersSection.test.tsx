@@ -3,10 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
-import type { Corners, Document } from '@/types/shapes'
+import type { Corners, Icon } from '@/types/shapes'
 
 import { CornersSection } from './CornersSection'
 
@@ -14,7 +14,7 @@ function corners(overrides: Partial<Corners> = {}): Corners {
   return { ...DEFAULT_CORNERS, ...overrides }
 }
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -46,9 +46,9 @@ const testDoc: Document = {
   ],
 }
 
-function renderSection(doc: Document = testDoc, selectedIds: string[] = []) {
+function renderSection(doc: Icon = testDoc, selectedIds: string[] = []) {
   return renderWithStore(<CornersSection />, (store) => {
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     if (selectedIds.length > 0) {
       store.set(selectShapesCommand, selectedIds)
     }
@@ -76,7 +76,7 @@ describe('CornersSection', () => {
 
   describe('radius-gating', () => {
     it('hides the segmented control when all radii are 0', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: DEFAULT_CORNERS }],
       }
@@ -90,7 +90,7 @@ describe('CornersSection', () => {
     })
 
     it('shows the segmented control when radii are MIXED across selection', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           { ...testDoc.shapes[0], corners: corners({ radii: [4, 4, 4, 4] }) },
@@ -114,12 +114,12 @@ describe('CornersSection', () => {
 
       await userEvent.click(segmentedOption('Smooth'))
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.style).toBe('smooth')
     })
 
     it('switches back to Rounded', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -132,12 +132,12 @@ describe('CornersSection', () => {
 
       await userEvent.click(segmentedOption('Rounded'))
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.style).toBe('rounded')
     })
 
     it('shows MIXED text when selected rects disagree on corner style', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           { ...testDoc.shapes[0], corners: corners({ radii: [4, 4, 4, 4], style: 'rounded' }) },
@@ -149,7 +149,7 @@ describe('CornersSection', () => {
     })
 
     it('has no active pill when style is MIXED', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           { ...testDoc.shapes[0], corners: corners({ radii: [4, 4, 4, 4], style: 'rounded' }) },
@@ -164,7 +164,7 @@ describe('CornersSection', () => {
 
   describe('smoothing controls', () => {
     it('shows slider and percent field when style is smooth and radius > 0', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -184,7 +184,7 @@ describe('CornersSection', () => {
     })
 
     it('hides smoothing controls when radius is 0', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: corners({ style: 'smooth', smoothing: 50 }) }],
       }
@@ -193,7 +193,7 @@ describe('CornersSection', () => {
     })
 
     it('dispatches smoothing value from the text field on Enter', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -209,12 +209,12 @@ describe('CornersSection', () => {
       await userEvent.type(input, '75')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.smoothing).toBe(75)
     })
 
     it('clamps smoothing to 0-100 on commit', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -230,12 +230,12 @@ describe('CornersSection', () => {
       await userEvent.type(input, '200')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.smoothing).toBe(100)
     })
 
     it('shows MIXED placeholder when smoothing differs across selection', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -255,7 +255,7 @@ describe('CornersSection', () => {
     })
 
     it('dispatches smoothing via slider', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           {
@@ -272,7 +272,7 @@ describe('CornersSection', () => {
       })
       await userEvent.keyboard('{ArrowRight}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.smoothing).toBeGreaterThan(0)
     })
   })

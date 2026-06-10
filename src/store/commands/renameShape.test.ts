@@ -2,9 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
-import type { Document, RectShape } from '@/types/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { undoCommand } from './historyCommands'
 import { renameShapeCommand } from './renameShape'
@@ -24,16 +24,16 @@ function makeRect(id: string, name = 'Rect'): RectShape {
   }
 }
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -43,7 +43,7 @@ describe('renameShapeCommand', () => {
 
     store.set(renameShapeCommand, { id: 'a', name: 'New' })
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('New')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('New')
   })
 
   it('trims whitespace from the new name', () => {
@@ -51,7 +51,7 @@ describe('renameShapeCommand', () => {
 
     store.set(renameShapeCommand, { id: 'a', name: '  Trimmed  ' })
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('Trimmed')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('Trimmed')
   })
 
   it('is a no-op when the name is unchanged — no history entry', () => {
@@ -76,7 +76,7 @@ describe('renameShapeCommand', () => {
     store.set(renameShapeCommand, { id: 'a', name: '' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(documentAtom).shapes[0].name).toBe('Keep')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('Keep')
   })
 
   it('is a no-op when the new name is only whitespace', () => {
@@ -85,7 +85,7 @@ describe('renameShapeCommand', () => {
     store.set(renameShapeCommand, { id: 'a', name: '   ' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(documentAtom).shapes[0].name).toBe('Keep')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('Keep')
   })
 
   it('pushes exactly one history entry', () => {
@@ -96,8 +96,8 @@ describe('renameShapeCommand', () => {
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Rename shape')
-    expect(undo[0].before.shapes[0].name).toBe('Old')
-    expect(undo[0].after.shapes[0].name).toBe('New')
+    expect(undo[0].before.icons[0].shapes[0].name).toBe('Old')
+    expect(undo[0].after.icons[0].shapes[0].name).toBe('New')
   })
 
   it('undo restores the previous name', () => {
@@ -106,7 +106,7 @@ describe('renameShapeCommand', () => {
     store.set(renameShapeCommand, { id: 'a', name: 'New' })
     store.set(undoCommand)
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('Old')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('Old')
   })
 
   it('does not affect other shapes', () => {
@@ -117,8 +117,8 @@ describe('renameShapeCommand', () => {
 
     store.set(renameShapeCommand, { id: 'a', name: 'A2' })
 
-    expect(store.get(documentAtom).shapes[0].name).toBe('A2')
-    expect(store.get(documentAtom).shapes[1].name).toBe('B')
+    expect(store.get(activeIconAtom).shapes[0].name).toBe('A2')
+    expect(store.get(activeIconAtom).shapes[1].name).toBe('B')
   })
 
   it('is a no-op for a non-existent shape ID', () => {

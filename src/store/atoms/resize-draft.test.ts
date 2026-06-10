@@ -2,16 +2,16 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeRect } from '@/test/fixtures/shapes'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { displayedSelectionBboxAtom, resizeDraftAtom } from './resize-draft'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -47,7 +47,7 @@ const testDoc: Document = {
 
 function makeStore() {
   const store = createStore()
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   return store
 }
 

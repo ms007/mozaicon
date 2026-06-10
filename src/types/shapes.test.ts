@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Corners, Document, RectShape, Shape } from './shapes'
+import { Corners, Icon, RectShape, Shape } from './shapes'
 
 const validCorners = { radii: [0, 0, 0, 0] as const, style: 'rounded' as const, smoothing: 0 }
 
@@ -142,9 +142,9 @@ describe('Shape discriminated union', () => {
   })
 })
 
-describe('Document schema', () => {
-  it('accepts a document with an empty shapes list', () => {
-    const parsed = Document.parse({
+describe('Icon schema', () => {
+  it('accepts an icon with an empty shapes list', () => {
+    const parsed = Icon.parse({
       id: 'doc-1',
       name: 'Untitled',
       viewBox: [0, 0, 24, 24],
@@ -155,7 +155,7 @@ describe('Document schema', () => {
   })
 
   it('applies the default viewBox of [0, 0, 24, 24]', () => {
-    const parsed = Document.parse({
+    const parsed = Icon.parse({
       id: 'doc-1',
       name: 'Untitled',
       shapes: [],
@@ -163,8 +163,8 @@ describe('Document schema', () => {
     expect(parsed.viewBox).toEqual([0, 0, 24, 24])
   })
 
-  it('accepts a document containing rect shapes', () => {
-    const parsed = Document.parse({
+  it('accepts an icon containing rect shapes', () => {
+    const parsed = Icon.parse({
       id: 'doc-1',
       name: 'Untitled',
       viewBox: [0, 0, 24, 24],
@@ -181,20 +181,20 @@ describe('Document schema', () => {
       viewBox: [0, 0, 24],
       shapes: [],
     }
-    expect(Document.safeParse(bad).success).toBe(false)
+    expect(Icon.safeParse(bad).success).toBe(false)
   })
 
-  it('rejects a document missing required fields', () => {
-    expect(Document.safeParse({ name: 'x', shapes: [] }).success).toBe(false)
+  it('rejects an icon missing required fields', () => {
+    expect(Icon.safeParse({ name: 'x', shapes: [] }).success).toBe(false)
   })
 
-  it('rejects a document containing an invalid shape', () => {
+  it('rejects an icon containing an invalid shape', () => {
     const bad = {
       id: 'doc-1',
       name: 'Untitled',
       viewBox: [0, 0, 24, 24],
       shapes: [{ ...validRect, width: 'wide' }],
     }
-    expect(Document.safeParse(bad).success).toBe(false)
+    expect(Icon.safeParse(bad).success).toBe(false)
   })
 })

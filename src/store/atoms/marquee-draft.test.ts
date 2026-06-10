@@ -1,9 +1,9 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { makeMarqueeDraft } from '@/test/fixtures/marquee'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
 import {
   highlightedShapeIdsAtom,
@@ -41,7 +41,7 @@ describe('marqueeRectAtom', () => {
   })
 })
 
-const doc = makeDoc([
+const doc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5 }),
   makeRect({ id: 'c', x: 20, y: 20, width: 5, height: 5 }),
@@ -52,13 +52,13 @@ const doc = makeDoc([
 describe('previewSelectedIdsAtom', () => {
   it('returns empty when no draft', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     expect(store.get(previewSelectedIdsAtom)).toEqual([])
   })
 
   it('replace mode: selects shapes whose bbox intersects the marquee', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } }),
@@ -68,7 +68,7 @@ describe('previewSelectedIdsAtom', () => {
 
   it('replace mode: excludes hidden and locked shapes', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 0, y: 0 }, current: { x: 6, y: 6 } }),
@@ -78,7 +78,7 @@ describe('previewSelectedIdsAtom', () => {
 
   it('additive mode: symmetric difference against baseSelection', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -95,7 +95,7 @@ describe('previewSelectedIdsAtom', () => {
 
   it('additive mode: empty marquee with non-empty base preserves base', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -111,7 +111,7 @@ describe('previewSelectedIdsAtom', () => {
 
   it('replace mode: empty marquee (no hits) returns empty', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } }),
@@ -123,13 +123,13 @@ describe('previewSelectedIdsAtom', () => {
 describe('highlightedShapeIdsAtom', () => {
   it('returns empty when no draft is active', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     expect(store.get(highlightedShapeIdsAtom)).toEqual([])
   })
 
   it('highlights the live hits during a non-additive marquee', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 0, y: 0 }, current: { x: 12, y: 12 } }),
@@ -139,7 +139,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('non-additive marquee with no hits → no highlights', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } }),
@@ -149,7 +149,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('in-base, not in-marquee → highlighted (still selected)', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -165,7 +165,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('in-base, in-marquee → not highlighted (toggled off)', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -181,7 +181,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('not in-base, in-marquee → highlighted (will be added)', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -197,7 +197,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('not in-base, not in-marquee → not highlighted', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -214,7 +214,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('empty marquee with non-empty base → highlight equals base', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -230,7 +230,7 @@ describe('highlightedShapeIdsAtom', () => {
 
   it('all four quadrants in one scenario', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -253,13 +253,13 @@ describe('highlightedShapeIdsAtom', () => {
 describe('previewSelectionBboxAtom', () => {
   it('returns null when no draft is active', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     expect(store.get(previewSelectionBboxAtom)).toBe(null)
   })
 
   it('returns null when draft has no hits and no base (non-additive)', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({ startViewBox: { x: 100, y: 100 }, current: { x: 101, y: 101 } }),
@@ -269,7 +269,7 @@ describe('previewSelectionBboxAtom', () => {
 
   it('returns bbox of preview shapes during additive marquee', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     store.set(
       marqueeDraftAtom,
       baseDraft({
@@ -292,7 +292,7 @@ describe('previewSelectionBboxAtom', () => {
 describe('highlightedShapeIdsAtom: recomputes when draft fields change', () => {
   it('toggling additive mid-drag switches between sym-diff and raw hits', () => {
     const store = createStore()
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
 
     // 'a' is in base AND in the marquee → sym diff = [].
     store.set(

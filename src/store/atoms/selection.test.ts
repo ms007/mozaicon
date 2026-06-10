@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-import { documentAtom } from './document'
+import { activeIconAtom } from './project'
 import {
   hasSelectionAtom,
   restoreSelectionAtom,
@@ -15,7 +15,7 @@ import {
   visibleSelectionBboxAtom,
 } from './selection'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -49,9 +49,9 @@ const testDoc: Document = {
   ],
 }
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -96,7 +96,7 @@ describe('selectedShapesAtom', () => {
     store.set(selectShapesCommand, ['r1'])
     const before = store.get(selectedShapesAtom)
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const r2 = draft.shapes.find((s) => s.id === 'r2')
       if (r2) r2.name = 'Renamed'
     })
@@ -109,7 +109,7 @@ describe('selectedShapesAtom', () => {
     store.set(selectShapesCommand, ['r1'])
     const before = store.get(selectedShapesAtom)
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const r1 = draft.shapes.find((s) => s.id === 'r1')
       if (r1) r1.name = 'Renamed'
     })
@@ -168,7 +168,7 @@ describe('selectionBboxAtom', () => {
     store.set(selectShapesCommand, ['r1'])
     const before = store.get(selectionBboxAtom)
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const r1 = draft.shapes.find((s) => s.id === 'r1')
       if (r1) r1.name = 'Renamed'
     })
@@ -181,7 +181,7 @@ describe('selectionBboxAtom', () => {
     store.set(selectShapesCommand, ['r1'])
     const before = store.get(selectionBboxAtom)
 
-    store.set(documentAtom, (draft) => {
+    store.set(activeIconAtom, (draft) => {
       const r1 = draft.shapes.find((s) => s.id === 'r1')
       if (r1?.type === 'rect') r1.x = 100
     })
@@ -194,7 +194,7 @@ describe('selectionBboxAtom', () => {
 
 describe('visibleSelectionBboxAtom', () => {
   it('returns null when all selected shapes are hidden', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...testDoc,
       shapes: testDoc.shapes.map((s) => ({ ...s, visible: false })),
     }
@@ -204,7 +204,7 @@ describe('visibleSelectionBboxAtom', () => {
   })
 
   it('returns bbox of only visible selected shapes', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...testDoc,
       shapes: [testDoc.shapes[0], { ...testDoc.shapes[1], visible: false }],
     }

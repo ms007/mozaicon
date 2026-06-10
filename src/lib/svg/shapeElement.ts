@@ -1,5 +1,5 @@
 import { assertNever } from '@/lib/util/assertNever'
-import type { Document, Shape, ShapeBase } from '@/types/shapes'
+import type { Icon, Shape, ShapeBase } from '@/types/shapes'
 
 import { chooseRectElement } from './rectElement'
 
@@ -56,6 +56,6 @@ export function shapeToElement(shape: Shape): ShapeElement {
   /* eslint-enable @typescript-eslint/no-unnecessary-condition */
 }
 
-export function documentElements(doc: Document): ShapeElement[] {
+export function iconElements(doc: Icon): ShapeElement[] {
   return doc.shapes.filter((s) => s.visible).map(shapeToElement)
 }

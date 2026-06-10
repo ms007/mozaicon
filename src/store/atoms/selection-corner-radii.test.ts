@@ -2,9 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Corners, Document, RectShape } from '@/types/shapes'
+import type { Corners, Icon, RectShape } from '@/types/shapes'
 
 import { selectionCornerRadiiAtom } from './selection-corner-radii'
 import { MIXED } from './selection-geometry'
@@ -26,16 +26,16 @@ const baseRect: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const baseDoc: Document = {
+const baseDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [baseRect],
 }
 
-function makeStore(doc: Document = baseDoc, selectedIds: string[] = ['r1']) {
+function makeStore(doc: Icon = baseDoc, selectedIds: string[] = ['r1']) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   if (selectedIds.length > 0) {
     store.set(commitSelectionAtom, { ids: selectedIds, doc })
   }
@@ -89,7 +89,7 @@ describe('selectionCornerRadiiAtom', () => {
   })
 
   it('returns MIXED when corners differ across selected rects', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [
         { ...baseRect, corners: corners([2, 2, 2, 2]) },
@@ -107,7 +107,7 @@ describe('selectionCornerRadiiAtom', () => {
   })
 
   it('returns consistent values across rects with matching corners', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [
         { ...baseRect, corners: corners([3, 3, 3, 3]) },
@@ -124,7 +124,7 @@ describe('selectionCornerRadiiAtom', () => {
   })
 
   it('returns MIXED per-corner when only some corners differ across rects', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [
         { ...baseRect, corners: corners([2, 3, 2, 2]) },

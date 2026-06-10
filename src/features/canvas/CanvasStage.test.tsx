@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import { CanvasStage } from '@/features/canvas/CanvasStage'
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-const seededDoc: Document = {
+const seededDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -36,7 +36,7 @@ function makeSvgRef(): React.RefObject<SVGSVGElement | null> {
 describe('CanvasStage', () => {
   it('renders a <rect> with the seeded shape attributes', () => {
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const rect = container.querySelector('rect[fill="#000"]')
@@ -50,7 +50,7 @@ describe('CanvasStage', () => {
 
   it('renders the canvas with the document viewBox', () => {
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const svg = container.querySelector('svg')
@@ -58,7 +58,7 @@ describe('CanvasStage', () => {
   })
 
   it('renders one <rect> per shape in the document', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...seededDoc,
       shapes: [
         { ...seededDoc.shapes[0], id: 'r1' },
@@ -66,7 +66,7 @@ describe('CanvasStage', () => {
       ],
     }
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, doc)
+      store.set(activeIconAtom, doc)
     })
 
     expect(container.querySelectorAll('rect[fill="#000"]')).toHaveLength(2)
@@ -74,7 +74,7 @@ describe('CanvasStage', () => {
 
   it('sets overflow visible so edge grid dots are not clipped', () => {
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
     })
 
     const svg = container.querySelector('svg')
@@ -83,7 +83,7 @@ describe('CanvasStage', () => {
 
   it('renders draft shape and selection overlay bbox when draftShapeAtom is set', () => {
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, { ...seededDoc, shapes: [] })
+      store.set(activeIconAtom, { ...seededDoc, shapes: [] })
       store.set(draftShapeAtom, {
         type: 'rect',
         id: '__draft__',
@@ -106,7 +106,7 @@ describe('CanvasStage', () => {
 
   it('mounts SelectionOverlay when a shape is selected', () => {
     const { container } = renderWithStore(<CanvasStage svgRef={makeSvgRef()} />, (store) => {
-      store.set(documentAtom, seededDoc)
+      store.set(activeIconAtom, seededDoc)
       store.set(selectShapesCommand, ['r1'])
     })
 

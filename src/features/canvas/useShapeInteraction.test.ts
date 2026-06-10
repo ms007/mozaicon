@@ -1,20 +1,20 @@
 import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftAtom } from '@/store/atoms/gestures/nudge'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
 import { seedSelection } from '@/test/seedSelection'
 
 import { useShapeInteraction } from './useShapeInteraction'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 's1', name: 'S1', width: 5, height: 5 }),
   makeRect({ id: 's2', name: 'S2', x: 5, y: 5, width: 5, height: 5 }),
   makeRect({ id: 'other', name: 'Other', x: 10, y: 10, width: 5, height: 5 }),
@@ -86,7 +86,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['other'])
       },
     )
@@ -103,7 +103,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s2', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -120,7 +120,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2'])
       },
     )
@@ -137,7 +137,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
     )
 
@@ -154,7 +154,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -171,7 +171,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
     )
 
@@ -189,7 +189,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         seedSelection(s, ['s1'])
       },
     )
@@ -213,7 +213,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction(id, scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -230,7 +230,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store, rerender } = renderHookWithStore(
       ({ id }: { id: string }) => useShapeInteraction(id, scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
       { initialProps: { id: 's1' } },
     )
@@ -257,7 +257,7 @@ describe('useShapeInteraction — click-to-select', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['other'])
       },
     )
@@ -282,7 +282,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -302,7 +302,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2'])
       },
     )
@@ -321,7 +321,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s2', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -342,7 +342,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s2', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -363,7 +363,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2', 'other'])
       },
     )
@@ -383,7 +383,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -396,7 +396,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const shape = doc.shapes.find((s) => s.id === 's1')
     expect(shape?.x).toBe(10)
     expect(shape?.y).toBe(5)
@@ -407,12 +407,12 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
 
-    const docBefore = store.get(documentAtom)
+    const docBefore = store.get(activeIconAtom)
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
@@ -421,7 +421,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     })
 
     store.set(undoCommand)
-    expect(store.get(documentAtom)).toBe(docBefore)
+    expect(store.get(activeIconAtom)).toBe(docBefore)
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
   })
 
@@ -430,7 +430,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -449,7 +449,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -468,7 +468,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -486,17 +486,17 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
 
-    const docBefore = store.get(documentAtom)
+    const docBefore = store.get(activeIconAtom)
     act(() => {
       result.current.onPointerUp(pointerEvent().event)
     })
 
-    expect(store.get(documentAtom)).toBe(docBefore)
+    expect(store.get(activeIconAtom)).toBe(docBefore)
     expect(store.get(selectedIdsAtom)).toEqual(['s1'])
   })
 
@@ -505,7 +505,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('locked', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
     )
 
@@ -523,7 +523,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -549,7 +549,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -570,7 +570,7 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -596,12 +596,12 @@ describe('useShapeInteraction — drag-to-move', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
 
-    const docBefore = store.get(documentAtom)
+    const docBefore = store.get(activeIconAtom)
     act(() => {
       result.current.onPointerDown(pointerEvent({ clientX: 0, clientY: 0 }).event)
       result.current.onPointerMove(pointerEvent({ clientX: 10, clientY: 10 }).event)
@@ -614,7 +614,7 @@ describe('useShapeInteraction — drag-to-move', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 20, clientY: 15 }).event)
     })
 
-    expect(store.get(documentAtom)).toBe(docBefore)
+    expect(store.get(activeIconAtom)).toBe(docBefore)
   })
 })
 
@@ -624,7 +624,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -644,7 +644,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -664,7 +664,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -688,7 +688,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -712,7 +712,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -724,7 +724,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 3, shiftKey: true }).event)
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const shape = doc.shapes.find((s) => s.id === 's1')
     expect(shape?.x).toBe(10)
     expect(shape?.y).toBe(0)
@@ -735,7 +735,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -749,7 +749,7 @@ describe('useShapeInteraction — axis-lock (Shift)', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 3 }).event)
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const shape = doc.shapes.find((s) => s.id === 's1')
     expect(shape?.x).toBe(10)
     expect(shape?.y).toBe(3)
@@ -762,7 +762,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('locked', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
     )
 
@@ -780,7 +780,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('locked', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
       },
     )
 
@@ -796,7 +796,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 's2', 'locked'])
       },
     )
@@ -817,7 +817,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'hidden'])
       },
     )
@@ -837,7 +837,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'locked'])
       },
     )
@@ -857,7 +857,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -885,7 +885,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1', 'locked'])
       },
     )
@@ -897,7 +897,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
       result.current.onPointerUp(pointerEvent({ clientX: 10, clientY: 5 }).event)
     })
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const s1 = doc.shapes.find((s) => s.id === 's1')
     const locked = doc.shapes.find((s) => s.id === 'locked')
     expect(s1?.x).toBe(10)
@@ -911,7 +911,7 @@ describe('useShapeInteraction — locked-shape filter', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('locked', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         seedSelection(s, ['locked'])
       },
     )
@@ -934,7 +934,7 @@ describe('useShapeInteraction — frame coalescing', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -956,7 +956,7 @@ describe('useShapeInteraction — frame coalescing', () => {
     const { result, store } = renderHookWithStore(
       () => useShapeInteraction('s1', scheduler),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         s.set(selectShapesCommand, ['s1'])
       },
     )
@@ -969,7 +969,7 @@ describe('useShapeInteraction — frame coalescing', () => {
     })
 
     expect(store.get(moveDraftAtom)).toBeNull()
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     const shape = doc.shapes.find((s) => s.id === 's1')
     expect(shape?.x).toBe(15)
     expect(shape?.y).toBe(12)

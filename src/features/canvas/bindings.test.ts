@@ -1,29 +1,29 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { moveDraftAtom } from '@/store/atoms/gestures/move'
 import { undoStackAtom } from '@/store/atoms/history'
 import { marqueeDraftAtom } from '@/store/atoms/marquee-draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
 
 import { createCanvasBindings } from './bindings'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 's1', name: 'S1' }),
   makeRect({ id: 's2', name: 'S2', x: 10, y: 10 }),
 ])
 
 function setup() {
   const store = createStore()
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   const bindings = createCanvasBindings(store)
   const escape = bindings.find((b) => b.key === 'Escape')
   if (!escape) throw new Error('No Escape binding found')

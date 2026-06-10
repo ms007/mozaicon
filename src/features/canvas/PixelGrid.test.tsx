@@ -2,12 +2,12 @@ import { act } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { PixelGrid } from '@/features/canvas/PixelGrid'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { renderWithStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 function renderGrid(viewBox: [number, number, number, number] = [0, 0, 24, 24]) {
-  const doc: Document = {
+  const doc: Icon = {
     id: 'doc-test',
     name: 'Test',
     viewBox,
@@ -18,7 +18,7 @@ function renderGrid(viewBox: [number, number, number, number] = [0, 0, 24, 24]) 
       <PixelGrid />
     </svg>,
     (store) => {
-      store.set(documentAtom, doc)
+      store.set(activeIconAtom, doc)
     },
   )
 }
@@ -51,7 +51,7 @@ describe('PixelGrid', () => {
     const { container, store } = renderGrid([0, 0, 24, 24])
 
     act(() => {
-      store.set(documentAtom, {
+      store.set(activeIconAtom, {
         id: 'doc-test',
         name: 'Test',
         viewBox: [0, 0, 32, 32],

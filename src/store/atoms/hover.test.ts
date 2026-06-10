@@ -2,14 +2,14 @@ import { atom, createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-import { documentAtom } from './document'
 import { type GestureAdapter, setGestureRegistryForTest } from './gestures/registry'
 import { effectiveHoveredShapeIdAtom, hoveredShapeIdAtom } from './hover'
+import { activeIconAtom } from './project'
 import { commitSelectionAtom } from './selection'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -53,9 +53,9 @@ const testDoc: Document = {
   ],
 }
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -88,7 +88,7 @@ describe('effectiveHoveredShapeIdAtom', () => {
 
   it('suppresses when the hovered shape is selected', () => {
     const store = makeStore()
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     store.set(commitSelectionAtom, { ids: ['r1'], doc })
     store.set(hoveredShapeIdAtom, 'r1')
     expect(store.get(effectiveHoveredShapeIdAtom)).toBeNull()
@@ -141,7 +141,7 @@ describe('effectiveHoveredShapeIdAtom', () => {
 
   it('shows highlight for non-selected shape during multi-selection', () => {
     const store = makeStore()
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     store.set(commitSelectionAtom, { ids: ['r1'], doc })
     store.set(hoveredShapeIdAtom, 'r3')
     expect(store.get(effectiveHoveredShapeIdAtom)).toBe('r3')

@@ -1,12 +1,12 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { redoCommand, undoCommand } from './historyCommands'
 import {
@@ -15,15 +15,15 @@ import {
   toggleSelectionCommand,
 } from './selectionCommands'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'a', name: 'A', width: 5, height: 5 }),
   makeRect({ id: 'b', name: 'B', x: 5, y: 5, width: 5, height: 5 }),
   makeRect({ id: 'c', name: 'C', x: 10, y: 10, width: 5, height: 5 }),
 ])
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -65,11 +65,11 @@ describe('selectShapesCommand', () => {
 
   it('does not change the document', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(selectShapesCommand, ['a'])
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].before).toBe(undo[0].after)

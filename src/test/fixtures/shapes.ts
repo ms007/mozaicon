@@ -1,5 +1,5 @@
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import type { Document, RectShape, Shape } from '@/types/shapes'
+import type { Icon, Project, RectShape, Shape } from '@/types/shapes'
 
 const baseRect: RectShape = {
   id: 'r1',
@@ -18,12 +18,23 @@ export function makeRect(overrides: Partial<RectShape> = {}): RectShape {
   return { ...baseRect, ...overrides }
 }
 
-export function makeDoc(shapes: Shape[] = [], overrides: Partial<Document> = {}): Document {
+export function makeIcon(shapes: Shape[] = [], overrides: Partial<Icon> = {}): Icon {
   return {
-    id: 'doc-test',
+    id: 'icon-test',
     name: 'Test',
     viewBox: [0, 0, 24, 24],
     shapes,
+    ...overrides,
+  }
+}
+
+export function makeProject(icons?: Icon[], overrides?: Partial<Project>): Project {
+  const defaultIcon = makeIcon()
+  return {
+    id: 'proj-test',
+    icons: icons ?? [defaultIcon],
+    activeIconId: icons?.[0]?.id ?? defaultIcon.id,
+    nextIconNumber: 1,
     ...overrides,
   }
 }

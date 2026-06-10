@@ -4,16 +4,16 @@ How the export feature works end to end: pipeline, formats, naming, and the stic
 
 ## Pipeline
 
-Every export flows through the same two-stage pipeline:
+Export always acts on the **active icon** (`activeIconAtom`). Every export flows through the same two-stage pipeline:
 
 ```
-documentAtom → serialize (serializeDocument) → optimize (SVGO) → optimized SVG
-                                                                  ├→ .svg download
-                                                                  ├→ codegen → .tsx download
-                                                                  └→ rasterize → .png download
+activeIconAtom → serialize (serializeIcon) → optimize (SVGO) → optimized SVG
+                                                               ├→ .svg download
+                                                               ├→ codegen → .tsx download
+                                                               └→ rasterize → .png download
 ```
 
-1. **Serialize** (`src/features/export/serialize.ts`) — prints the document's **element tree** (see below) as a raw SVG string with the document's `viewBox`. This is a pure function of the document model — no React, no atoms.
+1. **Serialize** (`src/features/export/serialize.ts`) — prints the icon's **element tree** (see below) as a raw SVG string with the icon's `viewBox`. This is a pure function of the icon model — no React, no atoms.
 2. **Optimize** (`src/features/export/optimize.ts`) — passes the raw SVG through SVGO's `preset-default` for minification (collapsing groups, merging paths, stripping editor noise). The `convertShapeToPath` plugin is disabled: a plain `<rect>` must stay a `<rect>` so the SVG output structurally matches the TSX export and the canvas element tree.
 
 For PNG, the optimized SVG feeds into the **rasterizer** (`src/features/export/rasterize.ts`), which loads the SVG into an `Image`, draws it onto an off-screen `<canvas>` at the requested scale, and extracts a PNG `Blob` via `canvas.toBlob`.
@@ -22,7 +22,7 @@ For TSX, the **codegen** module (`src/features/export/codegen.ts`) parses the **
 
 ## Element Tree
 
-`documentElements` (`src/lib/svg/shapeElement.ts`) is the single document-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which applies the fill default and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`). The JSX printer in `codegen.ts` sits **after** SVGO and converts them back (`stroke-width` → `strokeWidth`).
+`iconElements` (`src/lib/svg/shapeElement.ts`) is the single icon-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which applies the fill default and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`). The JSX printer in `codegen.ts` sits **after** SVGO and converts them back (`stroke-width` → `strokeWidth`).
 
 `serialize.ts` and `codegen.ts` are format printers only — adding a shape type touches the element tree once, never the printers.
 
@@ -42,7 +42,7 @@ If a future feature adds a visual effect to the canvas (shadow, guides, snap ind
 
 ## File-Naming Rules
 
-All filenames derive from `documentAtom.name` via the naming module (`src/lib/naming.ts`).
+All filenames derive from the **active icon's `name`** (`activeIconAtom`) via the naming module (`src/lib/naming.ts`). The name is editable inline in the Icons panel (double-click a row), so naming the file is naming the icon.
 
 | Format | Naming function         | Example (name = "Arrow Left") | Filename            |
 | ------ | ----------------------- | ----------------------------- | ------------------- |
@@ -65,9 +65,9 @@ The **Sticky Export Target** (`exportTargetAtom` in `src/store/atoms/export.ts`)
 1. **Visual feedback** — the sticky target's button renders with the `primary` variant so the user can see at a glance which format they last used.
 2. **Keyboard shortcut** — Mod+Shift+E re-triggers the sticky target without clicking, enabling rapid re-export during iteration.
 
-The target defaults to `svg` and is session-local (not persisted across reloads). All five export buttons participate: `svg`, `tsx`, `png1x`, `png2x`, `png4x`. Clicking any button updates the sticky target and immediately downloads the file.
+The target defaults to `svg` and is session-local (not persisted across reloads). It is **project-global, not per-icon**: switching the active icon does not reset it, so exporting a batch of icons in one format stays one keystroke per icon. All five export buttons participate: `svg`, `tsx`, `png1x`, `png2x`, `png4x`. Clicking any button updates the sticky target and immediately downloads the file.
 
-Export is disabled (all buttons greyed out) when the document has no visible shapes (`allExportDisabledAtom`). The shortcut no-ops in this state.
+Export is disabled (all buttons greyed out) when the active icon has no visible shapes (`allExportDisabledAtom`). The shortcut no-ops in this state.
 
 ## Key Files
 
@@ -75,7 +75,7 @@ Export is disabled (all buttons greyed out) when the document has no visible sha
 | --------------------------------------- | ----------------------------------------------- |
 | `src/features/export/ExportSection.tsx` | UI: five export buttons, sticky target styling  |
 | `src/features/export/performExport.ts`  | Shared dispatch: target → pipeline → download   |
-| `src/lib/svg/shapeElement.ts`           | Element tree: document → `ShapeElement[]`       |
+| `src/lib/svg/shapeElement.ts`           | Element tree: icon → `ShapeElement[]`           |
 | `src/features/export/serialize.ts`      | XML printer: element tree → raw SVG string      |
 | `src/features/export/optimize.ts`       | Stage 2: raw SVG → SVGO-optimized SVG           |
 | `src/features/export/pipeline.ts`       | `exportSvg` (serialize + optimize), `exportTsx` |

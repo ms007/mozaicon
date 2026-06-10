@@ -2,8 +2,8 @@ import { createStore } from 'jotai'
 import { vi } from 'vitest'
 
 import type { Vec2 } from '@/lib/geometry/vec2'
-import { documentAtom } from '@/store/atoms/document'
-import type { Document } from '@/types/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import type { Icon } from '@/types/shapes'
 
 import type { DragToolConfig } from './createDragTool'
 import type { Modifiers, ToolCtx, ToolEvent } from './registry'
@@ -12,7 +12,7 @@ export type BoxGeometry = { x: number; y: number; w: number; h: number }
 
 export const NO_MODIFIERS: Modifiers = { shift: false, alt: false, meta: false, ctrl: false }
 
-export const emptyDoc: Document = {
+export const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -50,7 +50,7 @@ export const baseBoxConfig: Omit<DragToolConfig<BoxGeometry>, 'toolId'> = {
 
 export function makeCtx(): ToolCtx & { completeTool: ReturnType<typeof vi.fn> } {
   const store = createStore()
-  store.set(documentAtom, emptyDoc)
+  store.set(activeIconAtom, emptyDoc)
   const completeTool = vi.fn()
   return { store, completeTool }
 }

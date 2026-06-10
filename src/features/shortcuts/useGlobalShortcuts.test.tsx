@@ -4,12 +4,12 @@ import { type PropsWithChildren } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { createCanvasBindings } from '../canvas/bindings'
 import { createHistoryBindings } from '../history/bindings'
@@ -18,7 +18,7 @@ import type { ShortcutBinding } from './registry'
 import { buildBindings } from './registry'
 import { useGlobalShortcuts } from './useGlobalShortcuts'
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -40,9 +40,9 @@ function makeRect(id: string): RectShape {
   }
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -61,7 +61,7 @@ function fireKey(key: string, opts: Partial<KeyboardEventInit> & { target?: Even
   return event
 }
 
-function setup(opts?: { bindings?: ShortcutBinding[]; doc?: Document }) {
+function setup(opts?: { bindings?: ShortcutBinding[]; doc?: Icon }) {
   const store = makeStore(opts?.doc)
   const resolved =
     opts?.bindings ??
@@ -92,7 +92,7 @@ describe('useGlobalShortcuts', () => {
     fireKey('r')
 
     expect(store.get(activeToolAtom)).toBe('rect')
-    expect(store.get(documentAtom).shapes).toHaveLength(0)
+    expect(store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 
   it('pressing R with Ctrl does not dispatch (browser reload)', () => {
@@ -340,7 +340,7 @@ describe('useGlobalShortcuts', () => {
 
       fireKey('Delete')
 
-      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(activeIconAtom).shapes).toHaveLength(0)
       expect(store.get(selectedIdsAtom)).toEqual([])
     })
 
@@ -351,7 +351,7 @@ describe('useGlobalShortcuts', () => {
 
       fireKey('Backspace')
 
-      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(activeIconAtom).shapes).toHaveLength(0)
       expect(store.get(selectedIdsAtom)).toEqual([])
     })
 
@@ -361,7 +361,7 @@ describe('useGlobalShortcuts', () => {
 
       fireKey('Delete')
 
-      expect(store.get(documentAtom).shapes).toHaveLength(1)
+      expect(store.get(activeIconAtom).shapes).toHaveLength(1)
       expect(store.get(undoStackAtom)).toHaveLength(0)
     })
 
@@ -371,11 +371,11 @@ describe('useGlobalShortcuts', () => {
       store.set(restoreSelectionAtom, ['a'])
 
       fireKey('Delete')
-      expect(store.get(documentAtom).shapes).toHaveLength(0)
+      expect(store.get(activeIconAtom).shapes).toHaveLength(0)
 
       fireKey('z', { ctrlKey: true })
 
-      expect(store.get(documentAtom).shapes).toHaveLength(1)
+      expect(store.get(activeIconAtom).shapes).toHaveLength(1)
       expect(store.get(selectedIdsAtom)).toEqual(['a'])
     })
 
@@ -388,7 +388,7 @@ describe('useGlobalShortcuts', () => {
       document.body.appendChild(input)
       try {
         fireKey('Backspace', { target: input })
-        expect(store.get(documentAtom).shapes).toHaveLength(1)
+        expect(store.get(activeIconAtom).shapes).toHaveLength(1)
       } finally {
         input.remove()
       }
@@ -401,7 +401,7 @@ describe('useGlobalShortcuts', () => {
 
       fireKey('Delete')
 
-      const shapes = store.get(documentAtom).shapes
+      const shapes = store.get(activeIconAtom).shapes
       expect(shapes).toHaveLength(1)
       expect(shapes[0].id).toBe('b')
     })

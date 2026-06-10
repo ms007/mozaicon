@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
 import { downloadBlob, downloadSvg, downloadTsx } from './download'
 import { performExport } from './performExport'
@@ -16,7 +16,7 @@ vi.mock('./rasterize', () => ({
   rasterize: vi.fn().mockResolvedValue(new Blob(['fake-png'], { type: 'image/png' })),
 }))
 
-const doc = makeDoc([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
+const doc = makeIcon([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
 
 describe('performExport', () => {
   beforeEach(() => {

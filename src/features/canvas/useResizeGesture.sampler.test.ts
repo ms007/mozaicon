@@ -1,16 +1,16 @@
 import { act } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderHookWithStore } from '@/test/renderWithStore'
 import { seedSelection } from '@/test/seedSelection'
 
 import { useResizeGesture } from './useResizeGesture'
 
 const rect = makeRect({ id: 's1', x: 0, y: 0, width: 100, height: 50 })
-const testDoc = makeDoc([rect])
+const testDoc = makeIcon([rect])
 
 function makeSvgRef(ctm: DOMMatrix | null = new DOMMatrix([1, 0, 0, 1, 0, 0])) {
   const svg = { getScreenCTM: () => ctm } as unknown as SVGSVGElement
@@ -50,7 +50,7 @@ describe('useResizeGesture (sampler integration)', () => {
     const { result, store } = renderHookWithStore(
       () => useResizeGesture(svgRef),
       (s) => {
-        s.set(documentAtom, testDoc)
+        s.set(activeIconAtom, testDoc)
         seedSelection(s, ['s1'])
       },
     )
@@ -126,7 +126,7 @@ describe('useResizeGesture (sampler integration)', () => {
 
     expect(store.get(resizeDraftAtom)).toBeNull()
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     const updated = shapes.find((s) => s.id === 's1')
     expect(updated).toMatchObject({ x: 0, y: 0, width: 150, height: 75 })
 

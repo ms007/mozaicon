@@ -2,9 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
-import { documentAtom } from './document'
+import { activeIconAtom } from './project'
 import {
   commitSelectionAtom,
   restoreSelectionAtom,
@@ -12,7 +12,7 @@ import {
   selectionEqual,
 } from './selection'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -59,9 +59,9 @@ const testDoc: Document = {
   ],
 }
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 

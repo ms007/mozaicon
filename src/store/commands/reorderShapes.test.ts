@@ -2,12 +2,12 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { undoCommand } from './historyCommands'
 import { moveShapeBlockCommand, reorderStepCommand } from './reorderShapes'
@@ -30,21 +30,21 @@ function makeInlineRect(id: string, overrides: Partial<RectShape> = {}): RectSha
   }
 }
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeReorderStore(doc: Document = emptyDoc) {
+function makeReorderStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
 function shapeIds(store: ReturnType<typeof createStore>): string[] {
-  return store.get(documentAtom).shapes.map((s) => s.id)
+  return store.get(activeIconAtom).shapes.map((s) => s.id)
 }
 
 /* ── reorderStepCommand tests (issue #180) ── */
@@ -86,8 +86,8 @@ describe('reorderStepCommand', () => {
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Reorder shapes')
-    expect(undo[0].before.shapes.map((s) => s.id)).toEqual(['a', 'b'])
-    expect(undo[0].after.shapes.map((s) => s.id)).toEqual(['b', 'a'])
+    expect(undo[0].before.icons[0].shapes.map((s) => s.id)).toEqual(['a', 'b'])
+    expect(undo[0].after.icons[0].shapes.map((s) => s.id)).toEqual(['b', 'a'])
   })
 
   it('re-normalizes selection to the new z-order', () => {
@@ -167,12 +167,12 @@ const d = makeRect({ id: 'd', name: 'D' })
 const aLocked = makeRect({ id: 'a', name: 'A', locked: true })
 
 function ids(store: ReturnType<typeof createStore>): string[] {
-  return store.get(documentAtom).shapes.map((s) => s.id)
+  return store.get(activeIconAtom).shapes.map((s) => s.id)
 }
 
 function setup(shapes = [a, b, c, d]) {
   const store = createStore()
-  store.set(documentAtom, makeDoc(shapes))
+  store.set(activeIconAtom, makeIcon(shapes))
   return store
 }
 

@@ -1,7 +1,7 @@
 import { toKebabSlug, toPascalComponentName } from '@/lib/naming'
 import { assertNever } from '@/lib/util/assertNever'
 import type { ExportTarget } from '@/store/atoms/export'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { downloadBlob, downloadSvg, downloadTsx } from './download'
 import { exportSvg, exportTsx } from './pipeline'
@@ -14,7 +14,7 @@ function pngFilename(slug: string, scale: number): string {
   return `${slug}@${String(scale)}x.png`
 }
 
-export async function performExport(doc: Document, target: ExportTarget): Promise<void> {
+export async function performExport(doc: Icon, target: ExportTarget): Promise<void> {
   try {
     switch (target) {
       case 'svg': {

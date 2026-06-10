@@ -90,18 +90,14 @@ Test store logic in isolation using Jotai's `createStore`.
 ```ts
 import { createStore } from 'jotai'
 import { describe, it, expect } from 'vitest'
-import { documentAtom } from '../atoms/document'
+import { activeIconAtom, projectAtom } from '../atoms/project'
 import { undoStackAtom } from '../atoms/history'
+import { makeIcon, makeProject } from '@/test/fixtures/shapes'
 import { moveShapeCommand } from './moveShape'
 
 function makeStore(shapes: Shape[] = []) {
   const store = createStore()
-  store.set(documentAtom, {
-    id: 'test',
-    name: '',
-    viewBox: [0, 0, 100, 100],
-    shapes,
-  })
+  store.set(projectAtom, makeProject([makeIcon(shapes)]))
   return store
 }
 
@@ -123,8 +119,8 @@ describe('moveShapeCommand', () => {
 
     store.set(moveShapeCommand, { id: 'r1', dx: 5, dy: 7 })
 
-    const doc = store.get(documentAtom)
-    expect(doc.shapes[0]).toMatchObject({ x: 15, y: 17 })
+    const icon = store.get(activeIconAtom)
+    expect(icon.shapes[0]).toMatchObject({ x: 15, y: 17 })
   })
 
   it('pushes to undo stack', () => {
@@ -151,17 +147,17 @@ it('round-trips through undo/redo', () => {
   const store = makeStore([
     /* initial state */
   ])
-  const before = store.get(documentAtom)
+  const before = store.get(projectAtom)
 
   store.set(moveShapeCommand, { id: 'r1', dx: 10, dy: 10 })
-  const after = store.get(documentAtom)
+  const after = store.get(projectAtom)
   expect(after).not.toEqual(before)
 
   store.set(undoCommand)
-  expect(store.get(documentAtom)).toEqual(before)
+  expect(store.get(projectAtom)).toEqual(before)
 
   store.set(redoCommand)
-  expect(store.get(documentAtom)).toEqual(after)
+  expect(store.get(projectAtom)).toEqual(after)
 })
 ```
 
@@ -205,16 +201,14 @@ import { renderWithStore } from '@/test/renderWithStore'
 
 it('updates fill color on input', async () => {
   const { store } = renderWithStore(<PropertiesPanel />, (s) => {
-    s.set(documentAtom, {
-      /* doc with one shape */
-    })
+    s.set(projectAtom, makeProject([makeIcon([makeRect()])]))
     s.set(selectShapesCommand, ['r1'])
   })
 
   const fillInput = screen.getByLabelText('Fill')
   fireEvent.change(fillInput, { target: { value: '#ff0000' } })
 
-  expect(store.get(documentAtom).shapes[0].fill).toBe('#ff0000')
+  expect(store.get(activeIconAtom).shapes[0].fill).toBe('#ff0000')
 })
 ```
 
@@ -240,16 +234,16 @@ SVG export is where snapshot testing shines — the output is deterministic and 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
-import { serializeDocument } from './serialize'
+import { serializeIcon } from './serialize'
 
 function loadFixture(name: string) {
   return readFileSync(resolve(__dirname, '__fixtures__', name), 'utf-8').trim()
 }
 
-describe('serializeDocument', () => {
+describe('serializeIcon', () => {
   it('serializes a single rect', () => {
-    const doc: Document = {
-      id: 'd',
+    const icon: Icon = {
+      id: 'i',
       name: 't',
       viewBox: [0, 0, 24, 24],
       shapes: [
@@ -267,7 +261,7 @@ describe('serializeDocument', () => {
         },
       ],
     }
-    expect(serializeDocument(doc)).toBe(loadFixture('single-rect.svg'))
+    expect(serializeIcon(icon)).toBe(loadFixture('single-rect.svg'))
   })
 })
 ```
@@ -275,10 +269,10 @@ describe('serializeDocument', () => {
 ### What to Cover in Export Tests
 
 - Each shape type in isolation
-- Combined document with multiple shape types
+- Combined icon with multiple shape types
 - Style serialization (fill, stroke, dash arrays)
 - Transform handling
-- Empty document
+- Empty icon
 - Very small numbers (precision)
 - SVGO-optimized vs unoptimized output
 
@@ -351,7 +345,7 @@ When validating SVG output, parse it — string comparison is fragile:
 import { parseSvg } from '@/lib/svg/parse'
 
 it('produces valid SVG', () => {
-  const output = serializeDocument(doc)
+  const output = serializeIcon(icon)
   const parsed = parseSvg(output)
   expect(parsed.viewBox).toEqual([0, 0, 24, 24])
   expect(parsed.shapes).toHaveLength(3)
@@ -366,9 +360,9 @@ A strong invariant: **serialize → parse → serialize should be stable.**
 
 ```ts
 it('round-trips through serialize/parse', () => {
-  const once = serializeDocument(doc)
-  const parsed = parseDocument(once)
-  const twice = serializeDocument(parsed)
+  const once = serializeIcon(icon)
+  const parsed = parseIcon(once)
+  const twice = serializeIcon(parsed)
   expect(twice).toBe(once)
 })
 ```

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
 import { normalizeSelection } from './selection'
 
-const doc = makeDoc([
+const doc = makeIcon([
   makeRect({ id: 'a', name: 'A', width: 5, height: 5 }),
   makeRect({ id: 'b', name: 'B', x: 5, y: 5, width: 5, height: 5 }),
   makeRect({ id: 'c', name: 'C', x: 10, y: 10, width: 5, height: 5 }),
@@ -40,6 +40,6 @@ describe('normalizeSelection', () => {
   })
 
   it('handles document with no shapes', () => {
-    expect(normalizeSelection(['a'], makeDoc())).toEqual([])
+    expect(normalizeSelection(['a'], makeIcon())).toEqual([])
   })
 })

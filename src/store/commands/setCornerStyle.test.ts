@@ -2,10 +2,10 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom, projectAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { setCornerStyleCommand } from './setCornerStyle'
 
@@ -22,16 +22,16 @@ const baseRect: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const docWithRect: Document = {
+const docWithRect: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [baseRect],
 }
 
-function makeStore(doc: Document = docWithRect, selectedIds: string[] = ['r1']) {
+function makeStore(doc: Icon = docWithRect, selectedIds: string[] = ['r1']) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   if (selectedIds.length > 0) {
     store.set(commitSelectionAtom, { ids: selectedIds, doc })
   }
@@ -44,7 +44,7 @@ describe('setCornerStyleCommand', () => {
 
     store.set(setCornerStyleCommand, 'smooth')
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.style).toBe('smooth')
 
     const undo = store.get(undoStackAtom)
@@ -61,7 +61,7 @@ describe('setCornerStyleCommand', () => {
   })
 
   it('applies to multiple selected rects', () => {
-    const twoRectDoc: Document = {
+    const twoRectDoc: Icon = {
       ...docWithRect,
       shapes: [baseRect, { ...baseRect, id: 'r2' }],
     }
@@ -69,7 +69,7 @@ describe('setCornerStyleCommand', () => {
 
     store.set(setCornerStyleCommand, 'smooth')
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes[0].corners.style).toBe('smooth')
     expect(shapes[1].corners.style).toBe('smooth')
   })
@@ -90,7 +90,7 @@ describe('setCornerStyleCommand', () => {
 
     store.set(setCornerStyleCommand, 'rounded')
 
-    expect(store.get(documentAtom).shapes[0].corners.style).toBe('rounded')
+    expect(store.get(activeIconAtom).shapes[0].corners.style).toBe('rounded')
     expect(store.get(undoStackAtom)).toHaveLength(1)
   })
 
@@ -107,7 +107,7 @@ describe('setCornerStyleCommand', () => {
 
     store.set(setCornerStyleCommand, 'smooth')
 
-    const { corners } = store.get(documentAtom).shapes[0]
+    const { corners } = store.get(activeIconAtom).shapes[0]
     expect(corners.radii).toEqual([1, 2, 3, 4])
     expect(corners.smoothing).toBe(42)
     expect(corners.style).toBe('smooth')
@@ -115,10 +115,10 @@ describe('setCornerStyleCommand', () => {
 
   it('undo restores the previous style', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(projectAtom)
 
     store.set(setCornerStyleCommand, 'smooth')
-    expect(store.get(documentAtom).shapes[0].corners.style).toBe('smooth')
+    expect(store.get(activeIconAtom).shapes[0].corners.style).toBe('smooth')
 
     const entry = store.get(undoStackAtom)[0]
     expect(entry.before).toBe(before)

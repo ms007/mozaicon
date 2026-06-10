@@ -41,7 +41,8 @@ pnpm build-storybook  # Build static Storybook
 
 ## Key Concepts
 
-- **Document:** The top-level SVG being edited. One per tab.
+- **Project:** The top-level container holding many icons. One in-memory project per session (`projectAtom`).
+- **Icon:** One designable SVG — name, viewBox, shapes. Formerly "Document" (term retired). The **active icon** is what the canvas edits, accessed via the `activeIconAtom` lens.
 - **Shape:** A single element (rect, circle, path, group). Each has a stable `id`.
 - **Selection:** Array of shape IDs. Multi-select is first-class.
 - **Command:** Every mutation goes through a command (for undo/redo). See `src/store/commands/`.
@@ -52,7 +53,7 @@ pnpm build-storybook  # Build static Storybook
 src/
   features/         # Feature slices (canvas, toolbar, properties, layers, shortcuts, export, storage)
   store/            # Jotai state
-    atoms/          # Primitive + derived atoms (document, selection, tool, history, draft, …)
+    atoms/          # Primitive + derived atoms (project, selection, tool, history, draft, …)
     commands/       # Undoable mutations via createCommand
     hooks/          # Composed hooks (reserved)
   lib/              # Pure utilities, no React (svg/, geometry/, util/, ids, utils)
@@ -82,7 +83,7 @@ src/
 
 - **All mutations via commands.** Don't call `set` on primitive atoms from components — dispatch via command atoms in `store/commands/` (use `createCommand`).
 - **Small atoms, derived views.** Prefer many focused atoms + `atom((get) => …)` for computed state over one big atom.
-- **Selection is session-local but goes through commands.** Don't embed selection in shape data, and don't `set(selectedIdsAtom, …)` directly from features — dispatch `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`. Selection is a first-class undo step (PRD #119): every effective change pushes one history entry, document mutations that change selection push one combined entry. See `docs/architecture.md` → Selection / Command Pattern.
+- **Selection is session-local but goes through commands.** Don't embed selection in shape data, and don't `set(selectedIdsAtom, …)` directly from features — dispatch `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`. Selection is a first-class undo step (PRD #119): every effective change pushes one history entry, icon/project mutations that change selection push one combined entry. See `docs/architecture.md` → Selection / Command Pattern.
 
 Details (atomFamily, splitAtom, atomWithImmer, command internals) → `docs/architecture.md`.
 

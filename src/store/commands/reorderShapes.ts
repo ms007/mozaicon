@@ -13,7 +13,7 @@ export const reorderStepCommand = createCommand<{ ids: string[]; direction: Reor
     const nextDoc = { ...doc, shapes }
     const selection = normalizeSelection(ids, nextDoc)
 
-    return { document: nextDoc, selection }
+    return { icon: nextDoc, selection }
   },
 )
 
@@ -26,7 +26,7 @@ export const moveShapeBlockCommand = createCommand<{
 
   const nextDoc = { ...doc, shapes: result.shapes }
   return {
-    document: nextDoc,
+    icon: nextDoc,
     selection: normalizeSelection(selection, nextDoc),
   }
 })

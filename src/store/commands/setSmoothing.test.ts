@@ -2,10 +2,10 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom, projectAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Corners, Document, RectShape } from '@/types/shapes'
+import type { Corners, Icon, RectShape } from '@/types/shapes'
 
 import { setSmoothingCommand } from './setSmoothing'
 
@@ -22,7 +22,7 @@ const baseRect: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const docWithRect: Document = {
+const docWithRect: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -33,9 +33,9 @@ function withSmoothing(smoothing: number): Corners {
   return { ...DEFAULT_CORNERS, smoothing }
 }
 
-function makeStore(doc: Document = docWithRect, selectedIds: string[] = ['r1']) {
+function makeStore(doc: Icon = docWithRect, selectedIds: string[] = ['r1']) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   if (selectedIds.length > 0) {
     store.set(commitSelectionAtom, { ids: selectedIds, doc })
   }
@@ -48,7 +48,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, 60)
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.smoothing).toBe(60)
 
     const undo = store.get(undoStackAtom)
@@ -72,7 +72,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, 150)
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.smoothing).toBe(100)
   })
 
@@ -84,12 +84,12 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, -10)
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.smoothing).toBe(0)
   })
 
   it('applies to multiple selected rects', () => {
-    const twoRectDoc: Document = {
+    const twoRectDoc: Icon = {
       ...docWithRect,
       shapes: [baseRect, { ...baseRect, id: 'r2' }],
     }
@@ -97,7 +97,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, 75)
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes[0].corners.smoothing).toBe(75)
     expect(shapes[1].corners.smoothing).toBe(75)
   })
@@ -118,7 +118,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, NaN)
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.smoothing).toBe(0)
   })
 
@@ -127,7 +127,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, Infinity)
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape.corners.smoothing).toBe(0)
   })
 
@@ -152,7 +152,7 @@ describe('setSmoothingCommand', () => {
 
     store.set(setSmoothingCommand, 80)
 
-    const { corners } = store.get(documentAtom).shapes[0]
+    const { corners } = store.get(activeIconAtom).shapes[0]
     expect(corners.radii).toEqual([1, 2, 3, 4])
     expect(corners.style).toBe('smooth')
     expect(corners.smoothing).toBe(80)
@@ -160,10 +160,10 @@ describe('setSmoothingCommand', () => {
 
   it('undo restores the previous smoothing', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(projectAtom)
 
     store.set(setSmoothingCommand, 80)
-    expect(store.get(documentAtom).shapes[0].corners.smoothing).toBe(80)
+    expect(store.get(activeIconAtom).shapes[0].corners.smoothing).toBe(80)
 
     const entry = store.get(undoStackAtom)[0]
     expect(entry.before).toBe(before)

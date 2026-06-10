@@ -3,18 +3,18 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { cornerRadiusStepDraftAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { propertyStepDraftAtom } from '@/store/atoms/gestures/propertyStep'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { undoCommand } from '@/store/commands/historyCommands'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { PropertiesPanel } from './PropertiesPanel'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -58,9 +58,9 @@ const testDoc: Document = {
   ],
 }
 
-function renderPanel(doc: Document = testDoc, selectedIds: string[] = []) {
+function renderPanel(doc: Icon = testDoc, selectedIds: string[] = []) {
   return renderWithStore(<PropertiesPanel />, (store) => {
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
     if (selectedIds.length > 0) {
       store.set(selectShapesCommand, selectedIds)
     }
@@ -113,7 +113,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('displays zero values as "0" not empty', () => {
-      const zeroDoc: Document = {
+      const zeroDoc: Icon = {
         id: 'doc-zero',
         name: 'Zero',
         viewBox: [0, 0, 24, 24],
@@ -140,7 +140,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('shows values faithfully without rounding', () => {
-      const preciseDoc: Document = {
+      const preciseDoc: Icon = {
         id: 'doc-precise',
         name: 'Precise',
         viewBox: [0, 0, 24, 24],
@@ -211,7 +211,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('X'), '100')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ x: 100 })
     })
 
@@ -222,18 +222,18 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Y'), '50')
       await userEvent.tab()
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ y: 50 })
     })
 
     it('does not alter the shape while typing (before commit)', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
 
       await userEvent.clear(field('X'))
       await userEvent.type(field('X'), '99')
 
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('unifies a mixed field across all selected shapes on commit', async () => {
@@ -242,7 +242,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Y'), '20')
       await userEvent.keyboard('{Enter}')
 
-      const shapes = store.get(documentAtom).shapes
+      const shapes = store.get(activeIconAtom).shapes
       expect(shapes[0]).toMatchObject({ id: 'r1', y: 20 })
       expect(shapes[1]).toMatchObject({ id: 'r2', y: 20 })
     })
@@ -254,7 +254,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('X'), '15')
       await userEvent.keyboard('{Enter}')
 
-      const shapes = store.get(documentAtom).shapes
+      const shapes = store.get(activeIconAtom).shapes
       expect(shapes[0]).toMatchObject({ id: 'r1', x: 15 })
       expect(shapes[1]).toMatchObject({ id: 'r2', x: 15 })
     })
@@ -266,7 +266,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('W'), '-5')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ width: 0 })
       expect(field('W')).toHaveValue('0')
     })
@@ -278,7 +278,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('H'), '-10')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ height: 0 })
     })
 
@@ -289,7 +289,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('X'), '-3')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ x: -3 })
     })
 
@@ -300,7 +300,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Y'), '-7')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape).toMatchObject({ y: -7 })
     })
 
@@ -317,25 +317,25 @@ describe('PropertiesPanel', () => {
 
     it('reverts on Escape without committing', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
 
       await userEvent.clear(field('X'))
       await userEvent.type(field('X'), '999')
       await userEvent.keyboard('{Escape}')
 
       expect(field('X')).toHaveValue('2')
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('reverts on empty input commit (cleared field)', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
 
       await userEvent.clear(field('X'))
       await userEvent.keyboard('{Enter}')
 
       expect(field('X')).toHaveValue('2')
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('does not double-commit when Enter is followed by blur', async () => {
@@ -348,19 +348,19 @@ describe('PropertiesPanel', () => {
       await userEvent.tab()
 
       expect(store.get(undoStackAtom)).toHaveLength(stackBefore + 1)
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 50 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 50 })
     })
 
     it('reverts to value on invalid input commit', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
 
       await userEvent.clear(field('X'))
       await userEvent.type(field('X'), 'abc')
       await userEvent.keyboard('{Enter}')
 
       expect(field('X')).toHaveValue('2')
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('is undoable via the undo command', async () => {
@@ -370,14 +370,14 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('X'), '50')
       await userEvent.keyboard('{Enter}')
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 50 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 50 })
       expect(store.get(canUndoAtom)).toBe(true)
 
       act(() => {
         store.set(undoCommand)
       })
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 2 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 2 })
     })
   })
 
@@ -409,14 +409,14 @@ describe('PropertiesPanel', () => {
 
     it('does not change the document during stepping', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
       await userEvent.click(field('X'))
 
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.keyboard('{ArrowUp}')
 
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('commits on Enter after stepping — single undo entry', async () => {
@@ -429,7 +429,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.keyboard('{Enter}')
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 5 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 5 })
       expect(store.get(undoStackAtom)).toHaveLength(stackBefore + 1)
     })
 
@@ -442,7 +442,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.tab()
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 4 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 4 })
       expect(store.get(undoStackAtom)).toHaveLength(stackBefore + 1)
     })
 
@@ -458,7 +458,7 @@ describe('PropertiesPanel', () => {
 
     it('reverts on Escape and clears preview', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
       await userEvent.click(field('X'))
 
       await userEvent.keyboard('{ArrowUp}')
@@ -466,7 +466,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Escape}')
 
       expect(field('X')).toHaveValue('2')
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
       expect(store.get(propertyStepDraftAtom)).toBeNull()
     })
 
@@ -488,14 +488,14 @@ describe('PropertiesPanel', () => {
 
     it('is a no-op on a mixed field', async () => {
       const { store } = renderPanel(testDoc, ['r1', 'r2'])
-      const before = store.get(documentAtom)
+      const before = store.get(activeIconAtom)
       await userEvent.click(field('Y'))
 
       await userEvent.keyboard('{ArrowUp}')
 
       expect(field('Y')).toHaveValue('')
       expect(field('Y')).toHaveAttribute('placeholder', 'Mixed')
-      expect(store.get(documentAtom)).toBe(before)
+      expect(store.get(activeIconAtom)).toBe(before)
       expect(store.get(propertyStepDraftAtom)).toBeNull()
     })
 
@@ -508,7 +508,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('clamps width to non-negative when stepping down', async () => {
-      const zeroDoc: Document = {
+      const zeroDoc: Icon = {
         id: 'doc-zero',
         name: 'Zero',
         viewBox: [0, 0, 24, 24],
@@ -545,13 +545,13 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.keyboard('{Enter}')
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 4 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 4 })
 
       act(() => {
         store.set(undoCommand)
       })
 
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ x: 2 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ x: 2 })
     })
 
     it('does not block undo/redo while stepping is active', async () => {
@@ -560,7 +560,7 @@ describe('PropertiesPanel', () => {
       await userEvent.clear(field('Y'))
       await userEvent.type(field('Y'), '20')
       await userEvent.keyboard('{Enter}')
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ y: 20 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ y: 20 })
 
       await userEvent.click(field('X'))
       await userEvent.keyboard('{ArrowUp}')
@@ -569,7 +569,7 @@ describe('PropertiesPanel', () => {
       act(() => {
         store.set(undoCommand)
       })
-      expect(store.get(documentAtom).shapes[0]).toMatchObject({ y: 3 })
+      expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ y: 3 })
     })
 
     it('applies stepping to all selected shapes (multi-selection)', async () => {
@@ -578,7 +578,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{ArrowUp}')
       await userEvent.keyboard('{Enter}')
 
-      const shapes = store.get(documentAtom).shapes
+      const shapes = store.get(activeIconAtom).shapes
       expect(shapes[0]).toMatchObject({ id: 'r1', x: 3 })
       expect(shapes[1]).toMatchObject({ id: 'r2', x: 3 })
     })
@@ -608,7 +608,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('shows the rx value for a rect with uniform radius', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [4, 4, 4, 4] } }],
       }
@@ -624,7 +624,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '3')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.radii).toEqual([3, 3, 3, 3])
       expect(store.get(undoStackAtom)).toHaveLength(stackBefore + 1)
     })
@@ -636,7 +636,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '3')
       await userEvent.keyboard('{Enter}')
 
-      const shapes = store.get(documentAtom).shapes
+      const shapes = store.get(activeIconAtom).shapes
       expect(shapes[0].id).toBe('r1')
       expect(shapes[0].corners.radii).toEqual([3, 3, 3, 3])
       expect(shapes[1].id).toBe('r2')
@@ -644,7 +644,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('shows "Mixed" when corners differ within a rect', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
@@ -654,7 +654,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('shows "Mixed" when selected rects have different radii', () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [
           { ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [2, 2, 2, 2] } },
@@ -668,7 +668,7 @@ describe('PropertiesPanel', () => {
     })
 
     it('typing into a Mixed uniform field sets all four corners', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
@@ -677,7 +677,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '4')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.radii).toEqual([4, 4, 4, 4])
     })
 
@@ -712,12 +712,12 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Top Left'), '3')
       await userEvent.keyboard('{Enter}')
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.radii).toEqual([3, 0, 0, 0])
     })
 
     it('per-corner fields show correct values for non-uniform radii', async () => {
-      const doc: Document = {
+      const doc: Icon = {
         ...testDoc,
         shapes: [{ ...testDoc.shapes[0], corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] } }],
       }
@@ -739,7 +739,7 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       expect(field('Corner Radius')).toHaveValue('0')
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.radii).toEqual([0, 0, 0, 0])
     })
 
@@ -751,19 +751,19 @@ describe('PropertiesPanel', () => {
       await userEvent.keyboard('{Enter}')
 
       expect(field('Corner Radius')).toHaveValue('4')
-      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
+      expect(store.get(activeIconAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
     })
 
     it('reverts on Escape without committing', async () => {
       const { store } = renderPanel(testDoc, ['r1'])
-      const before = store.get(documentAtom).shapes[0]
+      const before = store.get(activeIconAtom).shapes[0]
 
       await userEvent.clear(field('Corner Radius'))
       await userEvent.type(field('Corner Radius'), '99')
       await userEvent.keyboard('{Escape}')
 
       expect(field('Corner Radius')).toHaveValue('0')
-      expect(store.get(documentAtom).shapes[0]).toBe(before)
+      expect(store.get(activeIconAtom).shapes[0]).toBe(before)
     })
 
     it('commits on blur', async () => {
@@ -773,7 +773,7 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '4')
       await userEvent.tab()
 
-      const shape = store.get(documentAtom).shapes[0]
+      const shape = store.get(activeIconAtom).shapes[0]
       expect(shape.corners.radii).toEqual([4, 4, 4, 4])
     })
 
@@ -784,14 +784,14 @@ describe('PropertiesPanel', () => {
       await userEvent.type(field('Corner Radius'), '4')
       await userEvent.keyboard('{Enter}')
 
-      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
+      expect(store.get(activeIconAtom).shapes[0].corners.radii).toEqual([4, 4, 4, 4])
       expect(store.get(canUndoAtom)).toBe(true)
 
       act(() => {
         store.set(undoCommand)
       })
 
-      expect(store.get(documentAtom).shapes[0].corners.radii).toEqual([0, 0, 0, 0])
+      expect(store.get(activeIconAtom).shapes[0].corners.radii).toEqual([0, 0, 0, 0])
     })
 
     it('arrow-key steps the uniform radius with preview', async () => {

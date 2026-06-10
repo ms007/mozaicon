@@ -2,9 +2,9 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
-import type { Corners, CornerStyle, Document, RectShape } from '@/types/shapes'
+import type { Corners, CornerStyle, Icon, RectShape } from '@/types/shapes'
 
 import { selectionCornerStyleAtom, selectionSmoothingAtom } from './selection-corner-style'
 import { MIXED } from './selection-geometry'
@@ -26,16 +26,16 @@ const baseRect: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const baseDoc: Document = {
+const baseDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [baseRect],
 }
 
-function makeStore(doc: Document = baseDoc, selectedIds: string[] = ['r1']) {
+function makeStore(doc: Icon = baseDoc, selectedIds: string[] = ['r1']) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   if (selectedIds.length > 0) {
     store.set(commitSelectionAtom, { ids: selectedIds, doc })
   }
@@ -61,7 +61,7 @@ describe('selectionCornerStyleAtom', () => {
   })
 
   it('returns the shared style when all rects agree', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [rect('r1', 'smooth', 50), rect('r2', 'smooth', 80)],
     }
@@ -70,7 +70,7 @@ describe('selectionCornerStyleAtom', () => {
   })
 
   it('returns MIXED when styles differ across selected rects', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [rect('r1', 'rounded', 0), rect('r2', 'smooth', 60)],
     }
@@ -99,7 +99,7 @@ describe('selectionSmoothingAtom', () => {
   })
 
   it('returns the shared value when all rects agree', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [rect('r1', 'smooth', 40), rect('r2', 'smooth', 40)],
     }
@@ -108,7 +108,7 @@ describe('selectionSmoothingAtom', () => {
   })
 
   it('returns MIXED when smoothing differs across selected rects', () => {
-    const doc: Document = {
+    const doc: Icon = {
       ...baseDoc,
       shapes: [rect('r1', 'smooth', 20), rect('r2', 'smooth', 80)],
     }

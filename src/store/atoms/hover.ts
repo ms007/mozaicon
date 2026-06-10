@@ -1,7 +1,7 @@
 import { atom } from 'jotai'
 
-import { shapeAtom } from './document'
 import { isAnyGestureActiveAtom } from './gestures/registry'
+import { shapeAtom } from './project'
 import { selectedIdsAtom } from './selection'
 
 export const hoveredShapeIdAtom = atom<string | null>(null)

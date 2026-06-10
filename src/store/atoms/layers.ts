@@ -3,7 +3,7 @@ import { atomFamily } from 'jotai-family'
 
 import type { Shape } from '@/types/shapes'
 
-import { documentAtom, shapeAtom } from './document'
+import { activeIconAtom, shapeAtom } from './project'
 import { selectionEqual } from './selection'
 
 export interface LayerRecord {
@@ -15,7 +15,7 @@ export interface LayerRecord {
 }
 
 export const layerIdsAtom = selectAtom(
-  documentAtom,
+  activeIconAtom,
   (doc) => {
     const ids: string[] = []
     for (let i = doc.shapes.length - 1; i >= 0; i--) {

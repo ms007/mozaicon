@@ -69,48 +69,81 @@ export const RectShape = ShapeBase.extend({
 export const Shape = z.discriminatedUnion('type', [RectShape])
 export type Shape = z.infer<typeof Shape>
 
-export const Document = z.object({
+// One designable unit (formerly "Document" — term retired, see docs/glossary.md)
+export const Icon = z.object({
   id: z.string(),
   name: z.string(),
   viewBox: z.tuple([z.number(), z.number(), z.number(), z.number()]),
   shapes: z.array(Shape),
 })
-export type Document = z.infer<typeof Document>
+export type Icon = z.infer<typeof Icon>
+
+// The top-level container: many icons, one active
+export const Project = z.object({
+  id: z.string(),
+  icons: z.array(Icon),
+  activeIconId: z.string(),
+  // monotonic default-name counter — "highest ever assigned + 1", never reused
+  nextIconNumber: z.number().int().positive(),
+})
+export type Project = z.infer<typeof Project>
 ```
 
 ## Core Atoms
 
-### Document Atom (`src/store/atoms/document.ts`)
+### Project Atom & Active-Icon Lens (`src/store/atoms/project.ts`)
 
 ```ts
 import { atom } from 'jotai'
 import { atomWithImmer } from 'jotai-immer'
 import { splitAtom } from 'jotai/utils'
-import type { Document, Shape } from '@/types/shapes'
+import type { Icon, Project, Shape } from '@/types/shapes'
 
-// Root atom — the whole document. Only written by commands.
-export const documentAtom = atomWithImmer<Document>({
-  id: 'doc-1',
-  name: 'Untitled',
-  viewBox: [0, 0, 24, 24],
-  shapes: [],
+// Root atom — the whole project. The single Immer root; only written by commands.
+export const projectAtom = atomWithImmer<Project>({
+  id: 'proj-1',
+  icons: [{ id: 'icon-1', name: 'Untitled', viewBox: [0, 0, 24, 24], shapes: [] }],
+  activeIconId: 'icon-1',
+  nextIconNumber: 2,
 })
 
-// Derived: just the shapes array
-export const shapesAtom = atom((get) => get(documentAtom).shapes)
+// Read/write lens onto project.icons[activeIconId]. Shape commands and canvas
+// subscriptions operate on "the active icon" without knowing the Project exists.
+export const activeIconAtom = atom(
+  (get): Icon => {
+    const project = get(projectAtom)
+    const icon = project.icons.find((i) => i.id === project.activeIconId)
+    if (!icon) throw new Error(`activeIconId "${project.activeIconId}" not found`)
+    return icon
+  },
+  (_get, set, update: Icon | ((draft: Icon) => void)) => {
+    set(projectAtom, (draft) => {
+      const idx = draft.icons.findIndex((i) => i.id === draft.activeIconId)
+      if (typeof update === 'function') update(draft.icons[idx])
+      else draft.icons[idx] = update
+    })
+  },
+)
+
+// Derived: the active icon's shapes array
+export const shapesAtom = atom(
+  (get) => get(activeIconAtom).shapes,
+  (_get, set, shapes: Shape[]) => {
+    set(activeIconAtom, (draft) => {
+      draft.shapes = shapes
+    })
+  },
+)
 
 // Split atom: one atom per shape. Fine-grained subscriptions.
 // Use this in the canvas so editing one shape doesn't re-render others.
-export const shapeAtomsAtom = splitAtom(
-  atom(
-    (get) => get(documentAtom).shapes,
-    (get, set, shapes: Shape[]) => {
-      set(documentAtom, (draft) => {
-        draft.shapes = shapes
-      })
-    },
-  ),
+export const shapeAtomsAtom = splitAtom(shapesAtom)
+
+// Feeds the Icons panel: id + name per icon, nothing else.
+export const iconListAtom = atom((get) =>
+  get(projectAtom).icons.map((i) => ({ id: i.id, name: i.name })),
 )
+export const activeIconIdAtom = atom((get) => get(projectAtom).activeIconId)
 
 // Per-shape lookup. atomWithImmer keeps unchanged shapes referentially
 // stable, so .find() returns the same reference when other shapes mutate.
@@ -121,13 +154,15 @@ export const shapeAtom = atomFamily((id: string) =>
 )
 ```
 
+Switching the active icon swaps the entire editable canvas: every atom downstream of `activeIconAtom` (shapes, layers, bboxes, export) re-projects onto the new icon. The lens is the seam that kept the multi-icon change mechanical — ~60 call-sites renamed `documentAtom` → `activeIconAtom` without behavioral change.
+
 `atomFamily` comes from `jotai-family` (the `jotai/utils` export is deprecated and slated for removal in Jotai v3).
 
 ### Selection Atom (`src/store/atoms/selection.ts`)
 
 ```ts
 import { atom } from 'jotai'
-import { shapeAtom } from './document'
+import { shapeAtom } from './project'
 
 // Module-private — the only writable atom for selection state.
 const _selectedIdsAtom = atom<string[]>([])
@@ -150,7 +185,7 @@ export const hasSelectionAtom = atom((get) => get(selectedIdsAtom).length > 0)
 - `commitSelectionAtom` — normalises (dedup, z-order, stale-ID drop), compares to prior value, writes only on change. Used by `createCommand`.
 - `restoreSelectionAtom` — writes verbatim without normalisation. Used by undo/redo to restore a snapshot.
 
-`selectShapesCommand` (replace), `toggleSelectionCommand` (additive shift+click), and `clearSelectionCommand` (Escape / background click) each push one `HistoryEntry`. They enforce two invariants on every write: IDs are deduplicated, and the array is sorted by document z-order (position in `documentAtom.shapes`). The stale-id filter inside `selectedShapesAtom` stays as defense-in-depth — the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
+`selectShapesCommand` (replace), `toggleSelectionCommand` (additive shift+click), and `clearSelectionCommand` (Escape / background click) each push one `HistoryEntry`. They enforce two invariants on every write: IDs are deduplicated, and the array is sorted by z-order (position in the active icon's `shapes`). The stale-id filter inside `selectedShapesAtom` stays as defense-in-depth — the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
 If a future surface needs "which shape did the user click first" (e.g. an Align anchor), that's its own atom — don't smuggle the meaning into list position.
 
@@ -158,12 +193,12 @@ If a future surface needs "which shape did the user click first" (e.g. an Align 
 
 ```ts
 import { atom } from 'jotai'
-import type { Document } from '@/types/shapes'
+import type { Project } from '@/types/shapes'
 
 export type HistoryEntry = {
-  label: string // e.g. "Move shape", "Change fill"
-  before: Document
-  after: Document
+  label: string // e.g. "Move shape", "Switch icon"
+  before: Project
+  after: Project
   selectionBefore: string[]
   selectionAfter: string[]
 }
@@ -177,9 +212,11 @@ export const canUndoAtom = atom((get) => get(undoStackAtom).length > 0 && !get(i
 export const canRedoAtom = atom((get) => get(redoStackAtom).length > 0 && !get(isGestureActiveAtom))
 ```
 
+**History is Project-level.** `before`/`after` snapshot the whole `Project` — including `activeIconId` — so icon creation, switching, renaming, and deletion are ordinary entries on the same timeline as shape edits, and undo across an icon switch restores the prior icon as active together with its earlier selection. Immer structural sharing keeps unchanged icons referentially stable between snapshots, so widening the snapshot root from one icon to the project did not change per-entry memory cost in practice.
+
 ### Per-Shape Atoms (`atomFamily`)
 
-When a UI surface (e.g. a single shape's property editor) cares about one shape but nothing else, subscribing to `documentAtom` or `shapesAtom` re-renders on every unrelated change. `shapeAtom` (defined in `document.ts` above) gives you one stable atom per shape id — two editors looking at the same shape share a subscription.
+When a UI surface (e.g. a single shape's property editor) cares about one shape but nothing else, subscribing to `projectAtom` or `shapesAtom` re-renders on every unrelated change. `shapeAtom` (defined in `project.ts` above) gives you one stable atom per shape id — two editors looking at the same shape share a subscription.
 
 **Lifecycle.** `atomFamily` caches per key. When a shape is deleted, the entry stays in the cache until you evict it — call `shapeAtom.remove(id)` from the same command that removes the shape, otherwise the family leaks.
 
@@ -187,15 +224,15 @@ When a UI surface (e.g. a single shape's property editor) cares about one shape 
 
 `shapeAtom` powers `selectedShapesAtom`; reach for it directly when you need keyed lookup outside the canvas list (e.g. a property panel bound to a single shape). The canvas list itself uses `splitAtom` (`shapeAtomsAtom`).
 
-## State Categories: Document vs UI
+## State Categories: Project vs UI
 
 Atoms in the store fall into two categories with different mutation rules:
 
-**Document state** (`documentAtom`): the SVG being edited. Mutations must go through commands so they're undoable.
+**Project state** (`projectAtom`): the icons being edited, plus which one is active. Mutations must go through commands so they're undoable. Shape-level commands reach it through the `activeIconAtom` lens; icon-level commands (`src/store/commands/iconCommands.ts`) write the project directly.
 
 **UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
-**Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the document. Selection therefore lives on the _same_ history stack as the document. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the document, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the document axis untouched (`before === after`), a _Combined Command_ moves both atomically.
+**Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the project. Selection therefore lives on the _same_ history stack as the project. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the project, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the project axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
 Consumers of selection still filter stale ids against the per-shape atoms as defense-in-depth (`selectedShapesAtom` already does this), but the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
@@ -205,52 +242,60 @@ If any other UI atom ever wants in on undo/redo, the bar is high: justify it aga
 
 Commands are **write-only atoms**. They:
 
-1. Compute the new document state and/or the new selection
+1. Compute the new state (icon, project, and/or selection)
 2. Push a `HistoryEntry` onto the undo stack
 3. Clear the redo stack
 
-Three flavours fall out of one primitive: **document-only** commands (e.g. `moveShapeCommand`), **selection-only** commands (e.g. `clearSelectionCommand`), and **combined** commands (e.g. `addShapeCommand`, which creates a shape _and_ selects it as one atomic step).
+Three flavours fall out of the `createCommand` primitive: **icon-only** commands (e.g. `moveSelectionCommand`), **selection-only** commands (e.g. `clearSelectionCommand`), and **combined** commands (e.g. `addShapeCommand`, which creates a shape _and_ selects it as one atomic step). A fourth family — the **project-level icon commands** — lives outside `createCommand`; see _Icon Commands_ below.
 
 ### Command Template (`src/store/commands/createCommand.ts`)
 
 ```ts
 import { atom } from 'jotai'
-import { documentAtom } from '../atoms/document'
+import { activeIconAtom, projectAtom } from '../atoms/project'
 import { commitSelectionAtom, selectedIdsAtom } from '../atoms/selection'
 import { isGestureActiveAtom } from '../atoms/gesture'
 import { undoStackAtom, redoStackAtom } from '../atoms/history'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 export type CommandResult = {
-  document?: Document // omit to leave the document untouched
+  icon?: Icon // omit to leave the active icon untouched
   selection?: string[] // omit to leave the selection untouched
 }
 
 export function createCommand<Payload>(
   label: string,
-  apply: (doc: Document, payload: Payload, selection: string[]) => CommandResult,
+  apply: (icon: Icon, payload: Payload, selection: string[]) => CommandResult,
 ) {
   return atom(null, (get, set, payload: Payload) => {
     if (get(isGestureActiveAtom)) return // freeze: gesture in flight
 
-    const before = get(documentAtom)
+    const beforeProject = get(projectAtom)
+    const beforeIcon = get(activeIconAtom)
     const selectionBefore = get(selectedIdsAtom)
-    const result = apply(before, payload, selectionBefore)
+    const result = apply(beforeIcon, payload, selectionBefore)
 
-    const after = result.document ?? before
+    const afterIcon = result.icon ?? beforeIcon
     const { changed: selChanged, ids: selectionAfter } = result.selection
-      ? set(commitSelectionAtom, { ids: result.selection, doc: after })
+      ? set(commitSelectionAtom, { ids: result.selection, doc: afterIcon })
       : { changed: false, ids: selectionBefore }
 
-    const docChanged = after !== before
-    if (!docChanged && !selChanged) return // no-op on both axes
+    const iconChanged = afterIcon !== beforeIcon
+    if (!iconChanged && !selChanged) return // no-op on both axes
 
-    if (docChanged) set(documentAtom, after)
-    set(undoStackAtom, (s) => [...s, { label, before, after, selectionBefore, selectionAfter }])
+    if (iconChanged) set(activeIconAtom, afterIcon)
+
+    const afterProject = get(projectAtom)
+    set(undoStackAtom, (s) => [
+      ...s,
+      { label, before: beforeProject, after: afterProject, selectionBefore, selectionAfter },
+    ])
     set(redoStackAtom, [])
   })
 }
 ```
+
+Note the asymmetry: `apply` stays **icon-scoped** — shape commands never see the Project — but the history snapshot it pushes is **project-wide** (`beforeProject`/`afterProject`). That's the seam that let multi-icon support land without rewriting any shape command.
 
 Three things this primitive owns and no caller has to think about:
 
@@ -262,7 +307,7 @@ Three things this primitive owns and no caller has to think about:
 
 1. **Happy path** — dispatch with a valid payload, assert the axis (or axes) it claims to touch actually changed, assert one `HistoryEntry` with the right `label` was pushed, and assert the snapshot's `before`/`after` and `selectionBefore`/`selectionAfter` are consistent with what the command did.
 2. **No-op invariant** — pick the variant that fits the command:
-   - Document-only commands: if `apply()` can return `{ document: before }` for some payload (e.g. moving a missing id), dispatch that and assert the undo stack stays empty. If `apply()` structurally always changes the document (e.g. `addShape` appending with a fresh ULID), prove the invariant that makes that the case — e.g. two dispatches yield shapes with distinct ids.
+   - Icon-only commands: if `apply()` can return `{ icon: before }` for some payload (e.g. moving a missing id), dispatch that and assert the undo stack stays empty. If `apply()` structurally always changes the icon (e.g. `addShape` appending with a fresh ULID), prove the invariant that makes that the case — e.g. two dispatches yield shapes with distinct ids.
    - Selection-only commands: dispatch with the same selection that's already active (after normalisation) and assert the undo stack stays empty.
    - Combined commands: cover both — e.g. `addShape` always pushes (new id ⇒ document and selection both change); `deleteShape` of a missing id is a full no-op.
 
@@ -290,7 +335,7 @@ export const moveSelectionCommand = createCommand<{
 
   const changed = nextShapes.some((s, i) => s !== doc.shapes[i])
   if (!changed) return {}
-  return { document: { ...doc, shapes: nextShapes } }
+  return { icon: { ...doc, shapes: nextShapes } }
 })
 ```
 
@@ -314,18 +359,29 @@ function useCommitMove() {
 }
 ```
 
-### Undo / Redo (`src/store/commands/history.ts`)
+### Icon Commands (`src/store/commands/iconCommands.ts`)
+
+The project-level commands operate on the `Project` itself — outside the icon-scoped `createCommand` contract — so they are built on `createProjectCommand`, a sibling factory next to `createCommand` (same file) that owns the shared protocol once: gesture freeze, before/after project snapshot, selection via `commitSelectionAtom`, one `HistoryEntry`, clear redo. A command's `apply(project, payload)` returns `undefined` for a no-op, or `{ mutate, selectionDoc? }` — `mutate` receives the Immer draft of the project, and `selectionDoc` (when present) is the icon against which the empty selection is committed (`addIconCommand`: the new icon; `switchIconCommand`: the target; `deleteIconCommand`: the successor, only when the deleted icon was active; `renameIconCommand`: omitted, so the selection is untouched). `createCommand`'s apply stays icon-scoped — the two factories are siblings sharing the history-entry shape, not layers of one another.
+
+- **`addIconCommand`** — appends a new empty icon (viewBox inherited from the active icon, default name `Icon ${nextIconNumber}`), bumps `nextIconNumber`, makes it active, clears selection. Combined: one entry.
+- **`switchIconCommand`** — sets `activeIconId` _and_ clears the selection in one entry (Figma page-switch model). No-op when the target is already active or unknown.
+- **`renameIconCommand`** — sets an icon's name. No-op when unchanged; empty/whitespace names are guarded at the UI layer and fall back to the export naming default.
+- **`deleteIconCommand`** — removes an icon, enforcing the **≥1 invariant** (no-op at one icon). When the deleted icon was active, the successor is the previous sibling — or the next sibling when the deleted icon was first — and the selection clears. Like `deleteShapesCommand`, it evicts the `shapeAtom` family entries of the deleted icon's shapes after the splice (undo recreates them on demand).
+
+`nextIconNumber` lives on the Project (not derived from names) so a number is never reused after a delete. Undoing an `addIconCommand` rolls the counter back with the snapshot — safe, because the icon that carried the number is gone too.
+
+### Undo / Redo (`src/store/commands/historyCommands.ts`)
 
 ```ts
 import { atom } from 'jotai'
-import { documentAtom } from '../atoms/document'
+import { projectAtom } from '../atoms/project'
 import { undoStackAtom, redoStackAtom } from '../atoms/history'
 
 export const undoCommand = atom(null, (get, set) => {
   const stack = get(undoStackAtom)
   const entry = stack.at(-1)
   if (!entry) return
-  set(documentAtom, entry.before)
+  set(projectAtom, entry.before)
   set(undoStackAtom, stack.slice(0, -1))
   set(redoStackAtom, (s) => [...s, entry])
 })
@@ -334,7 +390,7 @@ export const redoCommand = atom(null, (get, set) => {
   const stack = get(redoStackAtom)
   const entry = stack.at(-1)
   if (!entry) return
-  set(documentAtom, entry.after)
+  set(projectAtom, entry.after)
   set(redoStackAtom, stack.slice(0, -1))
   set(undoStackAtom, (s) => [...s, entry])
 })
@@ -366,7 +422,7 @@ Two commands, deliberately separate rather than one overloaded payload:
 - **`moveShapeBlockCommand`** `{ ids, beforeId }` — used by drag-to-reorder (drop) and the Shift bring-to-front / send-to-back shortcuts. Delegates to `moveBlockBefore`.
 - **`nudgeShapeOrderCommand`** `{ ids, direction }` — used by the single-step Cmd/Ctrl+] and Cmd/Ctrl+[ shortcuts. Delegates to `nudge`.
 
-Both are **Combined Commands**: they return `{ document, selection }` so one `HistoryEntry` atomically covers the new shape order _and_ a re-normalised selection. Re-normalisation (`normalizeSelection(ids, nextDoc)`) re-sorts the selected IDs by their new positions in the reordered shapes array, preserving the invariant that `selectedIdsAtom` is always z-order-sorted. Without this, undo would restore stale selection order and downstream derivations (multi-shape property panels, the selection bbox fold) would see the wrong sequence.
+Both are **Combined Commands**: they return `{ icon, selection }` so one `HistoryEntry` atomically covers the new shape order _and_ a re-normalised selection. Re-normalisation (`normalizeSelection(ids, nextDoc)`) re-sorts the selected IDs by their new positions in the reordered shapes array, preserving the invariant that `selectedIdsAtom` is always z-order-sorted. Without this, undo would restore stale selection order and downstream derivations (multi-shape property panels, the selection bbox fold) would see the wrong sequence.
 
 ### Why Combined Command, not document-only + separate selection write
 
@@ -404,7 +460,7 @@ The canvas uses `splitAtom` so each shape subscribes only to itself:
 
 ```tsx
 import { useAtomValue } from 'jotai'
-import { shapeAtomsAtom } from '@/store/atoms/document'
+import { shapeAtomsAtom } from '@/store/atoms/project'
 import { ShapeRenderer } from './ShapeRenderer'
 
 export function Canvas() {
@@ -430,7 +486,7 @@ function ShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
 ## Export Pipeline
 
 ```
-documentAtom → serialize (lib/svg/serialize.ts) → SVGO → file-saver
+activeIconAtom → serialize (features/export/serialize.ts) → SVGO → file-saver
 ```
 
 - Serialization is a **pure function** of the document. No React, no atoms.
@@ -441,10 +497,12 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 
 ## Persistence
 
-- **Dexie** (IndexedDB) stores projects keyed by document id.
-- Auto-save is a Jotai effect atom that debounces writes on `documentAtom` changes (1s debounce).
-- On app load, the last-opened document hydrates `documentAtom` via Zod validation — if the schema fails, we fall back to a blank document and log a warning.
-- **Auto-save reacts to undo/redo like any other mutation.** `undoCommand` writes `documentAtom`, the debounce fires, the rewound state is persisted. Reload after an undo brings back the undone state; the history stacks themselves are session-local and start empty on reload. This means: undo survives reload, redo does not.
+Persistence is **designed for but not yet wired** (follow-up to PRD #219). The state is shaped so a thin persistence subscriber attaches to `projectAtom` without leaking storage concerns into commands:
+
+- **Dexie** (IndexedDB) will store the project keyed by its id.
+- Auto-save will be a Jotai effect atom that debounces writes on `projectAtom` changes (1s debounce).
+- On app load, the stored project hydrates `projectAtom` via Zod validation — if the schema fails, we fall back to a blank single-icon project and log a warning.
+- **Auto-save reacts to undo/redo like any other mutation.** `undoCommand` writes `projectAtom`, the debounce fires, the rewound state is persisted. Reload after an undo brings back the undone state; the history stacks themselves are session-local and start empty on reload. This means: undo survives reload, redo does not.
 
 ## Testing Strategy Per Layer
 
@@ -458,7 +516,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 
 ## Performance Notes
 
-- **Never read `documentAtom` in the canvas render path.** Always go through `shapeAtomsAtom` or derived atoms.
+- **Never read `projectAtom` or `activeIconAtom` in the canvas render path.** Always go through `shapeAtomsAtom` or derived atoms.
 - **Avoid `produce` in derived atoms** — they should be pure reads.
 - **Draft-then-commit for gestures.** Interactive gestures (resize, move) write a transient draft atom (`resizeDraftAtom`, `draftShapeAtom`) on every pointer move — these are UI state, not commands. A single undoable command fires on `pointerup`. Per-frame commands are **not** the rule; they would flood the undo stack and thrash document snapshots.
 - **Frame-throttled draft writes via the Gesture Sampler.** During a pointer-driven gesture (move, resize, draw), each `pointermove` calls `gestureSampler.schedule()` instead of writing the draft atom directly. The sampler coalesces samples so at most one draft write fires per animation frame (≤1 per frame). No commands dispatch mid-gesture — the draft atom is UI state, not a command. On `pointerup` the gesture commits from the up-event coordinate: a single undoable command dispatches once, and `gestureSampler.stop()` cancels any pending frame. This avoids flooding the undo stack with per-frame entries and keeps document snapshots stable for the gesture's duration.
@@ -469,7 +527,7 @@ See `src/features/export/` for the implementation and `export.test.ts` for golde
 If you're new to the codebase, read files in this order:
 
 1. `src/types/shapes.ts` — the data model
-2. `src/store/atoms/document.ts` — the root state
+2. `src/store/atoms/project.ts` — the root state and the active-icon lens
 3. `src/store/commands/createCommand.ts` — the command pattern
 4. `src/features/canvas/CanvasStage.tsx` — how rendering subscribes to atoms
 5. `src/features/export/serialize.ts` — how state becomes SVG

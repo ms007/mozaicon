@@ -2,11 +2,11 @@ import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { exportTargetAtom } from '@/store/atoms/export'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { renderWithStore } from '@/test/renderWithStore'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { ExportSection } from './ExportSection'
 import { performExport } from './performExport'
@@ -15,15 +15,15 @@ vi.mock('./performExport', () => ({
   performExport: vi.fn().mockResolvedValue(undefined),
 }))
 
-const docWithShapes = makeDoc([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
-const emptyDoc = makeDoc([], { name: 'Empty' })
-const allHiddenDoc = makeDoc([makeRect({ id: 's1', name: 'R1', visible: false })], {
+const docWithShapes = makeIcon([makeRect({ id: 's1', name: 'R1' })], { name: 'My Icon' })
+const emptyDoc = makeIcon([], { name: 'Empty' })
+const allHiddenDoc = makeIcon([makeRect({ id: 's1', name: 'R1', visible: false })], {
   name: 'Hidden',
 })
 
-function renderExport(doc: Document = docWithShapes) {
+function renderExport(doc: Icon = docWithShapes) {
   return renderWithStore(<ExportSection />, (store) => {
-    store.set(documentAtom, doc)
+    store.set(activeIconAtom, doc)
   })
 }
 
@@ -116,7 +116,7 @@ describe('ExportSection', () => {
       expect(btn('SVG')).toBeDisabled()
 
       act(() => {
-        store.set(documentAtom, docWithShapes)
+        store.set(activeIconAtom, docWithShapes)
       })
 
       expect(btn('SVG')).toBeEnabled()

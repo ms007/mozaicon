@@ -11,6 +11,6 @@ export const renameShapeCommand = createCommand<{ id: string; name: string }>(
     if (doc.shapes[idx].name === trimmed) return {}
 
     const shapes = doc.shapes.map((s, i) => (i === idx ? { ...s, name: trimmed } : s))
-    return { document: { ...doc, shapes } }
+    return { icon: { ...doc, shapes } }
   },
 )

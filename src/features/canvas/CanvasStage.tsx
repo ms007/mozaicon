@@ -9,7 +9,7 @@ import { PixelGrid } from '@/features/canvas/PixelGrid'
 import { ShapeRenderer } from '@/features/canvas/renderers/ShapeRenderer'
 import { SelectionOverlay } from '@/features/canvas/SelectionOverlay'
 import { CANVAS_SIZE, viewBoxAtom } from '@/store/atoms/canvas'
-import { shapeAtomsAtom } from '@/store/atoms/document'
+import { shapeAtomsAtom } from '@/store/atoms/project'
 
 const viewBoxStringAtom = selectAtom(viewBoxAtom, (vb) => vb.join(' '))
 

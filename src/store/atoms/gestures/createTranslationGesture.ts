@@ -5,7 +5,7 @@ import { type AtomFamily, atomFamily } from 'jotai-family'
 
 import { translateRect } from '@/lib/geometry/rect'
 import { bboxOfMany } from '@/lib/svg/bbox'
-import { shapeAtom } from '@/store/atoms/document'
+import { shapeAtom } from '@/store/atoms/project'
 
 import type { DisplayContribution, GestureAdapter } from './registry'
 

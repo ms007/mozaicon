@@ -1,7 +1,6 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { cancelDraftAtom } from '@/store/atoms/draft'
 import { isGestureActiveAtom } from '@/store/atoms/gesture'
 import { undoStackAtom } from '@/store/atoms/history'
@@ -10,15 +9,16 @@ import {
   marqueeDraftAtom,
   previewSelectedIdsAtom,
 } from '@/store/atoms/marquee-draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { displayedSelectionBboxAtom } from '@/store/atoms/resize-draft'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { undoCommand } from '@/store/commands/historyCommands'
 import { clearSelectionCommand, selectShapesCommand } from '@/store/commands/selectionCommands'
 import { makeMarqueeDraft } from '@/test/fixtures/marquee'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'a', x: 0, y: 0, width: 5, height: 5 }),
   makeRect({ id: 'b', x: 10, y: 10, width: 5, height: 5 }),
   makeRect({ id: 'c', x: 20, y: 20, width: 5, height: 5 }),
@@ -26,7 +26,7 @@ const testDoc = makeDoc([
 
 function makeStore() {
   const store = createStore()
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   return store
 }
 

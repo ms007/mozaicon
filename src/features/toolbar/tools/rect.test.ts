@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Rect } from '@/lib/geometry/rect'
 import type { Vec2 } from '@/lib/geometry/vec2'
-import { documentAtom } from '@/store/atoms/document'
 import { draftShapeAtom } from '@/store/atoms/draft'
 import { canUndoAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { styleDefaultsAtom } from '@/store/atoms/style-defaults'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { createDragTool } from './createDragTool'
 import { geometryFromDrag } from './rect'
@@ -111,7 +111,7 @@ describe('geometryFromDrag', () => {
 
 // --- Rect tool lifecycle ---
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -120,7 +120,7 @@ const emptyDoc: Document = {
 
 function makeCtx(): ToolCtx {
   const store = createStore()
-  store.set(documentAtom, emptyDoc)
+  store.set(activeIconAtom, emptyDoc)
   return { store, completeTool: vi.fn() }
 }
 
@@ -215,7 +215,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerMove(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
     rectTool.onPointerUp(ctx, event({ x: 10, y: 8 }, { x: 200, y: 200 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 2, y: 2, width: 8, height: 6 })
   })
@@ -225,7 +225,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerDown(ctx, event({ x: 5, y: 5 }, { x: 100, y: 100 }))
     rectTool.onPointerUp(ctx, event({ x: 5, y: 5 }, { x: 101, y: 100 }))
 
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(shapes).toHaveLength(1)
     expect(shapes[0]).toMatchObject({ type: 'rect', x: 5, y: 5, width: 4, height: 4 })
   })
@@ -236,7 +236,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
     const selection = ctx.store.get(selectedIdsAtom)
-    const shapes = ctx.store.get(documentAtom).shapes
+    const shapes = ctx.store.get(activeIconAtom).shapes
     expect(selection).toEqual([shapes[0].id])
   })
 
@@ -264,7 +264,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
     rectTool.onPointerUp(ctx, event({ x: 10, y: 10 }, { x: 200, y: 200 }, { pointerId: 99 }))
     expect(rectTool.shouldHandlePointerMove?.(ctx)).toBe(true)
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
   })
 
   it('uses default styles when styleDefaults is not overridden', () => {
@@ -273,7 +273,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
     rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
-    const shape = ctx.store.get(documentAtom).shapes[0]
+    const shape = ctx.store.get(activeIconAtom).shapes[0]
     expect(shape.fill).toBe('#000')
     expect(shape.stroke).toBe('none')
     expect(shape.strokeWidth).toBe(1)
@@ -286,7 +286,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerDown(ctx, event({ x: 2, y: 2 }, { x: 100, y: 100 }))
     rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
-    const shape = ctx.store.get(documentAtom).shapes[0]
+    const shape = ctx.store.get(activeIconAtom).shapes[0]
     expect(shape.fill).toBe('#ff0000')
     expect(shape.stroke).toBe('#00ff00')
     expect(shape.strokeWidth).toBe(3)

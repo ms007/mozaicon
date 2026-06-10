@@ -2,10 +2,10 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom, selectedIdsAtom } from '@/store/atoms/selection'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 import { toggleShapeVisibilityCommand } from './toggleShapeVisibility'
 
@@ -24,16 +24,16 @@ function makeRect(id: string, visible = true): RectShape {
   }
 }
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-function makeStore(doc: Document = emptyDoc) {
+function makeStore(doc: Icon = emptyDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -43,7 +43,7 @@ describe('toggleShapeVisibilityCommand', () => {
 
     store.set(toggleShapeVisibilityCommand, { id: 'a' })
 
-    expect(store.get(documentAtom).shapes[0].visible).toBe(false)
+    expect(store.get(activeIconAtom).shapes[0].visible).toBe(false)
   })
 
   it('shows a hidden shape', () => {
@@ -51,7 +51,7 @@ describe('toggleShapeVisibilityCommand', () => {
 
     store.set(toggleShapeVisibilityCommand, { id: 'a' })
 
-    expect(store.get(documentAtom).shapes[0].visible).toBe(true)
+    expect(store.get(activeIconAtom).shapes[0].visible).toBe(true)
   })
 
   it('pushes exactly one history entry', () => {
@@ -62,8 +62,8 @@ describe('toggleShapeVisibilityCommand', () => {
     const undo = store.get(undoStackAtom)
     expect(undo).toHaveLength(1)
     expect(undo[0].label).toBe('Toggle visibility')
-    expect(undo[0].before.shapes[0].visible).toBe(true)
-    expect(undo[0].after.shapes[0].visible).toBe(false)
+    expect(undo[0].before.icons[0].shapes[0].visible).toBe(true)
+    expect(undo[0].after.icons[0].shapes[0].visible).toBe(false)
   })
 
   it('does not change selection', () => {
@@ -81,6 +81,6 @@ describe('toggleShapeVisibilityCommand', () => {
     store.set(toggleShapeVisibilityCommand, { id: 'nonexistent' })
 
     expect(store.get(undoStackAtom)).toHaveLength(0)
-    expect(store.get(documentAtom).shapes[0].visible).toBe(true)
+    expect(store.get(activeIconAtom).shapes[0].visible).toBe(true)
   })
 })

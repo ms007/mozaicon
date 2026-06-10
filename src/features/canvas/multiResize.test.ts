@@ -6,13 +6,13 @@ import type { Rect } from '@/lib/geometry/rect'
 import { scaleShape } from '@/lib/geometry/scale'
 import type { Vec2 } from '@/lib/geometry/vec2'
 import { bboxOf } from '@/lib/svg/bbox'
-import { documentAtom } from '@/store/atoms/document'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { resizeDraftAtom } from '@/store/atoms/resize-draft'
 import { selectionBboxAtom } from '@/store/atoms/selection'
 import { resizeShapeCommand } from '@/store/commands/resizeShape'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import type { Document, RectShape } from '@/types/shapes'
+import type { Icon, RectShape } from '@/types/shapes'
 
 const r1: RectShape = {
   id: 'r1',
@@ -44,16 +44,16 @@ const r2: RectShape = {
   corners: DEFAULT_CORNERS,
 }
 
-const twoRectDoc: Document = {
+const twoRectDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
   shapes: [r1, r2],
 }
 
-function makeStore(doc: Document = twoRectDoc) {
+function makeStore(doc: Icon = twoRectDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -108,7 +108,7 @@ describe('Multi-shape resize', () => {
     const undo = store.get(undoStackAtom)
     expect(undo[0].label).toBe('Resize shape')
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     expect(doc.shapes[0]).toMatchObject(draft.r1)
     expect(doc.shapes[1]).toMatchObject(draft.r2)
   })
@@ -120,31 +120,31 @@ describe('Multi-shape resize', () => {
 
     store.set(resizeShapeCommand, draft)
 
-    const doc = store.get(documentAtom)
+    const doc = store.get(activeIconAtom)
     expect(doc.shapes[0]).toMatchObject({ strokeWidth: 1 })
     expect(doc.shapes[1]).toMatchObject({ strokeWidth: 2 })
   })
 
   it('undo restores every shape to pre-resize geometry in one step', () => {
     const store = makeStore()
-    const beforeDoc = store.get(documentAtom)
+    const beforeDoc = store.get(activeIconAtom)
     const anchor = { x: 2, y: 2 }
     const draft = computeMultiDraft([r1, r2], anchor, 2, 2)
 
     store.set(resizeShapeCommand, draft)
-    expect(store.get(documentAtom)).not.toBe(beforeDoc)
+    expect(store.get(activeIconAtom)).not.toBe(beforeDoc)
 
     expect(store.get(canUndoAtom)).toBe(true)
     const undo = store.get(undoStackAtom)
 
-    expect(undo[0].before.shapes[0]).toMatchObject({
+    expect(undo[0].before.icons[0].shapes[0]).toMatchObject({
       id: 'r1',
       x: 2,
       y: 2,
       width: 4,
       height: 4,
     })
-    expect(undo[0].before.shapes[1]).toMatchObject({
+    expect(undo[0].before.icons[0].shapes[1]).toMatchObject({
       id: 'r2',
       x: 10,
       y: 10,

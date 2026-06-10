@@ -9,7 +9,7 @@ import { isSelectable, symmetricDifference } from '@/lib/selection'
 import { bboxOf, bboxOfMany } from '@/lib/svg/bbox'
 import type { Shape } from '@/types/shapes'
 
-import { documentAtom, shapeAtom } from '../document'
+import { activeIconAtom, shapeAtom } from '../project'
 import { selectionEqual } from '../selection'
 import type { DisplayContribution, GestureAdapter } from './registry'
 
@@ -33,7 +33,7 @@ export const marqueeRectAtom = atom((get) => {
 export const previewSelectedIdsAtom = atom((get) => {
   const draft = get(marqueeDraftAtom)
   if (!draft) return []
-  const doc = get(documentAtom)
+  const doc = get(activeIconAtom)
   const rect = rectFromPoints(draft.startViewBox, draft.current)
 
   const hits: string[] = []

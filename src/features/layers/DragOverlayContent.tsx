@@ -1,7 +1,7 @@
 import { useAtomValue } from 'jotai'
 
-import { shapeAtom } from '@/store/atoms/document'
 import { layerAtom } from '@/store/atoms/layers'
+import { shapeAtom } from '@/store/atoms/project'
 
 import { LayerItemView } from './LayerItemView'
 import { LayerThumbnail } from './LayerThumbnail'

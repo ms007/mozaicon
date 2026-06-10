@@ -10,8 +10,8 @@ import {
   makeCtx,
 } from '@/features/toolbar/tools/dragToolHarness'
 import type { ToolCtx } from '@/features/toolbar/tools/registry'
-import { documentAtom } from '@/store/atoms/document'
 import { cancelDraftAtom } from '@/store/atoms/draft'
+import { activeIconAtom } from '@/store/atoms/project'
 import { restoreSelectionAtom } from '@/store/atoms/selection'
 import { activeToolAtom } from '@/store/atoms/tool'
 import { undoCommand } from '@/store/commands/historyCommands'
@@ -132,7 +132,7 @@ describe('withMode — undo does not restore active tool', () => {
         ctx.store.set(activeToolAtom, null)
       },
     }
-    ctx.store.set(documentAtom, emptyDoc)
+    ctx.store.set(activeIconAtom, emptyDoc)
     ctx.store.set(activeToolAtom, 'wrapped-box')
 
     tool.onPointerDown(ctx, ev({ x: 2, y: 2 }, { x: 100, y: 100 }))
@@ -142,7 +142,7 @@ describe('withMode — undo does not restore active tool', () => {
 
     ctx.store.set(undoCommand)
 
-    expect(ctx.store.get(documentAtom).shapes).toHaveLength(0)
+    expect(ctx.store.get(activeIconAtom).shapes).toHaveLength(0)
     expect(ctx.store.get(activeToolAtom)).toBeNull()
   })
 })

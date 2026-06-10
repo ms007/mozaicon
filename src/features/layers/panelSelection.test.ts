@@ -1,26 +1,26 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { documentAtom } from '@/store/atoms/document'
 import { undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectedIdsAtom } from '@/store/atoms/selection'
 import { clearSelectionCommand } from '@/store/commands/selectionCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { seedSelection } from '@/test/seedSelection'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { selectFromPanelAtom, selectionAnchorAtom } from './panelSelection'
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'a', name: 'A' }),
   makeRect({ id: 'b', name: 'B', x: 5, y: 5 }),
   makeRect({ id: 'c', name: 'C', x: 10, y: 10 }),
   makeRect({ id: 'd', name: 'D', x: 15, y: 15 }),
 ])
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -208,7 +208,7 @@ describe('selectFromPanelAtom', () => {
       store.set(selectFromPanelAtom, { id: 'c', additive: false, range: false })
 
       // Remove c from document
-      store.set(documentAtom, (draft) => {
+      store.set(activeIconAtom, (draft) => {
         draft.shapes = draft.shapes.filter((s) => s.id !== 'c')
       })
 

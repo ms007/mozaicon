@@ -2,17 +2,17 @@ import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
 import { marqueeDraftAtom } from '@/store/atoms/gestures/marquee'
 import { propertyStepDraftAtom } from '@/store/atoms/gestures/propertyStep'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import type { Document } from '@/types/shapes'
+import type { Icon } from '@/types/shapes'
 
 import { commitGeometryFieldAtom } from './commitGeometryField'
 import { clearGeometryPreviewAtom, previewGeometryFieldAtom } from './previewGeometryField'
 
-const testDoc: Document = {
+const testDoc: Icon = {
   id: 'doc-test',
   name: 'Test',
   viewBox: [0, 0, 24, 24],
@@ -44,9 +44,9 @@ const testDoc: Document = {
   ],
 }
 
-function makeStore(doc: Document = testDoc) {
+function makeStore(doc: Icon = testDoc) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return store
 }
 
@@ -57,7 +57,7 @@ describe('commitGeometryFieldAtom', () => {
 
     store.set(commitGeometryFieldAtom, { field: 'x', value: 100 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape).toMatchObject({ id: 'r1', x: 100, y: 3, width: 10, height: 8 })
   })
 
@@ -67,7 +67,7 @@ describe('commitGeometryFieldAtom', () => {
 
     store.set(commitGeometryFieldAtom, { field: 'x', value: 42 })
 
-    const shapes = store.get(documentAtom).shapes
+    const shapes = store.get(activeIconAtom).shapes
     expect(shapes[0]).toMatchObject({ id: 'r1', x: 42 })
     expect(shapes[1]).toMatchObject({ id: 'r2', x: 42 })
   })
@@ -78,7 +78,7 @@ describe('commitGeometryFieldAtom', () => {
 
     store.set(commitGeometryFieldAtom, { field: 'width', value: 20 })
 
-    const shape = store.get(documentAtom).shapes[0]
+    const shape = store.get(activeIconAtom).shapes[0]
     expect(shape).toMatchObject({ x: 2, y: 3, width: 20, height: 8 })
   })
 
@@ -94,11 +94,11 @@ describe('commitGeometryFieldAtom', () => {
 
   it('does nothing when no shapes are selected', () => {
     const store = makeStore()
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(commitGeometryFieldAtom, { field: 'x', value: 100 })
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
   })
 
   it('commits while a marquee draft is active (blur during background click)', () => {
@@ -115,7 +115,7 @@ describe('commitGeometryFieldAtom', () => {
 
     store.set(commitGeometryFieldAtom, { field: 'x', value: 100 })
 
-    expect(store.get(documentAtom).shapes[0]).toMatchObject({ id: 'r1', x: 100 })
+    expect(store.get(activeIconAtom).shapes[0]).toMatchObject({ id: 'r1', x: 100 })
   })
 
   it('is a no-op when the value is already current', () => {
@@ -143,11 +143,11 @@ describe('previewGeometryFieldAtom', () => {
   it('does not modify the document', () => {
     const store = makeStore()
     store.set(selectShapesCommand, ['r1'])
-    const before = store.get(documentAtom)
+    const before = store.get(activeIconAtom)
 
     store.set(previewGeometryFieldAtom, { field: 'x', value: 50 })
 
-    expect(store.get(documentAtom)).toBe(before)
+    expect(store.get(activeIconAtom)).toBe(before)
   })
 
   it('does not push an undo entry', () => {

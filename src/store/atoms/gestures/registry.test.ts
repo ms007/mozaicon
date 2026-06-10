@@ -3,9 +3,9 @@ import { atom, createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import type { Rect } from '@/lib/geometry/rect'
-import { documentAtom } from '@/store/atoms/document'
+import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
-import { makeDoc, makeRect } from '@/test/fixtures/shapes'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 
 import { draftShapeAtom } from './draw'
 import { type MarqueeDraft, marqueeDraftAtom } from './marquee'
@@ -361,14 +361,14 @@ describe('GestureAdapter type constraint', () => {
   })
 })
 
-const testDoc = makeDoc([
+const testDoc = makeIcon([
   makeRect({ id: 'r1', x: 2, y: 2, width: 4, height: 4 }),
   makeRect({ id: 'r2', x: 10, y: 10, width: 6, height: 6 }),
 ])
 
 function makeStore() {
   const store = createStore()
-  store.set(documentAtom, testDoc)
+  store.set(activeIconAtom, testDoc)
   return store
 }
 

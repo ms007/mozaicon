@@ -3,19 +3,19 @@ import { createStore, Provider } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
 import { DEFAULT_CORNERS } from '@/lib/geometry/corner-radius'
-import { documentAtom } from '@/store/atoms/document'
-import type { Document } from '@/types/shapes'
+import { activeIconAtom } from '@/store/atoms/project'
+import type { Icon } from '@/types/shapes'
 
 import { LayersPanel } from './LayersPanel'
 
-const emptyDoc: Document = {
+const emptyDoc: Icon = {
   id: 'doc-empty',
   name: 'Empty',
   viewBox: [0, 0, 24, 24],
   shapes: [],
 }
 
-const twoShapeDoc: Document = {
+const twoShapeDoc: Icon = {
   id: 'doc-2',
   name: 'Two',
   viewBox: [0, 0, 24, 24],
@@ -47,9 +47,9 @@ const twoShapeDoc: Document = {
   ],
 }
 
-function renderWithStore(doc: Document) {
+function renderWithStore(doc: Icon) {
   const store = createStore()
-  store.set(documentAtom, doc)
+  store.set(activeIconAtom, doc)
   return render(
     <Provider store={store}>
       <LayersPanel />
