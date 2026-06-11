@@ -4,7 +4,7 @@ This document explains how shapes work and how to add a new shape type.
 
 ## Overview
 
-A **shape** is a single drawable element in the document. All shapes share a common base (id, name, visibility, style) and add type-specific geometry.
+A **shape** is a single drawable element in the document. All shapes share a common base (`id`, `name`, `visible`, `locked`, and the paint fields `fill` / `stroke` / `strokeWidth`) and add type-specific geometry.
 
 Shapes are stored as a **discriminated union** in `src/types/shapes.ts`, keyed on `type`. This gives us:
 
@@ -16,18 +16,19 @@ Shapes are stored as a **discriminated union** in `src/types/shapes.ts`, keyed o
 
 Every shape must support these operations:
 
-| Operation     | Where                              | Required |
-| ------------- | ---------------------------------- | -------- |
-| Schema        | `src/types/shapes.ts`              | Yes      |
-| Element tree  | `src/lib/svg/shapeElement.ts`      | Yes      |
-| Bounding box  | `src/lib/svg/bbox/`                | Yes      |
-| Translate     | `src/lib/svg/transform.ts`         | Yes      |
-| Scale         | `src/lib/geometry/scale.ts`        | Yes      |
-| Properties UI | `src/features/properties/editors/` | Yes      |
-| Drawing tool  | `src/features/toolbar/tools/`      | Optional |
-| Hit testing   | `src/lib/svg/hitTest.ts`           | Yes      |
+| Operation     | Where                           | Required |
+| ------------- | ------------------------------- | -------- |
+| Schema        | `src/types/shapes.ts`           | Yes      |
+| Element tree  | `src/lib/svg/shapeElement.ts`   | Yes      |
+| Bounding box  | `src/lib/svg/bbox/`             | Yes      |
+| Translate     | `src/lib/geometry/translate.ts` | Yes      |
+| Scale         | `src/lib/geometry/scale.ts`     | Yes      |
+| Properties UI | `src/features/properties/`      | Yes      |
+| Drawing tool  | `src/features/toolbar/tools/`   | Optional |
 
 If any of these is missing, `pnpm check` should fail via the exhaustiveness check (see "Exhaustiveness" below).
+
+Hit testing needs no per-shape code: clicks land on the rendered SVG element via pointer events, and marquee selection intersects against the shape's bbox — both come for free once the element tree and bbox cases exist.
 
 ## Existing Shape Types
 
@@ -124,10 +125,10 @@ export function bboxOf(shape: Shape): Rect {
 
 ### 4. Translate (for Move commands)
 
-`src/lib/svg/transform.ts`:
+`src/lib/geometry/translate.ts`:
 
 ```ts
-export function translate(shape: Shape, dx: number, dy: number): Shape {
+export function translateShape(shape: Shape, dx: number, dy: number): Shape {
   switch (shape.type) {
     // ...
     case 'polygon':
@@ -143,7 +144,7 @@ export function translate(shape: Shape, dx: number, dy: number): Shape {
 
 ### 5. Properties Editor
 
-`src/features/properties/editors/PolygonEditor.tsx`:
+`src/features/properties/PolygonEditor.tsx`:
 
 ```tsx
 export function PolygonEditor({ shape }: { shape: Polygon }) {
@@ -158,29 +159,20 @@ export function PolygonEditor({ shape }: { shape: Polygon }) {
 
 Register in the editor switch (`PropertiesPanel.tsx`).
 
-### 6. Hit Testing
-
-`src/lib/svg/hitTest.ts` — use ray casting or point-in-polygon:
-
-```ts
-case 'polygon':
-  return pointInPolygon(point, shape.points);
-```
-
-### 7. (Optional) Drawing Tool
+### 6. (Optional) Drawing Tool
 
 If the shape is user-drawable, add a tool in `src/features/toolbar/tools/<name>.ts` and register it in `src/features/toolbar/tools/index.ts`. For drag-to-draw shapes, use the `createDragTool` factory (see [Drag-Tool Factory](#drag-tool-factory) below) — you only supply geometry math and a shape builder. See [Drawing Tools](#drawing-tools) for the full `DrawTool` interface and conventions.
 
-### 8. Tests
+### 7. Tests
 
 At minimum, add:
 
 - `src/types/shapes.test.ts` — schema validation (valid + invalid inputs)
 - `src/lib/svg/bbox.test.ts` — bbox correctness
-- `src/lib/svg/transform.test.ts` — translate preserves invariants
+- `src/lib/geometry/translate.test.ts` — translate preserves invariants
 - `src/lib/svg/shapeElement.test.ts` — element tree output (tag + attrs)
 
-### 9. Verify
+### 8. Verify
 
 ```bash
 pnpm check
@@ -228,6 +220,7 @@ type ToolEvent = {
 
 type ToolCtx = {
   store: JotaiStore // read atoms, dispatch commands
+  completeTool: () => void // signal "tool is done" — triggers one-shot deactivation
 }
 ```
 
@@ -246,7 +239,7 @@ The reference flow for `rect` (and any shape with rectangular bounds):
 3. **`onPointerUp`** —
    - Below threshold → **Click-Fallback**: dispatch `addShapeCommand` with default geometry, anchor at the down-point as the top-left corner.
    - At/above threshold → dispatch `addShapeCommand` with the final draft geometry, clamped to a minimum of 1×1 viewBox unit per axis.
-   - The tool generates the shape `id` (so it can select afterwards), passes it in the command payload, then writes `selectedIdsAtom = [id]` directly (selection is UI state — see _State Categories_ in `architecture.md`).
+   - The tool generates the shape `id` and passes it in the command payload; `addShapeCommand` is a _Combined Command_ that selects the new shape in the same history entry (see _State Categories_ in `state.md` and `commands.md`).
    - Reset `draftShapeAtom = null` and `activeDragAtom = null`.
 
 ### Cancel triggers

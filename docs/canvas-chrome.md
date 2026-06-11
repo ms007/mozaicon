@@ -1,6 +1,6 @@
 # Canvas Chrome
 
-Static visual scaffolding around and inside the canvas. Gesture-driven overlays (selection, marquee, draft shapes) live in [`architecture.md`](./architecture.md).
+Static visual scaffolding around and inside the canvas. Gesture-driven overlays (selection, marquee, draft shapes) live in [`gestures.md`](./gestures.md).
 
 ## Surface Hierarchy
 
@@ -59,13 +59,13 @@ A muted dot at every integer position within the document viewBox, rendered as t
 
 ### Implementation
 
-One SVG `<pattern>` (a single `<circle>` at the tile origin, `r=0.09` viewBox units, `currentColor`) tiled across one covering `<rect>`. The DOM is two elements regardless of viewBox dimensions — O(1) nodes.
+One SVG `<pattern>` (a single `<circle>` at the tile center, `r=0.09` viewBox units, `currentColor`) tiled across one covering `<rect>`. The DOM is two elements regardless of viewBox dimensions — O(1) nodes.
 
 ```
 <g class="text-foreground/25" pointer-events="none">
   <defs>
-    <pattern id="pixel-grid" width="1" height="1" patternUnits="userSpaceOnUse" overflow="visible">
-      <circle cx="0" cy="0" r="0.09" fill="currentColor" />
+    <pattern id="pixel-grid" x="-0.5" y="-0.5" width="1" height="1" patternUnits="userSpaceOnUse">
+      <circle cx="0.5" cy="0.5" r="0.09" fill="currentColor" />
     </pattern>
   </defs>
   <rect x="minX - 0.25" y="minY - 0.25"
@@ -76,7 +76,7 @@ One SVG `<pattern>` (a single `<circle>` at the tile origin, `r=0.09` viewBox un
 
 ### Edge handling
 
-The `<pattern>` carries `overflow="visible"` so the tile-corner circle paints as a full dot instead of being clipped to its tile (a circle at the tile origin would otherwise show only one quadrant). The covering rect extends 0.25 units past the viewBox in each direction so the edge-row and edge-column tiles are still instantiated and their dots painted. The canvas SVG also carries `overflow="visible"` so dots sitting on the viewBox boundary render in full, spilling ~1px into the Artboard padding.
+The pattern tile is offset by `(-0.5, -0.5)` and the circle sits at the tile center, so each dot lands exactly on an integer position while staying fully inside its tile — no clipping, no `overflow` override needed on the pattern. The covering rect extends 0.25 units past the viewBox in each direction so the edge-row and edge-column tiles are still instantiated and their dots painted. The canvas SVG carries `overflow="visible"` so dots sitting on the viewBox boundary render in full, spilling ~1px into the Artboard padding.
 
 ### viewBox subscription
 
@@ -98,7 +98,7 @@ The Canvas is the `<svg>` element and is 1:1 with the icon coordinate system. Sh
 
 1. Pixel Grid (deepest, `pointer-events: none`)
 2. Document shapes (via `splitAtom` / `ShapeRenderer`)
-3. Gesture-driven draft and overlay layers (draft shape, marquee highlight, selection overlay, marquee overlay)
+3. Gesture-driven draft and overlay layers (draft shape, hover highlight, marquee highlight, selection overlay, marquee overlay)
 
 **Outside the SVG** (app-space chrome):
 

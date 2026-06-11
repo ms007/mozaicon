@@ -24,7 +24,7 @@ After running, answer:
 - **Failures:** For each failure, identify the root cause file(s). Don't just paste the error.
 - **Warnings:** Any ESLint warnings that should become errors? Any `@ts-ignore` or `as any` in the diff?
 - **Test coverage gaps:** Any new code in recent commits that lacks tests? (Check `git diff` against `main`.)
-- **Docs drift:** Do `CLAUDE.md`, `docs/architecture.md`, or `docs/shapes.md` still match the code? Flag obvious mismatches.
+- **Docs drift:** Do `CLAUDE.md` and the `docs/*.md` deep-dives still match the code? Flag obvious mismatches.
 
 ## Rules
 

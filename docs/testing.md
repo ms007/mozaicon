@@ -85,56 +85,42 @@ Test store logic in isolation using Jotai's `createStore`.
 
 ### Pattern: Testing a Command
 
-`src/store/commands/moveShape.test.ts`:
+`src/store/commands/moveSelection.test.ts`:
 
 ```ts
 import { createStore } from 'jotai'
 import { describe, it, expect } from 'vitest'
-import { activeIconAtom, projectAtom } from '../atoms/project'
+import { activeIconAtom } from '../atoms/project'
 import { undoStackAtom } from '../atoms/history'
-import { makeIcon, makeProject } from '@/test/fixtures/shapes'
-import { moveShapeCommand } from './moveShape'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
+import { moveSelectionCommand } from './moveSelection'
 
 function makeStore(shapes: Shape[] = []) {
   const store = createStore()
-  store.set(projectAtom, makeProject([makeIcon(shapes)]))
+  store.set(activeIconAtom, makeIcon(shapes))
   return store
 }
 
-describe('moveShapeCommand', () => {
+describe('moveSelectionCommand', () => {
   it('moves a rect by dx/dy', () => {
-    const store = makeStore([
-      {
-        type: 'rect',
-        id: 'r1',
-        name: 'r',
-        visible: true,
-        locked: false,
-        x: 10,
-        y: 10,
-        width: 20,
-        height: 20,
-      },
-    ])
+    const store = makeStore([makeRect({ id: 'r1', x: 10, y: 10, width: 20, height: 20 })])
 
-    store.set(moveShapeCommand, { id: 'r1', dx: 5, dy: 7 })
+    store.set(moveSelectionCommand, { ids: ['r1'], dx: 5, dy: 7 })
 
     const icon = store.get(activeIconAtom)
     expect(icon.shapes[0]).toMatchObject({ x: 15, y: 17 })
   })
 
   it('pushes to undo stack', () => {
-    const store = makeStore([
-      /* ... */
-    ])
-    store.set(moveShapeCommand, { id: 'r1', dx: 5, dy: 5 })
+    const store = makeStore([makeRect({ id: 'r1' })])
+    store.set(moveSelectionCommand, { ids: ['r1'], dx: 5, dy: 5 })
     expect(store.get(undoStackAtom)).toHaveLength(1)
-    expect(store.get(undoStackAtom)[0].label).toBe('Move shape')
+    expect(store.get(undoStackAtom)[0].label).toBe('Move selection')
   })
 
   it('is a no-op for unknown id', () => {
     const store = makeStore([])
-    store.set(moveShapeCommand, { id: 'nonexistent', dx: 5, dy: 5 })
+    store.set(moveSelectionCommand, { ids: ['nonexistent'], dx: 5, dy: 5 })
     expect(store.get(undoStackAtom)).toHaveLength(0)
   })
 })
@@ -149,7 +135,7 @@ it('round-trips through undo/redo', () => {
   ])
   const before = store.get(projectAtom)
 
-  store.set(moveShapeCommand, { id: 'r1', dx: 10, dy: 10 })
+  store.set(moveSelectionCommand, { ids: ['r1'], dx: 10, dy: 10 })
   const after = store.get(projectAtom)
   expect(after).not.toEqual(before)
 
@@ -222,7 +208,7 @@ SVG export is where snapshot testing shines — the output is deterministic and 
 
 ### Golden File Pattern
 
-`src/features/export/__fixtures__/single-rect.svg`:
+`src/features/export/__fixtures__/plain-rect.svg`:
 
 ```svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" fill="#000"/></svg>
@@ -234,6 +220,7 @@ SVG export is where snapshot testing shines — the output is deterministic and 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
+import { makeIcon, makeRect } from '@/test/fixtures/shapes'
 import { serializeIcon } from './serialize'
 
 function loadFixture(name: string) {
@@ -242,26 +229,8 @@ function loadFixture(name: string) {
 
 describe('serializeIcon', () => {
   it('serializes a single rect', () => {
-    const icon: Icon = {
-      id: 'i',
-      name: 't',
-      viewBox: [0, 0, 24, 24],
-      shapes: [
-        {
-          type: 'rect',
-          id: 'r1',
-          name: 'r',
-          visible: true,
-          locked: false,
-          x: 2,
-          y: 2,
-          width: 20,
-          height: 20,
-          fill: '#000',
-        },
-      ],
-    }
-    expect(serializeIcon(icon)).toBe(loadFixture('single-rect.svg'))
+    const icon = makeIcon([makeRect({ id: 'r1', x: 2, y: 2, width: 20, height: 20, fill: '#000' })])
+    expect(serializeIcon(icon)).toBe(loadFixture('plain-rect.svg'))
   })
 })
 ```
@@ -282,7 +251,7 @@ Reserve Playwright for flows that cross boundaries: real browser, real pointer e
 
 ### Example: Draw-Move-Export Flow
 
-`e2e/draw-and-export.spec.ts`:
+Illustrative composite — the real specs split this per flow (`e2e/drag-to-draw.spec.ts`, `e2e/drag-to-move.spec.ts`, `e2e/export-svg.spec.ts`):
 
 ```ts
 import { test, expect } from '@playwright/test'
@@ -339,16 +308,15 @@ Store baselines in `e2e/__screenshots__/`. Regenerate with `--update-snapshots`.
 
 ### Parse, Don't String-Match
 
-When validating SVG output, parse it — string comparison is fragile:
+When validating SVG structure, parse it — string comparison is fragile. There is no in-house parse module yet; use `DOMParser` directly:
 
 ```ts
-import { parseSvg } from '@/lib/svg/parse'
-
 it('produces valid SVG', () => {
   const output = serializeIcon(icon)
-  const parsed = parseSvg(output)
-  expect(parsed.viewBox).toEqual([0, 0, 24, 24])
-  expect(parsed.shapes).toHaveLength(3)
+  const doc = new DOMParser().parseFromString(output, 'image/svg+xml')
+  expect(doc.querySelector('parsererror')).toBeNull()
+  expect(doc.documentElement.getAttribute('viewBox')).toBe('0 0 24 24')
+  expect(doc.querySelectorAll('rect, path')).toHaveLength(3)
 })
 ```
 
@@ -356,18 +324,7 @@ String comparison is fine for golden files (where we control every byte) but not
 
 ### Round-Trip Tests
 
-A strong invariant: **serialize → parse → serialize should be stable.**
-
-```ts
-it('round-trips through serialize/parse', () => {
-  const once = serializeIcon(icon)
-  const parsed = parseIcon(once)
-  const twice = serializeIcon(parsed)
-  expect(twice).toBe(once)
-})
-```
-
-If this fails, either serialization is lossy or parsing is lossy. Both are bugs.
+Once an SVG import/parse module lands (planned for paste/import), add the round-trip invariant: **serialize → parse → serialize should be stable.** If it fails, either serialization is lossy or parsing is lossy — both are bugs.
 
 ### Numeric Precision
 
@@ -413,4 +370,6 @@ pnpm test:e2e --ui     # Playwright UI mode
 3. `prettier --check` (formatting)
 4. `vitest run --project unit` (unit + component)
 
-E2E runs separately via `pnpm test:e2e` in a parallel CI job with a built dev server. See `.github/workflows/ci.yml`.
+The vitest config defines a second `storybook` project (`@storybook/addon-vitest`, runs stories as browser tests) which is not part of `pnpm check`.
+
+E2E is **not** part of CI (`.github/workflows/ci.yml` runs `pnpm check` plus a Storybook build) — run `pnpm test:e2e` locally before merging canvas-affecting changes.

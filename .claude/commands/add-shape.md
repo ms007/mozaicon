@@ -15,7 +15,7 @@ Read these files in order:
 1. @docs/shapes.md — the full walkthrough (required)
 2. @src/types/shapes.ts — the current shape union
 3. @src/lib/svg/shapeElement.ts — the element tree (shape-to-element translation)
-4. @docs/architecture.md — section "State Shape" (if you need context on the schema)
+4. @docs/state.md — section "State Shape" (if you need context on the schema)
 
 ## Task
 

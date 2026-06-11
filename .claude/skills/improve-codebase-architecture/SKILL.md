@@ -26,7 +26,7 @@ Key principles (see [LANGUAGE.md](LANGUAGE.md) for the full list):
 - **The interface is the test surface.**
 - **One adapter = hypothetical seam. Two adapters = real seam.**
 
-This skill is _informed_ by the project's domain model. The domain language in `docs/glossary.md` gives names to good seams; the thematic deep-dives in `docs/` (`architecture.md`, `shapes.md`, `testing.md`, `ui-primitives.md`, `design-tokens.md`) are decisions the skill should not re-litigate.
+This skill is _informed_ by the project's domain model. The domain language in `docs/glossary.md` gives names to good seams; the thematic deep-dives in `docs/` (`architecture.md`, `state.md`, `commands.md`, `gestures.md`, `shapes.md`, `testing.md`, `ui-primitives.md`, `design-tokens.md`) are decisions the skill should not re-litigate.
 
 ## Process
 
@@ -67,5 +67,5 @@ Side effects happen inline as decisions crystallize:
 
 - **Naming a deepened module after a concept not in `docs/glossary.md`?** Add the term to `docs/glossary.md` — same discipline as `/grill-with-docs`. Add the new term under the matching topic group, in the format used by the existing entries.
 - **Sharpening a fuzzy term during the conversation?** Update `docs/glossary.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an update to the most relevant thematic doc (`docs/architecture.md` for cross-feature decisions, `docs/shapes.md` for the shape model, `docs/testing.md` for test strategies, `docs/ui-primitives.md` for the shadcn seam, `docs/design-tokens.md` for tokens), framed as: _"Want me to record this in `docs/<file>.md` so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones.
+- **User rejects the candidate with a load-bearing reason?** Offer an update to the most relevant thematic doc (`docs/architecture.md` for cross-feature decisions, `docs/state.md` for the atom graph, `docs/commands.md` for the command pattern, `docs/gestures.md` for gestures, `docs/shapes.md` for the shape model, `docs/testing.md` for test strategies, `docs/ui-primitives.md` for the shadcn seam, `docs/design-tokens.md` for tokens), framed as: _"Want me to record this in `docs/<file>.md` so future architecture reviews don't re-suggest it?"_ Only offer when the reason would actually be needed by a future explorer to avoid re-suggesting the same thing — skip ephemeral reasons ("not worth it right now") and self-evident ones.
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
