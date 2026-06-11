@@ -13,7 +13,7 @@ import {
   CornerTopLeft,
   CornerTopRight,
 } from '@/icons'
-import { clamp, parseNumber } from '@/lib/util/number'
+import { clamp, parseNumber, step } from '@/lib/util/number'
 import { cn } from '@/lib/utils'
 import {
   type SelectionCornerRadii,
@@ -95,6 +95,24 @@ function SmoothingControls() {
       setBuffer(numericValue != null ? String(numericValue) : '')
       setBaseNumeric(numericValue)
       inputRef.current?.select()
+      return
+    }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      const currentValue = parseNumber(buffer) ?? numericValue
+      if (currentValue == null) return
+      const stepped = clamp(
+        step(currentValue, {
+          baseStep: 1,
+          direction: e.key === 'ArrowUp' ? 1 : -1,
+          coarse: e.shiftKey,
+          fine: e.altKey,
+        }),
+        { min: 0, max: 100 },
+      )
+      setBuffer(String(stepped))
+      setBaseNumeric(stepped)
+      dispatch(stepped)
     }
   }
 
