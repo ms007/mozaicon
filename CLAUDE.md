@@ -4,9 +4,12 @@
 
 ## Required Reading
 
-This file is the entry point. For non-trivial changes, read the matching deep-dive:
+This file is the entry point. For non-trivial changes, read the matching deep-dive. Path-scoped rules in `.claude/rules/` (via `paths:` frontmatter) auto-load each subtree's non-negotiable invariants plus a pointer to its owning doc when you work there — they are a safety net, not a substitute for reading the doc:
 
-- **`docs/architecture.md`** — atoms, command pattern, rendering pipeline
+- **`docs/architecture.md`** — system overview: layers, rendering pipeline, persistence, performance
+- **`docs/state.md`** — data model (Zod schemas), atom graph, Project-vs-UI state categories
+- **`docs/commands.md`** — command pattern, undo/redo, layer reorder
+- **`docs/gestures.md`** — gesture registry, drafts, translation gestures, Escape priority
 - **`docs/canvas-chrome.md`** — surface hierarchy, Artboard, Pixel Grid, Canvas-is-SVG invariant
 - **`docs/shapes.md`** — shape model and how to add a new shape type
 - **`docs/testing.md`** — test layers, golden-file conventions, Jotai test helpers
@@ -83,15 +86,17 @@ src/
 
 - **All mutations via commands.** Don't call `set` on primitive atoms from components — dispatch via command atoms in `store/commands/` (use `createCommand`).
 - **Small atoms, derived views.** Prefer many focused atoms + `atom((get) => …)` for computed state over one big atom.
-- **Selection is session-local but goes through commands.** Don't embed selection in shape data, and don't `set(selectedIdsAtom, …)` directly from features — dispatch `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`. Selection is a first-class undo step (PRD #119): every effective change pushes one history entry, icon/project mutations that change selection push one combined entry. See `docs/architecture.md` → Selection / Command Pattern.
+- **Selection is session-local but goes through commands.** Don't embed selection in shape data, and don't `set(selectedIdsAtom, …)` directly from features — dispatch `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`. Selection is a first-class undo step (PRD #119). Details → `docs/state.md` (Selection Atom) + `docs/commands.md`.
 
-Details (atomFamily, splitAtom, atomWithImmer, command internals) → `docs/architecture.md`.
+Details (atomFamily, splitAtom, atomWithImmer) → `docs/state.md`; command internals → `docs/commands.md`.
 
 ### Files
 
 - **Keep files under 300 lines.** Split by responsibility when they grow.
 - **One component per file.** Name file same as component (`ShapeInspector.tsx`).
 - **Co-locate tests:** `Foo.tsx` + `Foo.test.tsx` in the same folder.
+- **Docs follow the same budget.** Keep each `docs/*.md` under ~350 lines; when one outgrows it, split by subsystem and add the new doc to Required Reading. Don't restate a doc's content here — CLAUDE.md holds rules and pointers only.
+- **Rules mirror docs.** Each `.claude/rules/*.md` holds only the non-negotiable invariants for its `paths:` scope plus a pointer to the owning doc — never doc content. When an invariant changes in a doc, update the matching rule in the same change.
 
 ### Comments
 
@@ -118,25 +123,21 @@ Patterns that recurred in past sessions and cost real turns. Apply them by defau
 
 ## Testing Strategy
 
-Test at the layer where the logic lives, smallest first: pure logic → component → e2e.
-
-- `lib/` functions — Vitest unit, co-located.
-- Components with non-trivial logic — Vitest + Testing Library.
-- Canvas / drag / export flows — Playwright.
-- SVG output — snapshot the serialized string (golden files in `__fixtures__/`).
+Test at the layer where the logic lives, smallest first: pure logic → component → e2e. Layer table, golden-file conventions, and Jotai test helpers → `docs/testing.md`.
 
 ## Common Tasks
 
 Before starting, open the matching doc — it has the full walkthrough.
 
-| Task                    | Read first                        | Entry point                                                                    |
-| ----------------------- | --------------------------------- | ------------------------------------------------------------------------------ |
-| Add a shape type        | `docs/shapes.md`                  | `src/types/shapes.ts`                                                          |
-| Add a command           | `docs/architecture.md` (Commands) | `src/store/commands/` via `createCommand`                                      |
-| Add a shadcn primitive  | `docs/ui-primitives.md`           | `pnpm dlx shadcn@latest add <name>`, then wrap in `src/components/primitives/` |
-| Add an export format    | `docs/export.md`                  | `src/features/export/`                                                         |
-| Add a keyboard shortcut | —                                 | `src/features/shortcuts/registry.ts` (no ad-hoc listeners)                     |
-| Write tests             | `docs/testing.md`                 | Co-located `*.test.ts` next to source                                          |
+| Task                    | Read first              | Entry point                                                                    |
+| ----------------------- | ----------------------- | ------------------------------------------------------------------------------ |
+| Add a shape type        | `docs/shapes.md`        | `src/types/shapes.ts`                                                          |
+| Add a command           | `docs/commands.md`      | `src/store/commands/` via `createCommand`                                      |
+| Add a gesture           | `docs/gestures.md`      | `src/store/atoms/gestures/registry.ts`                                         |
+| Add a shadcn primitive  | `docs/ui-primitives.md` | `pnpm dlx shadcn@latest add <name>`, then wrap in `src/components/primitives/` |
+| Add an export format    | `docs/export.md`        | `src/features/export/`                                                         |
+| Add a keyboard shortcut | —                       | `src/features/shortcuts/registry.ts` (no ad-hoc listeners)                     |
+| Write tests             | `docs/testing.md`       | Co-located `*.test.ts` next to source                                          |
 
 ### Debugging canvas issues
 

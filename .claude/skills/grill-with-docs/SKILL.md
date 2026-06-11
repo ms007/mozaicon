@@ -17,11 +17,13 @@ If a question can be answered by exploring the codebase or reading a thematic do
 
 ## Doc layout this skill assumes
 
-This is a single-context project. Conventions and decisions live as prose inside thematic deep-dive docs under `docs/` (e.g. `architecture.md`, `shapes.md`, `testing.md`, `ui-primitives.md`, `design-tokens.md`). `CLAUDE.md` is the entry point and points at each one with a short description.
+This is a single-context project. Conventions and decisions live as prose inside thematic deep-dive docs under `docs/` (e.g. `architecture.md`, `state.md`, `commands.md`, `gestures.md`, `shapes.md`, `testing.md`, `ui-primitives.md`, `design-tokens.md`). `CLAUDE.md` is the entry point and points at each one with a short description.
 
 Shared vocabulary lives in `docs/glossary.md` (lazily created). Data-model terms are additionally defined as Zod schemas in `src/types/`, and `CLAUDE.md` lists "Key Concepts" as the onboarding-level glossary.
 
 There is no `docs/adr/` and no separate decision log. Decisions land **inline in the thematic doc that owns the topic** — or in a new thematic doc when nothing existing fits.
+
+Path-scoped rules in `.claude/rules/*.md` (`paths:` frontmatter) condense each doc's non-negotiable invariants for mechanical loading. When a session changes an invariant in a thematic doc, offer the matching rule update in the same breath — the rules mirror the docs and must not drift.
 
 ## Reading strategy
 

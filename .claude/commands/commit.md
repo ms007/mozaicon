@@ -68,7 +68,7 @@ Decide which files go into the commit(s):
 **Ask via `AskUserQuestion` when:**
 
 - Mix of feature work + unrelated refactor
-- Changes in `CLAUDE.md` / `docs/architecture.md` alongside code (might be intentional or drift-fix)
+- Changes in `CLAUDE.md` / `docs/*.md` / `.claude/rules/*.md` alongside code (might be intentional or drift-fix)
 - Plan would produce more than ~3 commits → ask once globally instead of 5 sub-approvals
 - Anything is unclear
 

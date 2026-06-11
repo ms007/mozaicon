@@ -6,8 +6,9 @@ paths:
 
 # Store & Canvas Architecture
 
-Read @docs/architecture.md before non-trivial changes here. It covers the
-command pattern, atom design, and the rendering pipeline in full.
+Read @docs/state.md (atom design) and @docs/commands.md (command pattern)
+before non-trivial changes here; @docs/gestures.md when touching gestures,
+@docs/architecture.md for the system overview and rendering pipeline.
 
 ## Non-negotiables
 
@@ -30,7 +31,13 @@ command pattern, atom design, and the rendering pipeline in full.
 - **Derived atoms** (`atom((get) => ...)`) for computed state. Don't
   recompute in components.
 - **`atomWithImmer`** for atoms holding deep structures (the document tree).
-- Selection lives in its own atom, never inside shape data.
+- Selection lives in its own atom, never inside shape data. Writes are
+  structurally sealed: the public `selectedIdsAtom` is read-only — dispatch
+  `selectShapesCommand` / `toggleSelectionCommand` / `clearSelectionCommand`.
+- **Evict `atomFamily` entries when their key dies.** A command that deletes
+  a shape also calls `shapeAtom.remove(id)`, otherwise the family leaks.
+- **Per-shape canvas components stay stateless** (undo can remount them).
+  Park per-shape state in a separate id-keyed atom, not in React state.
 
 ## Debugging
 
