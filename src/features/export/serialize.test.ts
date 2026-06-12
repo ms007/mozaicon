@@ -127,6 +127,54 @@ describe('serializeIcon', () => {
     ).toBe(loadFixture('smooth-corners.svg'))
   })
 
+  it('serializes a stroked rect with fill and stroke', () => {
+    expect(
+      serializeIcon(
+        doc({
+          ...baseRect,
+          x: 2,
+          y: 2,
+          width: 20,
+          height: 20,
+          fill: '#fff',
+          stroke: '#000',
+          strokeWidth: 2,
+        }),
+      ),
+    ).toBe(loadFixture('stroked-rect.svg'))
+  })
+
+  it('serializes a multi-shape icon with stroked rects', () => {
+    expect(
+      serializeIcon(
+        doc(
+          {
+            ...baseRect,
+            id: 'r1',
+            x: 2,
+            y: 2,
+            width: 20,
+            height: 20,
+            fill: '#ff6600',
+            stroke: '#333',
+            strokeWidth: 1,
+          },
+          {
+            ...baseRect,
+            id: 'r2',
+            x: 6,
+            y: 6,
+            width: 12,
+            height: 12,
+            fill: '#fff',
+            stroke: '#000',
+            strokeWidth: 2,
+          },
+        ),
+      ),
+    ).toBe(loadFixture('multi-shape-stroked.svg'))
+  })
+
   it('produces empty body when all shapes are hidden', () => {
     expect(serializeIcon(doc({ ...baseRect, visible: false }))).toBe(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"></svg>',

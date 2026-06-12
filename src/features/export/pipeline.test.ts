@@ -84,6 +84,37 @@ describe('exportSvg', () => {
     expect(await exportSvg(doc)).toBe(loadFixture('optimized-smooth-corners.svg'))
   })
 
+  it('optimizes a stroked rect preserving stroke attributes', async () => {
+    const doc = makeIcon([makeRect({ ...baseRect, fill: '#fff', stroke: '#000', strokeWidth: 2 })])
+    expect(await exportSvg(doc)).toBe(loadFixture('optimized-stroked-rect.svg'))
+  })
+
+  it('optimizes a multi-shape icon with stroked rects', async () => {
+    const doc = makeIcon([
+      makeRect({
+        id: 'r1',
+        x: 2,
+        y: 2,
+        width: 20,
+        height: 20,
+        fill: '#ff6600',
+        stroke: '#333',
+        strokeWidth: 1,
+      }),
+      makeRect({
+        id: 'r2',
+        x: 6,
+        y: 6,
+        width: 12,
+        height: 12,
+        fill: '#fff',
+        stroke: '#000',
+        strokeWidth: 2,
+      }),
+    ])
+    expect(await exportSvg(doc)).toBe(loadFixture('optimized-multi-shape-stroked.svg'))
+  })
+
   it('handles an empty document', async () => {
     const output = await exportSvg(makeIcon())
     expect(output).toContain('viewBox="0 0 24 24"')
@@ -197,6 +228,52 @@ describe('exportTsx', () => {
     expect(await exportNamed(namedDoc('My Icon', shape))).toBe(
       loadFixture('component-smooth-corners.tsx') + '\n',
     )
+  })
+
+  it('renders a stroked rect with fill and stroke', async () => {
+    const shape = makeRect({ ...baseRect, fill: '#fff', stroke: '#000', strokeWidth: 2 })
+    expect(await exportNamed(namedDoc('My Icon', shape))).toBe(
+      loadFixture('component-stroked-rect.tsx') + '\n',
+    )
+  })
+
+  it('renders a multi-shape icon with stroked rects', async () => {
+    const shapes: RectShape[] = [
+      makeRect({
+        id: 'r1',
+        x: 2,
+        y: 2,
+        width: 20,
+        height: 20,
+        fill: '#ff6600',
+        stroke: '#333',
+        strokeWidth: 1,
+      }),
+      makeRect({
+        id: 'r2',
+        x: 6,
+        y: 6,
+        width: 12,
+        height: 12,
+        fill: '#fff',
+        stroke: '#000',
+        strokeWidth: 2,
+      }),
+    ]
+    expect(await exportNamed(namedDoc('My Icon', ...shapes))).toBe(
+      loadFixture('component-multi-shape-stroked.tsx') + '\n',
+    )
+  })
+
+  it('stroked rect uses same stroke attributes in SVG and TSX exports', async () => {
+    const shape = makeRect({ ...baseRect, fill: '#fff', stroke: '#000', strokeWidth: 2 })
+    const doc = makeIcon([shape])
+    const svg = await exportSvg(doc)
+    const tsx = await exportTsx(doc, 'Test')
+    expect(svg).toContain('stroke="#000"')
+    expect(svg).toContain('stroke-width="2"')
+    expect(tsx).toContain('stroke="#000"')
+    expect(tsx).toContain('strokeWidth={2}')
   })
 
   it('does not include shape names, ids, or editor metadata', async () => {

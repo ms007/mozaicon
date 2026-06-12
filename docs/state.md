@@ -198,10 +198,36 @@ Atoms in the store fall into two categories with different mutation rules:
 
 **Project state** (`projectAtom`): the icons being edited, plus which one is active. Mutations must go through commands so they're undoable. Shape-level commands reach it through the `activeIconAtom` lens; icon-level commands (`src/store/commands/iconCommands.ts`) write the project directly.
 
-**UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
+**UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, `strokeColorSlotsAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
 **Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the project. Selection therefore lives on the _same_ history stack as the project. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the project, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the project axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
 Consumers of selection still filter stale ids against the per-shape atoms as defense-in-depth (`selectedShapesAtom` already does this), but the primary mechanism that keeps selection consistent across history is the snapshot, not the filter.
 
 If any other UI atom ever wants in on undo/redo, the bar is high: justify it against the principle that history's job is to roll back the _document_ and the _semantic context that drove each mutation_, nothing else.
+
+## Stroke Data Semantics
+
+Every shape carries optional `stroke` (color string) and `strokeWidth` (number) fields on the base schema. Their interplay:
+
+- **`stroke` is the on/off switch.** An absent `stroke` field (or the defense-in-depth sentinel `'none'`) means "no stroke". Commands never write `'none'` — they delete the field.
+- **`strokeWidth` persists independently.** Removing a stroke deletes `stroke` but keeps `strokeWidth` as memory for re-enable. A width without a color has no visual effect.
+- **Adding a stroke** writes `stroke: '#000'` and, where no width exists yet, `strokeWidth: 2`. The color command (`setStrokeColorCommand`) activates stroke-less shapes — setting a color implicitly adds the stroke. The width command (`setStrokeWidthCommand`) does **not** activate — it only stores the remembered width.
+
+### Selection-Stroke Atom
+
+`selectionStrokeAtom` (`src/store/atoms/selection-stroke.ts`) derives a summary from the selected shapes:
+
+| Field      | Value                                                                                         |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| `presence` | `'none'` / `'some'` / `'all'` — tri-state of how many selected shapes have an active stroke   |
+| `color`    | The uniform stroke color, or `MIXED` when selected stroked shapes disagree                    |
+| `width`    | The uniform stroke width among stroked shapes, or `MIXED` (a missing width counts as `MIXED`) |
+
+The Stroke Section reads this atom to decide header actions ("+"/"-") and control visibility.
+
+### Color Slots
+
+`strokeColorSlotsAtom` (factory: `createColorSlotsAtom` in `src/store/atoms/colorSlots.ts`) holds six color slots: slot 1 starts as `#000000`, the rest empty. **Color Slots are session-local UI state** — written directly, not through commands, not undoable, not persisted. After undo the shape color reverts but the slots keep their colors, by design.
+
+The factory is color-agnostic: it takes an optional initial-state array (defaults to slot 1 = `#000000`, rest empty). A future fill picker can instantiate its own slots with `createColorSlotsAtom(['#000000', null, null, null, null, null])` without sharing stroke state.

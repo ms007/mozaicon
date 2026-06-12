@@ -25,3 +25,7 @@ samplers, and per-gesture mechanics in full.
   use the `createTranslationGesture` factory.
 - **The gesture set is frozen at promotion.** Renderers and `displayBbox`
   key off `draft.ids`, never `selectedIdsAtom`.
+- **Paint-merging drafts override paint, not geometry.** The stroke preview
+  adapter (`strokePreviewAdapter`) uses `blocksCommands: false` — commands
+  can commit while the draft is active. The `change` handler must clear the
+  draft before dispatching the command so the undo step is clean.

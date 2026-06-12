@@ -3,6 +3,7 @@ import { ExportSection } from '@/features/export/ExportSection'
 
 import { CornersSection } from './CornersSection'
 import { GeometryField } from './GeometryField'
+import { StrokeSection } from './StrokeSection'
 
 export function PropertiesPanel() {
   return (
@@ -25,6 +26,7 @@ export function PropertiesPanel() {
       </PanelSection>
 
       <CornersSection />
+      <StrokeSection />
 
       <div className="mt-auto mb-2">
         <ExportSection />

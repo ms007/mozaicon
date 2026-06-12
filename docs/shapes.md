@@ -4,7 +4,7 @@ This document explains how shapes work and how to add a new shape type.
 
 ## Overview
 
-A **shape** is a single drawable element in the document. All shapes share a common base (`id`, `name`, `visible`, `locked`, and the paint fields `fill` / `stroke` / `strokeWidth`) and add type-specific geometry.
+A **shape** is a single drawable element in the document. All shapes share a common base (`id`, `name`, `visible`, `locked`, and the paint fields `fill` / `stroke` / `strokeWidth`) and add type-specific geometry. The `stroke` color field is the stroke on/off switch; `strokeWidth` persists independently as memory for re-enable. Full stroke data semantics → [`state.md`](./state.md) § Stroke Data Semantics.
 
 Shapes are stored as a **discriminated union** in `src/types/shapes.ts`, keyed on `type`. This gives us:
 

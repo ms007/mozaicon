@@ -19,7 +19,7 @@ Interactive gestures write a transient draft atom (`resizeDraftAtom`, `moveDraft
 
 ## Gesture Registry (`src/store/atoms/gestures/registry.ts`)
 
-The gesture registry is the single source of truth for "which gestures exist and which is active". It is an ordered list of `GestureAdapter` objects — currently Marquee → Resize → Move → Nudge → Draw → PropertyStep → CornerRadiusStep — each wrapping a draft atom and an optional `displayBbox` callback. The registry is input-source-agnostic: pointer-driven adapters (Marquee, Resize, Move, Draw) are driven by pointer-down-to-pointer-up; keyboard-driven adapters (Nudge) are driven by key-down-to-key-up across auto-repeat. Both kinds share the same `GestureAdapter` contract and contribute to the same derived atoms. The core invariant is **Active Gesture iff draft atom is non-null**: a gesture is in flight exactly when its adapter's draft atom holds a value, and at most one adapter is active at any time (pointer-driven hooks each own a single `dragRef` on shared `window` pointer events; the keyboard nudge handler is suppressed while a pointer gesture is active and vice versa). The at-most-one-active invariant is verified by a contract test in `registry.test.ts`.
+The gesture registry is the single source of truth for "which gestures exist and which is active". It is an ordered list of `GestureAdapter` objects — currently Marquee → Resize → Move → Nudge → Draw → PropertyStep → CornerRadiusStep → StrokePreview — each wrapping a draft atom and an optional `displayBbox` callback. The registry is input-source-agnostic: pointer-driven adapters (Marquee, Resize, Move, Draw) are driven by pointer-down-to-pointer-up; keyboard-driven adapters (Nudge) are driven by key-down-to-key-up across auto-repeat. Both kinds share the same `GestureAdapter` contract and contribute to the same derived atoms. The core invariant is **Active Gesture iff draft atom is non-null**: a gesture is in flight exactly when its adapter's draft atom holds a value, and at most one adapter is active at any time (pointer-driven hooks each own a single `dragRef` on shared `window` pointer events; the keyboard nudge handler is suppressed while a pointer gesture is active and vice versa). The at-most-one-active invariant is verified by a contract test in `registry.test.ts`.
 
 Three derived atoms are computed from the registry:
 
@@ -90,3 +90,18 @@ What a sub-threshold pointer down/up does instead of the gesture:
 3. Non-empty selection → `clearSelectionCommand`, return.
 
 The ladder is "one step up" — Escape never reaches past the first tier that applies. Combining tiers in a single press (cancel _and_ clear selection together) is a regression: cancel means "return to the state before the gesture started", not "throw away gesture and selection in one stroke".
+
+## Paint-Merging Drafts
+
+All drafts described above merge **geometry** — they override a shape's position or size while the gesture is in flight. A paint-merging draft instead overrides **paint attributes** (stroke color and/or stroke width), leaving geometry untouched. The renderer merges paint entries from the draft over the shape's stored attributes in `ShapeRenderer`.
+
+### Stroke Preview Draft
+
+The first paint-merging draft: `strokePreviewDraftAtom` in `src/store/atoms/gestures/strokePreview.ts`. It holds `Record<string, StrokePaintOverride> | null`, where `StrokePaintOverride` is `{ stroke?: string; strokeWidth?: number }`. Per-shape lookup is `strokePreviewDraftForShapeAtom` (an `atomFamily` of `selectAtom` slices with structural equality).
+
+**`blocksCommands: false`.** Unlike geometry drafts, the stroke preview adapter does _not_ freeze commands. This is deliberate: the native color picker fires a final `change` event that must (1) clear the draft, then (2) dispatch the `setStrokeColorCommand` — both in the same synchronous turn. If the adapter blocked commands, step 2 would no-op. The `change` handler clears the draft first so `isAnyGestureActiveAtom` flips back to `false` before the command dispatches. This ordering produces exactly one undo step per picker session.
+
+Two consumers write this draft:
+
+- **Color picker drag** (`previewStrokeColor`): continuous `input` events write only the draft (color override per selected shape); the final `change` event clears + commits.
+- **Width arrow stepping** (`previewStrokeWidth`): each arrow press writes a width override into the draft; Enter/blur clears + commits one `setStrokeWidthCommand`. Escape clears without committing.

@@ -6,6 +6,7 @@ import { cornerRadiusStepDraftForShapeAtom } from '@/store/atoms/gestures/corner
 import { moveDraftForShapeAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftForShapeAtom } from '@/store/atoms/gestures/nudge'
 import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
+import { strokePreviewDraftForShapeAtom } from '@/store/atoms/gestures/strokePreview'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
@@ -27,6 +28,7 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
   const propStepGeo = useAtomValue(propertyStepDraftForShapeAtom(shape.id))
   const radiusStepDraft = useAtomValue(cornerRadiusStepDraftForShapeAtom(shape.id))
+  const strokeDraft = useAtomValue(strokePreviewDraftForShapeAtom(shape.id))
   const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
   const nudgeOffset = useAtomValue(nudgeDraftForShapeAtom(shape.id))
   const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
@@ -39,6 +41,9 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   let rendered = geoOverride ? { ...shape, ...geoOverride } : shape
   if (radiusStepDraft) {
     rendered = { ...rendered, corners: { ...rendered.corners, radii: radiusStepDraft } }
+  }
+  if (strokeDraft) {
+    rendered = { ...rendered, ...strokeDraft }
   }
   const totalDx = (moveOffset?.dx ?? 0) + (nudgeOffset?.dx ?? 0)
   const totalDy = (moveOffset?.dy ?? 0) + (nudgeOffset?.dy ?? 0)

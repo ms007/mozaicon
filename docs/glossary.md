@@ -56,7 +56,7 @@ Shared vocabulary for the Mozaicon project, grouped by topic. Entries are **defi
 
 **Rect** — Axis-aligned rectangle `{ x, y, width, height }` in viewBox units (`src/lib/geometry/rect.ts`). Distinct from `RectShape`, which is a _Rect_ plus style and identity.
 
-**Bbox** — The smallest _Rect_ enclosing a shape's rendered geometry (`bboxOf`); excludes stroke width and transforms.
+**Bbox** — The smallest _Rect_ enclosing a shape's rendered geometry (`bboxOf`); deliberately geometry-only — excludes stroke width and transforms. Selection overlay, resize handles, and marquee hit-test all use this geometry-only bbox; click selection picks up painted strokes natively via pointer events, so no visual-bounds bbox is needed.
 
 **Selection bbox** — The union of the _Bbox_ of every selected shape (`bboxOfMany`), or `null` when empty; the anchor for selection-bound visuals.
 
@@ -67,6 +67,14 @@ Shared vocabulary for the Mozaicon project, grouped by topic. Entries are **defi
 **Resize Draft** — Transient per-shape geometry (`Record<id, Rect> | null`) in `resizeDraftAtom`; one `resizeShapeCommand` commits on pointerup. See [`gestures.md`](./gestures.md).
 
 **Move Set** — The subset of the selection that actually translates in a _Drag-to-Move_: selected ∩ _Selectable Shapes_, frozen at promotion. An empty Move Set blocks promotion.
+
+## Stroke
+
+**Stroke Section** — The properties-panel section (`StrokeSection.tsx`) for stroke editing, visible when the selection is non-empty. Exposes a presence tri-state derived from the selection: `none` (no selected shape has a stroke — header shows "+"), `some` or `all` (controls visible, header shows "−"). See [`state.md`](./state.md) § Selection-Stroke Atom.
+
+**Color Slots** — A row of six session-local color swatches in the _Stroke Section_, backed by `strokeColorSlotsAtom`. Three click modes: empty slot opens the native picker, filled inactive slot applies that color, filled active slot reopens the picker. Slot state is UI state — not undoable, not persisted. Built color-agnostically (`createColorSlotsAtom`) so a future fill picker can reuse the same factory. See [`state.md`](./state.md) § Color Slots.
+
+**Stroke Preview Draft** — A paint-merging gesture draft (`strokePreviewDraftAtom`) holding per-shape `StrokePaintOverride` entries (optional `stroke` and/or `strokeWidth`). Unlike geometry drafts (Translation, Resize), the renderer merges paint attributes rather than geometry. Registered in the _Gesture Registry_ with `blocksCommands: false` so commands can commit while the draft is active (the native picker's final `change` event clears the draft, then dispatches the command). See [`gestures.md`](./gestures.md) § Stroke Preview Draft.
 
 ## Corners
 
