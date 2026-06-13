@@ -74,6 +74,44 @@ describe('CornersSection', () => {
     expect(screen.queryByText('Corners')).not.toBeInTheDocument()
   })
 
+  describe('gutter alignment', () => {
+    it('renders expand action in the gutter slot of a PropertyRow when collapsed', () => {
+      renderSection(testDoc, ['r1'])
+      const expandBtn = screen.getByRole('button', { name: 'Expand corner radius' })
+      const gutterSlot = expandBtn.closest('.col-start-2')
+      expect(gutterSlot).toBeInTheDocument()
+      expect(gutterSlot?.closest('[data-slot="property-row"]')).toBeInTheDocument()
+    })
+
+    it('renders collapse action in the gutter slot of a PropertyRow when expanded', async () => {
+      renderSection(testDoc, ['r1'])
+      await userEvent.click(screen.getByRole('button', { name: 'Expand corner radius' }))
+      const collapseBtn = screen.getByRole('button', { name: 'Collapse corner radius' })
+      const gutterSlot = collapseBtn.closest('.col-start-2')
+      expect(gutterSlot).toBeInTheDocument()
+      expect(gutterSlot?.closest('[data-slot="property-row"]')).toBeInTheDocument()
+    })
+
+    it('keeps the gutter action top-aligned so it does not move when toggling', async () => {
+      renderSection(testDoc, ['r1'])
+      const expandBtn = screen.getByRole('button', { name: 'Expand corner radius' })
+      const collapsedRow = expandBtn.closest('[data-slot="property-row"]')
+      expect(collapsedRow).toHaveClass('items-start')
+
+      await userEvent.click(expandBtn)
+      const collapseBtn = screen.getByRole('button', { name: 'Collapse corner radius' })
+      const expandedRow = collapseBtn.closest('[data-slot="property-row"]')
+      expect(expandedRow).toHaveClass('items-start')
+    })
+
+    it('renders the segmented style row through PropertyRow', () => {
+      renderSection(testDoc, ['r1'])
+      const styleGroup = screen.getByRole('group', { name: 'Corner style' })
+      const propertyRow = styleGroup.closest('[data-slot="property-row"]')
+      expect(propertyRow).toBeInTheDocument()
+    })
+  })
+
   describe('radius-gating', () => {
     it('hides the segmented control when all radii are 0', () => {
       const doc: Icon = {
@@ -252,6 +290,22 @@ describe('CornersSection', () => {
       const input = screen.getByRole('textbox', { name: 'Smoothing' })
       expect(input).toHaveValue('')
       expect(input).toHaveAttribute('placeholder', 'Mixed')
+    })
+
+    it('renders smoothing row through PropertyRow', () => {
+      const doc: Icon = {
+        ...testDoc,
+        shapes: [
+          {
+            ...testDoc.shapes[0],
+            corners: corners({ radii: [4, 4, 4, 4], style: 'smooth', smoothing: 50 }),
+          },
+        ],
+      }
+      renderSection(doc, ['r1'])
+      const smoothingField = screen.getByRole('textbox', { name: 'Smoothing' })
+      const propertyRow = smoothingField.closest('[data-slot="property-row"]')
+      expect(propertyRow).toBeInTheDocument()
     })
 
     it('dispatches smoothing via slider', async () => {

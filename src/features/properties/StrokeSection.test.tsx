@@ -101,6 +101,23 @@ describe('StrokeSection', () => {
     expect(shape.stroke).toBe('#ff0000')
   })
 
+  it('renders content rows through PropertyRow', () => {
+    const doc: Icon = {
+      ...testDoc,
+      shapes: [{ ...baseRect, stroke: '#000', strokeWidth: 2 }],
+    }
+    const { container } = renderSection(doc, ['r1'])
+    const propertyRows = container.querySelectorAll('[data-slot="property-row"]')
+    expect(propertyRows.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('renders the add/remove toggle on the gutter line', () => {
+    renderSection(testDoc, ['r1'])
+    const button = screen.getByRole('button', { name: 'Add stroke' })
+    const gutterCell = button.closest('.col-start-2')
+    expect(gutterCell).toBeInTheDocument()
+  })
+
   it('dispatches removeStroke when clicking remove button', async () => {
     const doc: Icon = {
       ...testDoc,

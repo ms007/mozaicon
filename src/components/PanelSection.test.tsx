@@ -41,4 +41,25 @@ describe('PanelSection', () => {
     )
     expect(screen.getByTestId('add-btn')).toBeInTheDocument()
   })
+
+  it('places headerAction on the 28px gutter column', () => {
+    render(
+      <PanelSection title="Test" headerAction={<button data-testid="action">x</button>}>
+        content
+      </PanelSection>,
+    )
+    const action = screen.getByTestId('action')
+    const gutterCell = action.closest('.col-start-2')
+    expect(gutterCell).toBeInTheDocument()
+  })
+
+  it('uses a grid header matching PropertyRow column layout', () => {
+    const { container } = render(
+      <PanelSection title="Test" headerAction={<button>x</button>}>
+        content
+      </PanelSection>,
+    )
+    const header = container.querySelector('section > div')
+    expect(header).toHaveStyle({ gridTemplateColumns: 'minmax(0, 1fr) 28px' })
+  })
 })

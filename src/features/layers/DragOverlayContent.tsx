@@ -24,10 +24,10 @@ export function DragOverlayContent({ activeId, count }: DragOverlayContentProps)
   return (
     <div className="relative w-54">
       {count > 2 && (
-        <div className="bg-sidebar border-sidebar-border absolute inset-x-0 top-0 h-8 translate-x-1 translate-y-1 rounded-md border opacity-40" />
+        <div className="bg-sidebar border-sidebar-border absolute inset-x-0 top-0 h-7 translate-x-1 translate-y-1 rounded-md border opacity-40" />
       )}
       {count > 1 && (
-        <div className="bg-sidebar border-sidebar-border absolute inset-x-0 top-0 h-8 translate-x-0.5 translate-y-0.5 rounded-md border opacity-60" />
+        <div className="bg-sidebar border-sidebar-border absolute inset-x-0 top-0 h-7 translate-x-0.5 translate-y-0.5 rounded-md border opacity-60" />
       )}
       <LayerItemView
         icon={<LayerThumbnail shape={shape} />}

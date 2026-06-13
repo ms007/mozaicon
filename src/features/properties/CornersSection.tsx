@@ -27,6 +27,7 @@ import { MIXED } from '@/store/atoms/selection-geometry'
 import { setCornerStyleCommand } from '@/store/commands/setCornerStyle'
 import { setSmoothingCommand } from '@/store/commands/setSmoothing'
 
+import { PropertyRow } from './PropertyRow'
 import { RadiusField } from './RadiusField'
 
 function uniformValue(radii: SelectionCornerRadii) {
@@ -132,8 +133,8 @@ function SmoothingControls() {
   }
 
   return (
-    <div className="mt-1.5 grid grid-cols-[1fr_auto] gap-1.5">
-      <div className="grid min-w-0 grid-cols-2 items-center gap-1.5">
+    <PropertyRow className="mt-1.5">
+      <div className="grid grid-cols-2 items-center gap-1.5">
         <Slider
           aria-label="Smoothing"
           min={0}
@@ -181,8 +182,7 @@ function SmoothingControls() {
           </span>
         </label>
       </div>
-      <div aria-hidden className="w-6" />
-    </div>
+    </PropertyRow>
   )
 }
 
@@ -200,39 +200,13 @@ export function CornersSection() {
   const showSmoothing = radiusGated && cornerStyle === 'smooth'
 
   return (
-    <PanelSection title="Corners">
+    <PanelSection title="Corners" divided>
       {expanded ? (
-        <div className="flex flex-col gap-1.5">
-          <div className="grid grid-cols-[1fr_auto] items-start gap-1.5">
-            <div className="grid grid-cols-2 gap-1.5">
-              <RadiusField
-                fieldKey="tl"
-                label="Top Left"
-                value={radii.tl}
-                icon={<CornerTopLeft width={12} height={12} />}
-              />
-              <RadiusField
-                fieldKey="tr"
-                label="Top Right"
-                value={radii.tr}
-                icon={<CornerTopRight width={12} height={12} />}
-              />
-              <RadiusField
-                fieldKey="bl"
-                label="Bottom Left"
-                value={radii.bl}
-                icon={<CornerBottomLeft width={12} height={12} />}
-              />
-              <RadiusField
-                fieldKey="br"
-                label="Bottom Right"
-                value={radii.br}
-                icon={<CornerBottomRight width={12} height={12} />}
-              />
-            </div>
+        <PropertyRow
+          gutter={
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               pressed={true}
               onClick={() => {
                 setExpanded(false)
@@ -241,10 +215,50 @@ export function CornersSection() {
             >
               <CornersAll />
             </Button>
+          }
+        >
+          <div className="grid grid-cols-2 gap-1.5">
+            <RadiusField
+              fieldKey="tl"
+              label="Top Left"
+              value={radii.tl}
+              icon={<CornerTopLeft width={12} height={12} />}
+            />
+            <RadiusField
+              fieldKey="tr"
+              label="Top Right"
+              value={radii.tr}
+              icon={<CornerTopRight width={12} height={12} />}
+            />
+            <RadiusField
+              fieldKey="bl"
+              label="Bottom Left"
+              value={radii.bl}
+              icon={<CornerBottomLeft width={12} height={12} />}
+            />
+            <RadiusField
+              fieldKey="br"
+              label="Bottom Right"
+              value={radii.br}
+              icon={<CornerBottomRight width={12} height={12} />}
+            />
           </div>
-        </div>
+        </PropertyRow>
       ) : (
-        <div className="grid grid-cols-[1fr_auto] items-center gap-1.5">
+        <PropertyRow
+          gutter={
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setExpanded(true)
+              }}
+              aria-label="Expand corner radius"
+            >
+              <CornersAll />
+            </Button>
+          }
+        >
           <RadiusField
             fieldKey="uniform"
             label="Corner Radius"
@@ -252,21 +266,11 @@ export function CornersSection() {
             icon={<CornersAll width={12} height={12} />}
             suffix="px"
           />
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              setExpanded(true)
-            }}
-            aria-label="Expand corner radius"
-          >
-            <CornersAll />
-          </Button>
-        </div>
+        </PropertyRow>
       )}
 
       {radiusGated && (
-        <div className="mt-1.5 grid grid-cols-[1fr_auto] gap-1.5">
+        <PropertyRow className="mt-1.5">
           <div className="flex min-w-0 flex-col gap-1.5">
             <Segmented
               options={STYLE_OPTIONS}
@@ -278,8 +282,7 @@ export function CornersSection() {
             />
             {styleMixed && <p className="text-muted-foreground text-xs italic">Mixed</p>}
           </div>
-          <div aria-hidden className="w-6" />
-        </div>
+        </PropertyRow>
       )}
 
       {showSmoothing && <SmoothingControls />}

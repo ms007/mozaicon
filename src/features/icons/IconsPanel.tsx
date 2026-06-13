@@ -2,7 +2,6 @@ import { useAtomValue, useSetAtom } from 'jotai'
 
 import { PanelSection } from '@/components/PanelSection'
 import { Button } from '@/components/primitives/Button'
-import { Icon } from '@/icons/Icon'
 import { iconListAtom } from '@/store/atoms/project'
 import { addIconCommand } from '@/store/commands/iconCommands'
 
@@ -18,17 +17,14 @@ export function IconsPanel() {
       className="max-h-36 shrink-0"
       headerAction={
         <Button
-          size="icon-xs"
+          size="icon"
           variant="ghost"
           aria-label="Add icon"
           onClick={() => {
             addIcon()
           }}
         >
-          <Icon aria-hidden>
-            <line x1="7" y1="3" x2="7" y2="11" />
-            <line x1="3" y1="7" x2="11" y2="7" />
-          </Icon>
+          +
         </Button>
       }
     >

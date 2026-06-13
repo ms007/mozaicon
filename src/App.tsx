@@ -38,7 +38,7 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden">
           <aside
             aria-label="Left panel"
-            className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-60 flex-col gap-3 border-r p-3"
+            className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-60 flex-col border-r"
           >
             <IconsPanel />
             <LayersPanel />

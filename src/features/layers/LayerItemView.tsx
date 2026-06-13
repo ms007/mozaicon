@@ -1,13 +1,6 @@
-import {
-  type KeyboardEvent,
-  type MouseEvent,
-  type ReactNode,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useCallback, useState } from 'react'
 
+import { EditableLabel } from '@/components/EditableLabel'
 import { Eye, EyeOff } from '@/icons'
 import { cn } from '@/lib/utils'
 
@@ -35,40 +28,6 @@ export function LayerItemView({
   onRename,
 }: LayerItemViewProps) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(name)
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  useLayoutEffect(() => {
-    if (editing) {
-      const el = inputRef.current
-      if (el) {
-        // Drop any prior document selection (e.g. the span word-select from
-        // the dblclick that opened rename mode) so Chrome doesn't animate
-        // from it into the input's full-text selection.
-        window.getSelection()?.removeAllRanges()
-        el.focus({ preventScroll: true })
-        el.setSelectionRange(0, el.value.length)
-      }
-    }
-  }, [editing])
-
-  const enterEditMode = useCallback(() => {
-    setDraft(name)
-    setEditing(true)
-  }, [name])
-
-  const commit = useCallback(() => {
-    const trimmed = draft.trim()
-    setEditing(false)
-    if (trimmed && trimmed !== name) {
-      onRename(trimmed)
-    }
-  }, [draft, name, onRename])
-
-  const cancel = useCallback(() => {
-    setEditing(false)
-    setDraft(name)
-  }, [name])
 
   const handleRowClick = useCallback(
     (e: MouseEvent) => {
@@ -105,8 +64,11 @@ export function LayerItemView({
         }
       }}
       className={cn(
-        'group/layer flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2',
+        'group/layer flex h-7 cursor-pointer items-center gap-1.5 rounded-md px-2',
         'transition-colors outline-none',
+        // Let the rename field run to the row's right edge while editing,
+        // keeping a hair of padding so the focus ring isn't clipped.
+        editing && 'pr-0.5',
         'focus-visible:ring-ring focus-visible:ring-1',
         selected ? 'bg-primary-muted' : 'hover:bg-sidebar-accent',
         isDragging && 'opacity-40',
@@ -121,54 +83,12 @@ export function LayerItemView({
       </span>
 
       {/* Name / rename input */}
-      <span
-        className={cn(
-          'relative flex h-6 min-w-0 flex-1 items-center rounded-sm ring-1 transition-shadow',
-          // Ring fade-in is delayed on enter so the text selection paints
-          // first; on leave, no delay so the ring vanishes with the input.
-          editing ? 'ring-ring delay-[15ms]' : 'ring-transparent',
-        )}
-      >
-        {/* The row already owns role="button" + keyboard handling; this
-            span is a passive label whose only mouse affordances exist to
-            suppress Chrome's native word-select on dblclick (which would
-            leak a document selection into the rename input animation). */}
-        {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-        <span
-          onMouseDown={(e) => {
-            if (e.detail >= 2) e.preventDefault()
-          }}
-          onDoubleClick={enterEditMode}
-          className={cn(
-            'block min-w-0 flex-1 truncate px-1.5 pt-0.5 text-sm',
-            editing && 'invisible',
-            !visible && !editing && 'opacity-50',
-          )}
-        >
-          {name}
-        </span>
-        {editing && (
-          <input
-            ref={inputRef}
-            type="text"
-            value={draft}
-            onChange={(e) => {
-              setDraft(e.target.value)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.stopPropagation()
-                commit()
-              } else if (e.key === 'Escape') {
-                e.stopPropagation()
-                cancel()
-              }
-            }}
-            onBlur={commit}
-            className="text-foreground bg-primary-faint absolute inset-0 block w-full rounded-sm px-1.5 pt-0.5 text-sm outline-none"
-          />
-        )}
-      </span>
+      <EditableLabel
+        name={name}
+        onRename={onRename}
+        onEditingChange={setEditing}
+        className={cn(!visible && 'opacity-50')}
+      />
 
       {/* Eye toggle — hidden while editing */}
       {!editing && (

@@ -94,7 +94,7 @@ export function LayersPanel() {
   }, [])
 
   return (
-    <PanelSection title="Layers" className="min-h-0 flex-1">
+    <PanelSection title="Layers" className="min-h-0 flex-1" divided>
       {ids.length === 0 ? (
         <p className="text-muted-foreground py-6 text-center text-sm">No layers yet</p>
       ) : (

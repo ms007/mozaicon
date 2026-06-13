@@ -26,7 +26,7 @@ export function ExportSection() {
   }
 
   return (
-    <PanelSection title="Export">
+    <PanelSection title="Export" divided>
       <div className="grid grid-cols-5 gap-1.5">
         {TARGETS.map(({ id, label }) => {
           const variant = !allDisabled && stickyTarget === id ? 'primary' : 'default'

@@ -8,6 +8,7 @@ import { addStrokeCommand } from '@/store/commands/addStroke'
 import { removeStrokeCommand } from '@/store/commands/removeStroke'
 
 import { ColorSlots } from './ColorSlots'
+import { PropertyRow } from './PropertyRow'
 import { StrokeWidthField } from './StrokeWidthField'
 
 export function StrokeSection() {
@@ -23,7 +24,7 @@ export function StrokeSection() {
   const headerAction = !hasStroke ? (
     <Button
       variant="ghost"
-      size="icon-xs"
+      size="icon"
       aria-label="Add stroke"
       onClick={() => {
         addStroke(slots.find((slot) => slot !== null) ?? undefined)
@@ -34,7 +35,7 @@ export function StrokeSection() {
   ) : (
     <Button
       variant="ghost"
-      size="icon-xs"
+      size="icon"
       aria-label="Remove stroke"
       onClick={() => {
         removeStroke(undefined)
@@ -45,17 +46,15 @@ export function StrokeSection() {
   )
 
   return (
-    <PanelSection title="Stroke" headerAction={headerAction}>
+    <PanelSection title="Stroke" headerAction={headerAction} divided>
       {hasStroke && (
         <>
-          <div className="grid grid-cols-[1fr_auto] gap-1.5">
+          <PropertyRow>
             <ColorSlots />
-            <div aria-hidden className="w-6" />
-          </div>
-          <div className="grid grid-cols-[1fr_auto] gap-1.5">
+          </PropertyRow>
+          <PropertyRow>
             <StrokeWidthField />
-            <div aria-hidden className="w-6" />
-          </div>
+          </PropertyRow>
         </>
       )}
     </PanelSection>

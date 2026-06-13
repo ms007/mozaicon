@@ -3,26 +3,31 @@ import { ExportSection } from '@/features/export/ExportSection'
 
 import { CornersSection } from './CornersSection'
 import { GeometryField } from './GeometryField'
+import { PropertyRow } from './PropertyRow'
 import { StrokeSection } from './StrokeSection'
 
 export function PropertiesPanel() {
   return (
     <aside
       aria-label="Properties"
-      className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-60 flex-col gap-3 border-l p-3"
+      className="bg-sidebar text-sidebar-foreground border-sidebar-border flex w-60 flex-col border-l"
     >
       <PanelSection title="Position">
-        <div className="flex gap-2">
-          <GeometryField fieldKey="x" label="X" />
-          <GeometryField fieldKey="y" label="Y" />
-        </div>
+        <PropertyRow>
+          <div className="flex gap-2">
+            <GeometryField fieldKey="x" label="X" />
+            <GeometryField fieldKey="y" label="Y" />
+          </div>
+        </PropertyRow>
       </PanelSection>
 
-      <PanelSection title="Layout">
-        <div className="flex gap-2">
-          <GeometryField fieldKey="width" label="W" />
-          <GeometryField fieldKey="height" label="H" />
-        </div>
+      <PanelSection title="Layout" divided>
+        <PropertyRow>
+          <div className="flex gap-2">
+            <GeometryField fieldKey="width" label="W" />
+            <GeometryField fieldKey="height" label="H" />
+          </div>
+        </PropertyRow>
       </PanelSection>
 
       <CornersSection />
