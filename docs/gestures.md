@@ -91,6 +91,15 @@ What a sub-threshold pointer down/up does instead of the gesture:
 
 The ladder is "one step up" — Escape never reaches past the first tier that applies. Combining tiers in a single press (cancel _and_ clear selection together) is a regression: cancel means "return to the state before the gesture started", not "throw away gesture and selection in one stroke".
 
+### Overlay Escape interception
+
+Overlay primitives resolve Escape locally and must stop it before it reaches the `window`-level ladder. The _Color Picker_ popover is the first such case. While open it keeps the _Stroke Preview Draft_ populated, so tier 1 (active gesture) would otherwise fire on every Escape and revert without closing; instead the popover intercepts Escape (Radix `onEscapeKeyDown`) and calls `stopPropagation()`, resolving it in two local steps:
+
+1. Hex field with an uncommitted buffer → discard the buffer (NumberInput semantics), keep the popover open.
+2. Otherwise → close the popover and discard the preview draft (revert to the color before opening), without committing.
+
+Because the event never reaches `window`, the central ladder's tool-deactivate and clear-selection tiers stay untouched — closing a picker never doubles as deactivating the active tool.
+
 ## Paint-Merging Drafts
 
 All drafts described above merge **geometry** — they override a shape's position or size while the gesture is in flight. A paint-merging draft instead overrides **paint attributes** (stroke color and/or stroke width), leaving geometry untouched. The renderer merges paint entries from the draft over the shape's stored attributes in `ShapeRenderer`.
@@ -99,9 +108,9 @@ All drafts described above merge **geometry** — they override a shape's positi
 
 The first paint-merging draft: `strokePreviewDraftAtom` in `src/store/atoms/gestures/strokePreview.ts`. It holds `Record<string, StrokePaintOverride> | null`, where `StrokePaintOverride` is `{ stroke?: string; strokeWidth?: number }`. Per-shape lookup is `strokePreviewDraftForShapeAtom` (an `atomFamily` of `selectAtom` slices with structural equality).
 
-**`blocksCommands: false`.** Unlike geometry drafts, the stroke preview adapter does _not_ freeze commands. This is deliberate: the native color picker fires a final `change` event that must (1) clear the draft, then (2) dispatch the `setStrokeColorCommand` — both in the same synchronous turn. If the adapter blocked commands, step 2 would no-op. The `change` handler clears the draft first so `isAnyGestureActiveAtom` flips back to `false` before the command dispatches. This ordering produces exactly one undo step per picker session.
+**`blocksCommands: false`.** Unlike geometry drafts, the stroke preview adapter does _not_ freeze commands. This is deliberate: deliberately closing the _Color Picker_ must (1) clear the draft, then (2) dispatch the `setStrokeColorCommand` — both in the same synchronous turn. If the adapter blocked commands, step 2 would no-op. The close handler clears the draft first so `isAnyGestureActiveAtom` flips back to `false` before the command dispatches. This ordering produces exactly one undo step per picker session.
 
 Two consumers write this draft:
 
-- **Color picker drag** (`previewStrokeColor`): continuous `input` events write only the draft (color override per selected shape); the final `change` event clears + commits.
+- **Color Picker** (`previewStrokeColor`): the picker keeps the draft populated for its whole open session — pad, hue, and hex edits write only the draft (color override per selected shape). A deliberate close (outside-click, confirm, re-click of the active slot) clears the draft + commits one `setStrokeColorCommand`; Escape clears without committing (revert).
 - **Width arrow stepping** (`previewStrokeWidth`): each arrow press writes a width override into the draft; Enter/blur clears + commits one `setStrokeWidthCommand`. Escape clears without committing.

@@ -27,5 +27,6 @@ samplers, and per-gesture mechanics in full.
   key off `draft.ids`, never `selectedIdsAtom`.
 - **Paint-merging drafts override paint, not geometry.** The stroke preview
   adapter (`strokePreviewAdapter`) uses `blocksCommands: false` — commands
-  can commit while the draft is active. The `change` handler must clear the
-  draft before dispatching the command so the undo step is clean.
+  can commit while the draft is active. The close handler (Color Picker
+  deliberate close) must clear the draft before dispatching the command so
+  the undo step is clean.
