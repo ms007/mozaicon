@@ -69,6 +69,29 @@ describe('resizeShapeCommand', () => {
     expect(shape).toMatchObject({ strokeWidth: 2, fill: '#000' })
   })
 
+  it('quantizes incoming geometry to 2 decimal places', () => {
+    const store = makeStore()
+
+    store.set(resizeShapeCommand, {
+      r1: { x: 2.001, y: 3.456, width: 16.005, height: 11.994 },
+    })
+
+    const shape = store.get(activeIconAtom).shapes[0]
+    expect(shape).toMatchObject({ x: 2, y: 3.46, width: 16.01, height: 11.99 })
+  })
+
+  it('treats a sub-precision change as a no-op', () => {
+    const store = makeStore()
+    const before = store.get(activeIconAtom)
+
+    store.set(resizeShapeCommand, {
+      r1: { x: 4.001, y: 3.999, width: 8.002, height: 5.998 },
+    })
+
+    expect(store.get(activeIconAtom)).toBe(before)
+    expect(store.get(canUndoAtom)).toBe(false)
+  })
+
   it('does not push history when geometry is unchanged (identity no-op)', () => {
     const store = makeStore()
     const before = store.get(activeIconAtom)

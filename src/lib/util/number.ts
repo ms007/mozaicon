@@ -68,6 +68,17 @@ export function roundToPrecision(value: number, digits: number): number {
   return Math.round(value * factor) / factor
 }
 
+// Decimal places the icon model keeps for positions and dimensions. Matching
+// Figma's panel rounding, but applied to the stored value (not just display) so
+// the data model is the single source of truth and SVG export stays clean.
+export const COORD_PRECISION = 2
+
+// Snap a coordinate to model precision. Apply at every boundary that writes
+// geometry (commands, draft builders) so a value never carries sub-COORD_PRECISION drift.
+export function quantize(value: number): number {
+  return roundToPrecision(value, COORD_PRECISION)
+}
+
 // Number of fractional digits in a number's decimal representation, including
 // magnitudes JS stringifies in scientific notation (e.g. 5e-7 -> 7).
 export function decimalPlaces(value: number): number {

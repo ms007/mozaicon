@@ -1,3 +1,4 @@
+import { quantizeShape } from '@/lib/geometry/quantize'
 import { translateShape } from '@/lib/geometry/translate'
 
 import { createCommand } from './createCommand'
@@ -16,7 +17,7 @@ export const moveSelectionCommand = createCommand<MoveSelectionPayload>(
 
     const idSet = new Set(ids)
     const nextShapes = doc.shapes.map((shape) =>
-      idSet.has(shape.id) ? translateShape(shape, dx, dy) : shape,
+      idSet.has(shape.id) ? quantizeShape(translateShape(shape, dx, dy)) : shape,
     )
 
     const changed = nextShapes.some((s, i) => s !== doc.shapes[i])

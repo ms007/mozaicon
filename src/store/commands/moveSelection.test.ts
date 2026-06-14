@@ -137,4 +137,15 @@ describe('moveSelectionCommand', () => {
     expect(a?.x).toBe(0.5)
     expect(a?.y).toBe(1.5)
   })
+
+  it('quantizes the resulting position to 2 decimal places', () => {
+    const store = makeStore()
+
+    store.set(moveSelectionCommand, { ids: ['a'], dx: 1.2345, dy: 6.789 })
+
+    const doc = store.get(activeIconAtom)
+    const a = doc.shapes.find((s) => s.id === 'a')
+    expect(a?.x).toBe(1.23)
+    expect(a?.y).toBe(6.79)
+  })
 })

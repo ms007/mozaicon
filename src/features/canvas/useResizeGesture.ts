@@ -1,6 +1,7 @@
 import { useStore } from 'jotai'
 import { useCallback, useEffect, useRef } from 'react'
 
+import { quantizeRect } from '@/lib/geometry/quantize'
 import type { Rect } from '@/lib/geometry/rect'
 import { scaleShape } from '@/lib/geometry/scale'
 import type { Vec2 } from '@/lib/geometry/vec2'
@@ -55,7 +56,7 @@ export function computeResizeDraft(
   const draft: Record<string, Rect> = {}
   for (const shape of shapes) {
     const scaled = scaleShape(shape, anchor, sx, sy)
-    draft[shape.id] = bboxOf(scaled)
+    draft[shape.id] = quantizeRect(bboxOf(scaled))
   }
   return draft
 }

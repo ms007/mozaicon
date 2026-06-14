@@ -1,3 +1,4 @@
+import { quantizeRect } from '@/lib/geometry/quantize'
 import type { Rect } from '@/lib/geometry/rect'
 import { rectEqual } from '@/lib/geometry/rect'
 
@@ -13,8 +14,9 @@ export const resizeShapeCommand = createCommand<ResizeShapePayload>(
     const nextShapes = doc.shapes.map((shape) => {
       const geo = geometryById[shape.id] as Rect | undefined
       if (!geo) return shape
-      if (rectEqual(shape, geo)) return shape
-      return { ...shape, ...geo }
+      const quantized = quantizeRect(geo)
+      if (rectEqual(shape, quantized)) return shape
+      return { ...shape, ...quantized }
     })
 
     const changed = nextShapes.some((s, i) => s !== doc.shapes[i])
