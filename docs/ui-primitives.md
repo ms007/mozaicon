@@ -15,7 +15,7 @@ src/
 
 Three folders, three roles:
 
-- **`src/components/ui/`** — vendor code. Populated by `pnpm dlx shadcn@latest add <name>`. Treated like `node_modules`: don't hand-edit, don't reformat, don't lint for react-refresh boundaries. `eslint.config.js` disables `simple-import-sort/imports`, `react-refresh/only-export-components`, `no-restricted-imports`, and `@typescript-eslint/prefer-nullish-coalescing` here so regenerated files stay byte-identical to shadcn output.
+- **`src/components/ui/`** — vendor code. Populated by `pnpm dlx shadcn@latest add <name>`. Treated like `node_modules`: don't hand-edit, don't reformat, don't lint for react-refresh boundaries. `eslint.config.js` disables `simple-import-sort/imports`, `simple-import-sort/exports`, `react-refresh/only-export-components`, `no-restricted-imports`, and `@typescript-eslint/prefer-nullish-coalescing` here so regenerated files stay byte-identical to shadcn output.
 - **`src/components/primitives/`** — our stable seam. Every shadcn primitive the app uses has exactly one wrapper file here. This is what call-sites import.
 - **`src/components/*.tsx`** (top level) and **`src/features/**`** — application code. Imports primitives by `@/components/primitives/<Name>`, never from `@/components/ui/\*`.
 

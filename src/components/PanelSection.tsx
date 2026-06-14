@@ -33,7 +33,10 @@ export function PanelSection({
             {title}
           </h2>
           {headerAction && (
-            <div className="col-start-2 flex items-center justify-center">{headerAction}</div>
+            // Negative vertical margin keeps the (taller) action button from
+            // inflating the title row, so the title→content gap matches
+            // sections without an action (e.g. Corners).
+            <div className="col-start-2 -my-2 flex items-center justify-center">{headerAction}</div>
           )}
         </div>
         {children}

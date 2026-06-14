@@ -92,7 +92,7 @@ describe('StrokeSection', () => {
     const { store } = renderWithStore(<StrokeSection />, (s) => {
       s.set(activeIconAtom, testDoc)
       s.set(selectShapesCommand, ['r1'])
-      s.set(strokeColorSlotsAtom, [null, '#ff0000', null, null, null, null, null, null])
+      s.set(strokeColorSlotsAtom, [null, '#ff0000', null, null, null, null, null, null, null, null])
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Add stroke' }))
@@ -101,14 +101,18 @@ describe('StrokeSection', () => {
     expect(shape.stroke).toBe('#ff0000')
   })
 
-  it('renders content rows through PropertyRow', () => {
+  it('renders the colour trigger and width field in one PropertyRow', () => {
     const doc: Icon = {
       ...testDoc,
       shapes: [{ ...baseRect, stroke: '#000', strokeWidth: 2 }],
     }
     const { container } = renderSection(doc, ['r1'])
     const propertyRows = container.querySelectorAll('[data-slot="property-row"]')
-    expect(propertyRows.length).toBeGreaterThanOrEqual(2)
+    expect(propertyRows).toHaveLength(1)
+
+    const row = propertyRows[0]
+    expect(row.querySelector('[data-slot="stroke-color-trigger"]')).toBeInTheDocument()
+    expect(row.querySelector('[data-slot="stroke-width-field"]')).toBeInTheDocument()
   })
 
   it('renders the add/remove toggle on the gutter line', () => {

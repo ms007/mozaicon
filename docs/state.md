@@ -228,6 +228,6 @@ The Stroke Section reads this atom to decide header actions ("+"/"-") and contro
 
 ### Color Slots
 
-`strokeColorSlotsAtom` (factory: `createColorSlotsAtom` in `src/store/atoms/colorSlots.ts`) holds eight color slots: slot 1 starts as `#000000`, the rest empty. **Color Slots are session-local UI state** — written directly, not through commands, not undoable, not persisted. After undo the shape color reverts but the slots keep their colors, by design.
+`strokeColorSlotsAtom` (factory: `createColorSlotsAtom` in `src/store/atoms/colorSlots.ts`) holds ten color slots: slot 1 starts as `#000000`, the rest empty. **Color Slots are session-local UI state** — written directly, not through commands, not undoable, not persisted. After undo the shape color reverts but the slots keep their colors, by design.
 
-The factory is color-agnostic: it takes an optional initial-state array (defaults to slot 1 = `#000000`, rest empty). A future fill picker can instantiate its own slots with `createColorSlotsAtom(['#000000', null, null, null, null, null, null, null])` without sharing stroke state.
+The factory is color-agnostic: it takes an optional initial-state array (defaults to slot 1 = `#000000`, rest empty). A future fill picker can instantiate its own slots with `createColorSlotsAtom(['#000000', null, null, null, null, null, null, null, null, null])` without sharing stroke state.

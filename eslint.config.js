@@ -69,6 +69,7 @@ export default defineConfig([
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {
       'simple-import-sort/imports': 'off',
+      'simple-import-sort/exports': 'off',
       'react-refresh/only-export-components': 'off',
       'no-restricted-imports': 'off',
       '@typescript-eslint/prefer-nullish-coalescing': 'off',

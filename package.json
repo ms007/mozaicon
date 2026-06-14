@@ -36,6 +36,7 @@
     "jotai-immer": "^0.4.3",
     "radix-ui": "^1.4.3",
     "react": "^19.2.5",
+    "react-colorful": "^5.7.0",
     "react-dom": "^19.2.5",
     "svgo": "^4.0.1",
     "tailwind-merge": "^3.5.0",

@@ -53,5 +53,4 @@ function TooltipContent({
   )
 }
 
-// eslint-disable-next-line simple-import-sort/exports -- vendored shadcn output; keep byte-identical with generator
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }

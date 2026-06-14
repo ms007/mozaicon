@@ -7,8 +7,8 @@ import { selectionStrokeAtom } from '@/store/atoms/selection-stroke'
 import { addStrokeCommand } from '@/store/commands/addStroke'
 import { removeStrokeCommand } from '@/store/commands/removeStroke'
 
-import { ColorSlots } from './ColorSlots'
 import { PropertyRow } from './PropertyRow'
+import { StrokeColorControl } from './StrokeColorControl'
 import { StrokeWidthField } from './StrokeWidthField'
 
 export function StrokeSection() {
@@ -48,14 +48,12 @@ export function StrokeSection() {
   return (
     <PanelSection title="Stroke" headerAction={headerAction} divided>
       {hasStroke && (
-        <>
-          <PropertyRow>
-            <ColorSlots />
-          </PropertyRow>
-          <PropertyRow>
+        <PropertyRow>
+          <div className="grid grid-cols-2 gap-2">
+            <StrokeColorControl />
             <StrokeWidthField />
-          </PropertyRow>
-        </>
+          </div>
+        </PropertyRow>
       )}
     </PanelSection>
   )

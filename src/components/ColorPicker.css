@@ -1,0 +1,106 @@
+/* react-colorful overrides — match Mozaicon DS tokens, and lay the picker out
+ * like the reference: saturation full-width on top, then a preview swatch to
+ * the left of the hue + alpha sliders.
+ *
+ * `display: contents` dissolves react-colorful's own flex box so its
+ * saturation/hue children become grid items of `.color-picker-board`, letting
+ * us slot a (non-react-colorful) preview circle and alpha track into the same
+ * grid via named areas.
+ *
+ * Every react-colorful selector is scoped under `.color-picker-board` so it
+ * outranks react-colorful's runtime-injected single-class rules, which would
+ * otherwise win the cascade tie (same specificity, injected later). */
+
+.color-picker-board {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    'sat sat'
+    'preview hue'
+    'preview alpha';
+  column-gap: 10px;
+  row-gap: 8px;
+  align-items: center;
+}
+
+.color-picker-board > .react-colorful {
+  display: contents;
+}
+
+.color-picker-board .react-colorful__saturation {
+  grid-area: sat;
+  height: 150px;
+  border-radius: var(--radius-lg);
+  border-bottom: none;
+}
+
+.color-picker-board .react-colorful__hue {
+  grid-area: hue;
+  height: 14px;
+  border-radius: var(--radius-md);
+}
+
+.color-picker-board .react-colorful__pointer {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.color-picker-board .react-colorful__interactive:focus-visible .react-colorful__pointer {
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.color-picker-preview {
+  grid-area: preview;
+  justify-self: center;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+/* Alpha track is presentational only (opacity is not yet in the data model):
+ * a checkerboard under a transparent→colour gradient, knob pinned at 100%. */
+.color-picker-alpha {
+  grid-area: alpha;
+  position: relative;
+  height: 14px;
+  border-radius: var(--radius-md);
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #c8c8c8 25%, transparent 25%),
+    linear-gradient(-45deg, #c8c8c8 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #c8c8c8 75%),
+    linear-gradient(-45deg, transparent 75%, #c8c8c8 75%);
+  background-size: 8px 8px;
+  background-position:
+    0 0,
+    0 4px,
+    4px -4px,
+    -4px 0;
+}
+
+.color-picker-alpha::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to right, transparent, var(--picker-color, #000));
+}
+
+.color-picker-alpha-knob {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 2px rgba(0, 0, 0, 0.4);
+}
