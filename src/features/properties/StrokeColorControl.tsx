@@ -6,6 +6,7 @@ import { Divider } from '@/components/Divider'
 import { Button } from '@/components/primitives/Button'
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/primitives/Popover'
 import { Swatch } from '@/components/Swatch'
+import { SwatchInput } from '@/components/SwatchInput'
 import { COLOR_SLOT_COUNT, strokeColorSlotsAtom } from '@/store/atoms/colorSlots'
 import { MIXED } from '@/store/atoms/selection-geometry'
 import { selectionStrokeAtom } from '@/store/atoms/selection-stroke'
@@ -125,15 +126,18 @@ export function StrokeColorControl() {
   return (
     <Popover open={open}>
       <PopoverAnchor asChild>
-        <button
-          type="button"
+        <SwatchInput
           data-slot="stroke-color-trigger"
-          aria-label="Stroke color"
-          onClick={() => {
+          color={triggerColor}
+          swatchLabel="Stroke color"
+          hexLabel="Stroke color hex"
+          placeholder={isMixed ? 'Mixed' : undefined}
+          onSwatchClick={() => {
             if (!open) openPicker()
           }}
-          className="border-border focus-visible:border-ring focus-visible:outline-ring h-7 min-w-0 flex-1 cursor-pointer rounded-md border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid"
-          style={{ backgroundColor: triggerColor }}
+          onChange={(hex) => {
+            commitColor(hex)
+          }}
         />
       </PopoverAnchor>
       <PopoverContent
