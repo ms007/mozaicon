@@ -1,10 +1,8 @@
 import { atom } from 'jotai'
 
-import { selectedShapesAtom } from '@/store/atoms/selection'
 import { setStrokeColorCommand } from '@/store/commands/setStrokeColor'
 
-export const commitStrokeColorAtom = atom(null, (get, set, color: string) => {
-  const shapes = get(selectedShapesAtom)
-  if (shapes.length === 0) return
+// setStrokeColorCommand already no-ops on an empty selection, so no guard here.
+export const commitStrokeColorAtom = atom(null, (_get, set, color: string) => {
   set(setStrokeColorCommand, color)
 })

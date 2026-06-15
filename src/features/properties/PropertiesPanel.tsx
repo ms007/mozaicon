@@ -2,6 +2,7 @@ import { PanelSection } from '@/components/PanelSection'
 import { ExportSection } from '@/features/export/ExportSection'
 
 import { CornersSection } from './CornersSection'
+import { FillSection } from './FillSection'
 import { GeometryField } from './GeometryField'
 import { PropertyRow } from './PropertyRow'
 import { StrokeSection } from './StrokeSection'
@@ -31,6 +32,7 @@ export function PropertiesPanel() {
       </PanelSection>
 
       <CornersSection />
+      <FillSection />
       <StrokeSection />
 
       <div className="mt-auto mb-2">

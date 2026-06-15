@@ -1,7 +1,7 @@
 import { createStore } from 'jotai'
 import { describe, expect, it } from 'vitest'
 
-import { strokePreviewDraftAtom } from '@/store/atoms/gestures/strokePreview'
+import { paintPreviewDraftAtom } from '@/store/atoms/gestures/paintPreview'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { activeIconAtom } from '@/store/atoms/project'
 import { commitSelectionAtom } from '@/store/atoms/selection'
@@ -39,13 +39,13 @@ function makeStore(doc: Icon = testDoc) {
 }
 
 describe('previewStrokeColorAtom', () => {
-  it('sets strokePreviewDraftAtom with the preview color', () => {
+  it('sets paintPreviewDraftAtom with the preview color', () => {
     const store = makeStore()
     store.set(commitSelectionAtom, { ids: ['r1'], doc: testDoc })
 
     store.set(previewStrokeColorAtom, '#00ff00')
 
-    const draft = store.get(strokePreviewDraftAtom)
+    const draft = store.get(paintPreviewDraftAtom)
     expect(draft).toEqual({ r1: { stroke: '#00ff00' } })
   })
 
@@ -75,7 +75,7 @@ describe('previewStrokeColorAtom', () => {
 
     store.set(previewStrokeColorAtom, '#0000ff')
 
-    const draft = store.get(strokePreviewDraftAtom)
+    const draft = store.get(paintPreviewDraftAtom)
     expect(draft).toEqual({
       r1: { stroke: '#0000ff' },
       r2: { stroke: '#0000ff' },
@@ -87,20 +87,20 @@ describe('previewStrokeColorAtom', () => {
 
     store.set(previewStrokeColorAtom, '#00ff00')
 
-    expect(store.get(strokePreviewDraftAtom)).toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).toBeNull()
   })
 })
 
 describe('clearStrokeColorPreviewAtom', () => {
-  it('clears the strokePreviewDraftAtom', () => {
+  it('clears the paintPreviewDraftAtom', () => {
     const store = makeStore()
     store.set(commitSelectionAtom, { ids: ['r1'], doc: testDoc })
     store.set(previewStrokeColorAtom, '#00ff00')
-    expect(store.get(strokePreviewDraftAtom)).not.toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).not.toBeNull()
 
     store.set(clearStrokeColorPreviewAtom)
 
-    expect(store.get(strokePreviewDraftAtom)).toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).toBeNull()
   })
 })
 

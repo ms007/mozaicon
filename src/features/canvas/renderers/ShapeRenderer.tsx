@@ -5,8 +5,8 @@ import { shapeToElement } from '@/lib/svg/shapeElement'
 import { cornerRadiusStepDraftForShapeAtom } from '@/store/atoms/gestures/cornerRadiusStep'
 import { moveDraftForShapeAtom } from '@/store/atoms/gestures/move'
 import { nudgeDraftForShapeAtom } from '@/store/atoms/gestures/nudge'
+import { paintPreviewDraftForShapeAtom } from '@/store/atoms/gestures/paintPreview'
 import { propertyStepDraftForShapeAtom } from '@/store/atoms/gestures/propertyStep'
-import { strokePreviewDraftForShapeAtom } from '@/store/atoms/gestures/strokePreview'
 import { resizeDraftForShapeAtom } from '@/store/atoms/resize-draft'
 import type { Shape } from '@/types/shapes'
 
@@ -28,7 +28,7 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   const draftGeo = useAtomValue(resizeDraftForShapeAtom(shape.id))
   const propStepGeo = useAtomValue(propertyStepDraftForShapeAtom(shape.id))
   const radiusStepDraft = useAtomValue(cornerRadiusStepDraftForShapeAtom(shape.id))
-  const strokeDraft = useAtomValue(strokePreviewDraftForShapeAtom(shape.id))
+  const paintDraft = useAtomValue(paintPreviewDraftForShapeAtom(shape.id))
   const moveOffset = useAtomValue(moveDraftForShapeAtom(shape.id))
   const nudgeOffset = useAtomValue(nudgeDraftForShapeAtom(shape.id))
   const { onPointerDown, onPointerMove, onPointerUp, onPointerCancel } = useShapeInteraction(
@@ -42,8 +42,8 @@ function AtomShapeRenderer({ shapeAtom }: { shapeAtom: PrimitiveAtom<Shape> }) {
   if (radiusStepDraft) {
     rendered = { ...rendered, corners: { ...rendered.corners, radii: radiusStepDraft } }
   }
-  if (strokeDraft) {
-    rendered = { ...rendered, ...strokeDraft }
+  if (paintDraft) {
+    rendered = { ...rendered, ...paintDraft }
   }
   const totalDx = (moveOffset?.dx ?? 0) + (nudgeOffset?.dx ?? 0)
   const totalDy = (moveOffset?.dy ?? 0) + (nudgeOffset?.dy ?? 0)

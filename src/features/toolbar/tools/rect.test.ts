@@ -274,7 +274,7 @@ describe('rectTool lifecycle', () => {
     rectTool.onPointerUp(ctx, event({ x: 2, y: 2 }, { x: 101, y: 100 }))
 
     const shape = ctx.store.get(activeIconAtom).shapes[0]
-    expect(shape.fill).toBe('#000')
+    expect(shape.fill).toBe('#cccccc')
     expect(shape.stroke).toBe('none')
     expect(shape.strokeWidth).toBe(1)
   })

@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 
-import { strokePreviewDraftAtom } from '@/store/atoms/gestures/strokePreview'
+import { paintPreviewDraftAtom } from '@/store/atoms/gestures/paintPreview'
 import { selectedShapesAtom } from '@/store/atoms/selection'
 
 export const previewStrokeWidthAtom = atom(null, (get, set, width: number) => {
@@ -10,9 +10,9 @@ export const previewStrokeWidthAtom = atom(null, (get, set, width: number) => {
   for (const shape of shapes) {
     draft[shape.id] = { strokeWidth: width }
   }
-  set(strokePreviewDraftAtom, draft)
+  set(paintPreviewDraftAtom, draft)
 })
 
 export const clearStrokePreviewAtom = atom(null, (_get, set) => {
-  set(strokePreviewDraftAtom, null)
+  set(paintPreviewDraftAtom, null)
 })

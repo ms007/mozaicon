@@ -23,4 +23,4 @@ export function createColorSlotsAtom(initial: ColorSlotsState = defaultSlots) {
   return atom<ColorSlotsState>(initial)
 }
 
-export const strokeColorSlotsAtom = createColorSlotsAtom()
+export const colorSlotsAtom = createColorSlotsAtom()

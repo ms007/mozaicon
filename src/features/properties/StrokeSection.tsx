@@ -2,7 +2,7 @@ import { useAtomValue, useSetAtom } from 'jotai'
 
 import { PanelSection } from '@/components/PanelSection'
 import { Button } from '@/components/primitives/Button'
-import { strokeColorSlotsAtom } from '@/store/atoms/colorSlots'
+import { colorSlotsAtom } from '@/store/atoms/colorSlots'
 import { selectionStrokeAtom } from '@/store/atoms/selection-stroke'
 import { addStrokeCommand } from '@/store/commands/addStroke'
 import { removeStrokeCommand } from '@/store/commands/removeStroke'
@@ -13,7 +13,7 @@ import { StrokeWidthField } from './StrokeWidthField'
 
 export function StrokeSection() {
   const stroke = useAtomValue(selectionStrokeAtom)
-  const slots = useAtomValue(strokeColorSlotsAtom)
+  const slots = useAtomValue(colorSlotsAtom)
   const addStroke = useSetAtom(addStrokeCommand)
   const removeStroke = useSetAtom(removeStrokeCommand)
 

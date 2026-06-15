@@ -7,7 +7,7 @@ describe('styleDefaultsAtom', () => {
   it('has expected initial values', () => {
     const store = createStore()
     expect(store.get(styleDefaultsAtom)).toEqual({
-      fill: '#000',
+      fill: '#cccccc',
       stroke: 'none',
       strokeWidth: 1,
     })

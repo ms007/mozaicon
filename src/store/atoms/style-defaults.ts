@@ -7,7 +7,7 @@ export type StyleDefaults = {
 }
 
 export const styleDefaultsAtom = atom<StyleDefaults>({
-  fill: '#000',
+  fill: '#cccccc',
   stroke: 'none',
   strokeWidth: 1,
 })

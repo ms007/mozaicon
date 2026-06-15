@@ -10,9 +10,9 @@ import { drawAdapter } from './draw'
 import { marqueeAdapter } from './marquee'
 import { moveAdapter } from './move'
 import { nudgeAdapter } from './nudge'
+import { paintPreviewAdapter } from './paintPreview'
 import { propertyStepAdapter } from './propertyStep'
 import { resizeAdapter } from './resize'
-import { strokePreviewAdapter } from './strokePreview'
 
 export type DisplayContribution =
   | { kind: 'rect'; value: Rect }
@@ -39,7 +39,7 @@ export const gestureRegistry = [
   drawAdapter,
   propertyStepAdapter,
   cornerRadiusStepAdapter,
-  strokePreviewAdapter,
+  paintPreviewAdapter,
 ] as readonly GestureAdapter[]
 
 export const isAnyGestureActiveAtom = atom((get) =>

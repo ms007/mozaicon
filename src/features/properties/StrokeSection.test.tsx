@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
-import { strokeColorSlotsAtom } from '@/store/atoms/colorSlots'
+import { colorSlotsAtom } from '@/store/atoms/colorSlots'
 import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
 import { renderWithStore } from '@/test/renderWithStore'
@@ -92,7 +92,7 @@ describe('StrokeSection', () => {
     const { store } = renderWithStore(<StrokeSection />, (s) => {
       s.set(activeIconAtom, testDoc)
       s.set(selectShapesCommand, ['r1'])
-      s.set(strokeColorSlotsAtom, [null, '#ff0000', null, null, null, null, null, null, null, null])
+      s.set(colorSlotsAtom, [null, '#ff0000', null, null, null, null, null, null, null, null])
     })
 
     await userEvent.click(screen.getByRole('button', { name: 'Add stroke' }))

@@ -68,15 +68,21 @@ Shared vocabulary for the Mozaicon project, grouped by topic. Entries are **defi
 
 **Move Set** — The subset of the selection that actually translates in a _Drag-to-Move_: selected ∩ _Selectable Shapes_, frozen at promotion. An empty Move Set blocks promotion.
 
+## Fill
+
+**Fill Section** — The properties-panel section (`FillSection.tsx`) for fill editing, rendered directly above the Stroke section (panel order: Position → Layout → Corners → Fill → Stroke, Export pinned at bottom). Visible when the selection is non-empty. Exposes a presence tri-state derived from the selection: `none` (no selected shape has a fill — header shows "+"), `some` or `all` (single full-width color control visible, header shows "−"). See [`state.md`](./state.md) § Selection-Fill Atom.
+
 ## Stroke
 
 **Stroke Section** — The properties-panel section (`StrokeSection.tsx`) for stroke editing, visible when the selection is non-empty. Exposes a presence tri-state derived from the selection: `none` (no selected shape has a stroke — header shows "+"), `some` or `all` (controls visible, header shows "−"). See [`state.md`](./state.md) § Selection-Stroke Atom.
 
-**Color Slots** — A row of eight session-local color swatches in the _Stroke Section_, backed by `strokeColorSlotsAtom`. Three click modes: empty slot opens the _Color Picker_, filled inactive slot applies that color, filled active slot reopens the picker. Slot state is UI state — not undoable, not persisted. Built color-agnostically (`createColorSlotsAtom`) so a future fill picker can reuse the same factory. See [`state.md`](./state.md) § Color Slots.
+**Color Control** — A generic, parametrized color-editing component (`ColorControl.tsx`) that combines a `SwatchInput` trigger, an HSV _Color Picker_ popover, and a _Color Slots_ palette. Receives its channel-specific dependencies as props: a selection-paint summary atom, preview/commit/clear action atoms, a shared palette atom, and display labels. `StrokeColorControl` and `FillColorControl` render it with their channel-specific atoms.
 
-**Color Picker** — The custom HSV picker (saturation/value pad, hue slider, hex field) that opens in a Popover anchored to the _Stroke Section_ when a _Color Slot_ requests editing; replaces the browser-native `<input type="color">`. The whole open session feeds the _Stroke Preview Draft_; one `setStrokeColorCommand` commits on deliberate close (outside-click, confirm, re-click of the active slot), while Escape reverts — one undo step per visit. See [`gestures.md`](./gestures.md) § Stroke Preview Draft.
+**Color Slots** — A row of ten session-local color swatches shared across paint channels, backed by `colorSlotsAtom`. Three click modes: empty slot stores the working color, filled inactive slot applies that color, filled active slot tracks picker edits. Slot state is UI state — not undoable, not persisted. The generic `ColorControl` component receives the slots atom as a prop, so stroke and fill pickers share the same palette. See [`state.md`](./state.md) § Color Slots.
 
-**Stroke Preview Draft** — A paint-merging gesture draft (`strokePreviewDraftAtom`) holding per-shape `StrokePaintOverride` entries (optional `stroke` and/or `strokeWidth`). Unlike geometry drafts (Translation, Resize), the renderer merges paint attributes rather than geometry. Registered in the _Gesture Registry_ with `blocksCommands: false` so commands can commit while the draft is active (deliberately closing the _Color Picker_ clears the draft, then dispatches the command). See [`gestures.md`](./gestures.md) § Stroke Preview Draft.
+**Color Picker** — The custom HSV picker (saturation/value pad, hue slider, hex field) that opens in a Popover inside a _Color Control_ when editing begins; replaces the browser-native `<input type="color">`. The whole open session feeds the _Paint Preview Draft_; one commit command fires on deliberate close (outside-click, confirm button), while Escape reverts — one undo step per visit. See [`gestures.md`](./gestures.md) § Paint Preview Draft.
+
+**Paint Preview Draft** — A paint-merging gesture draft (`paintPreviewDraftAtom`) holding per-shape `PaintOverride` entries (optional `fill`, `stroke`, and/or `strokeWidth`). Unlike geometry drafts (Translation, Resize), the renderer merges paint attributes rather than geometry. Registered in the _Gesture Registry_ with `blocksCommands: false` so commands can commit while the draft is active (deliberately closing the _Color Picker_ clears the draft, then dispatches the command). See [`gestures.md`](./gestures.md) § Paint Preview Draft.
 
 ## Corners
 

@@ -2,8 +2,8 @@ import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 
-import { strokeColorSlotsAtom } from '@/store/atoms/colorSlots'
-import { strokePreviewDraftAtom } from '@/store/atoms/gestures/strokePreview'
+import { colorSlotsAtom } from '@/store/atoms/colorSlots'
+import { paintPreviewDraftAtom } from '@/store/atoms/gestures/paintPreview'
 import { canUndoAtom, undoStackAtom } from '@/store/atoms/history'
 import { activeIconAtom } from '@/store/atoms/project'
 import { selectShapesCommand } from '@/store/commands/selectionCommands'
@@ -109,24 +109,13 @@ describe('StrokeColorControl', () => {
     const { store } = renderWithStore(<StrokeColorControl />, (s) => {
       s.set(activeIconAtom, strokedDoc)
       s.set(selectShapesCommand, ['r1'])
-      s.set(strokeColorSlotsAtom, [
-        '#000000',
-        '#ff0000',
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-      ])
+      s.set(colorSlotsAtom, ['#000000', '#ff0000', null, null, null, null, null, null, null, null])
     })
 
     await openPicker()
     await userEvent.click(screen.getByLabelText('Color slot 2: #ff0000'))
 
-    expect(store.get(strokePreviewDraftAtom)?.r1.stroke).toBe('#ff0000')
+    expect(store.get(paintPreviewDraftAtom)?.r1.stroke).toBe('#ff0000')
     expect(screen.getByLabelText('Color slot 2: #ff0000')).toHaveAttribute('data-active', 'true')
     expect(screen.getByLabelText('Hex color')).toHaveValue('ff0000')
   })
@@ -137,7 +126,7 @@ describe('StrokeColorControl', () => {
 
     await openPicker()
 
-    expect(store.get(strokePreviewDraftAtom)).not.toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).not.toBeNull()
     expect(store.get(undoStackAtom)).toHaveLength(baseline)
   })
 
@@ -149,7 +138,7 @@ describe('StrokeColorControl', () => {
     await userEvent.clear(input)
     await userEvent.type(input, 'ff5500{Enter}')
 
-    expect(store.get(strokeColorSlotsAtom)[0]).toBe('#ff5500')
+    expect(store.get(colorSlotsAtom)[0]).toBe('#ff5500')
   })
 
   it('stores the working color into a clicked empty slot', async () => {
@@ -162,7 +151,7 @@ describe('StrokeColorControl', () => {
 
     await userEvent.click(screen.getByLabelText('Color slot 2 (empty)'))
 
-    expect(store.get(strokeColorSlotsAtom)[1]).toBe('#112233')
+    expect(store.get(colorSlotsAtom)[1]).toBe('#112233')
   })
 
   it('commits the working color and closes when the close button is clicked', async () => {
@@ -187,12 +176,12 @@ describe('StrokeColorControl', () => {
     const baseline = store.get(undoStackAtom).length
 
     await openPicker()
-    expect(store.get(strokePreviewDraftAtom)).not.toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).not.toBeNull()
 
     await userEvent.keyboard('{Escape}')
 
     expect(screen.queryByLabelText('Hex color')).not.toBeInTheDocument()
-    expect(store.get(strokePreviewDraftAtom)).toBeNull()
+    expect(store.get(paintPreviewDraftAtom)).toBeNull()
     expect(store.get(undoStackAtom)).toHaveLength(baseline)
   })
 

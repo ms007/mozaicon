@@ -198,7 +198,7 @@ Atoms in the store fall into two categories with different mutation rules:
 
 **Project state** (`projectAtom`): the icons being edited, plus which one is active. Mutations must go through commands so they're undoable. Shape-level commands reach it through the `activeIconAtom` lens; icon-level commands (`src/store/commands/iconCommands.ts`) write the project directly.
 
-**UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, `strokeColorSlotsAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
+**UI state** (`activeToolAtom`, `draftShapeAtom`, `resizeDraftAtom`, `moveDraftAtom`, `colorSlotsAtom`, …): transient interaction state. Features may write these directly — no command, no history entry. UI state is **not** restored by undo/redo.
 
 **Selection is the exception.** `selectedIdsAtom` is UI state by lifecycle (session-local, not persisted by export or save), but every effective change to it is itself a Figma-style Undo step — click shape A, then click shape B, then `Cmd+Z` restores the selection to A without touching the project. Selection therefore lives on the _same_ history stack as the project. The public `selectedIdsAtom` is read-only — its backing atom is module-private. The only write paths are `commitSelectionAtom` (normalising, used by `createCommand`) and `restoreSelectionAtom` (verbatim, used by undo/redo). This is a structural guarantee, not a convention. A `HistoryEntry` snapshots both axes (`before`/`after` for the project, `selectionBefore`/`selectionAfter` for selection); a _Selection-Command_ leaves the project axis untouched (`before === after`), a _Combined Command_ moves both atomically.
 
@@ -226,8 +226,21 @@ Every shape carries optional `stroke` (color string) and `strokeWidth` (number) 
 
 The Stroke Section reads this atom to decide header actions ("+"/"-") and control visibility.
 
+### Selection-Fill Atom
+
+`selectionFillAtom` (`src/store/atoms/selection-fill.ts`) derives a fill summary from the selected shapes:
+
+| Field      | Value                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------- |
+| `presence` | `'none'` / `'some'` / `'all'` — tri-state of how many selected shapes have an active fill |
+| `color`    | The uniform fill color, or `MIXED` when selected filled shapes disagree                   |
+
+Unlike the stroke summary, there is no width dimension. Presence is strict: a shape counts as filled only when `fill` is defined and not `'none'`. The Fill Section reads this atom for header actions and control visibility, mirroring the Stroke Section pattern.
+
+**Fill on/off differs from stroke.** SVG's initial `fill` is black, so a no-fill shape must export `fill="none"` explicitly — omitting the attribute would render black, not stroke-only. Both an absent `fill` and the sentinel `'none'` therefore resolve to `fill="none"` in `shapePaintAttrs`, and `removeFillCommand` writes `'none'` rather than deleting the field (the opposite of `removeStrokeCommand`, whose absence already means "no stroke"). New shapes from the draw tool seed an explicit `fill` (`styleDefaultsAtom`, currently `#cccccc`).
+
 ### Color Slots
 
-`strokeColorSlotsAtom` (factory: `createColorSlotsAtom` in `src/store/atoms/colorSlots.ts`) holds ten color slots: slot 1 starts as `#000000`, the rest empty. **Color Slots are session-local UI state** — written directly, not through commands, not undoable, not persisted. After undo the shape color reverts but the slots keep their colors, by design.
+`colorSlotsAtom` (factory: `createColorSlotsAtom` in `src/store/atoms/colorSlots.ts`) holds ten color slots shared across all paint channels (stroke, fill, etc.): slot 1 starts as `#000000`, the rest empty. **Color Slots are session-local UI state** — written directly, not through commands, not undoable, not persisted. After undo the shape color reverts but the slots keep their colors, by design.
 
-The factory is color-agnostic: it takes an optional initial-state array (defaults to slot 1 = `#000000`, rest empty). A future fill picker can instantiate its own slots with `createColorSlotsAtom(['#000000', null, null, null, null, null, null, null, null, null])` without sharing stroke state.
+The atom is channel-neutral by design: every `ColorControl` instance receives it as a prop, so stroke and fill pickers share the same palette. The factory `createColorSlotsAtom` exists for tests or future per-channel overrides but the default export is the single shared instance.
