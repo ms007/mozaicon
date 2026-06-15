@@ -165,7 +165,7 @@ describe('exportTsx', () => {
       corners: { ...DEFAULT_CORNERS, radii: [1, 2, 3, 4] },
     })
     const output = await exportNamed(namedDoc('Test', shape))
-    expect(output).toContain('<path d=')
+    expect(output).toContain('<path fill="none" d=')
     expect(output).not.toContain('<rect')
   })
 

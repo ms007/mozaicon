@@ -13,3 +13,6 @@ src/components/ui
 
 # Canonical license text — kept verbatim, not reformatted
 LICENSE.md
+
+# Export golden fixtures — must byte-match codegen/serializer output, not prettier
+src/features/export/__fixtures__

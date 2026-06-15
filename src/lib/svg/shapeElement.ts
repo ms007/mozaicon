@@ -3,7 +3,10 @@ import type { Icon, Shape, ShapeBase } from '@/types/shapes'
 
 import { chooseRectElement } from './rectElement'
 
-export const DEFAULT_FILL = '#000'
+// No-fill shapes (fill omitted or explicitly 'none') export as fill="none".
+// Omitting the attribute is not an option: SVG's initial `fill` is black, so a
+// missing attribute would render a black fill instead of a stroke-only shape.
+export const NO_FILL = 'none'
 
 export interface PaintAttrs {
   fill: string
@@ -12,7 +15,7 @@ export interface PaintAttrs {
 }
 
 export function shapePaintAttrs(shape: ShapeBase): PaintAttrs {
-  const fill = shape.fill ?? DEFAULT_FILL
+  const fill = shape.fill === undefined || shape.fill === 'none' ? NO_FILL : shape.fill
   if (shape.stroke === undefined || shape.stroke === 'none') return { fill }
   return { fill, stroke: shape.stroke, strokeWidth: shape.strokeWidth }
 }

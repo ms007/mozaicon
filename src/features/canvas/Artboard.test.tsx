@@ -150,7 +150,7 @@ describe('Artboard', () => {
     const wrapper = getArtboardDiv(container)
     const { setCapture } = mockCapture(wrapper)
 
-    const shapeEl = container.querySelector('rect[fill="#000"]')
+    const shapeEl = container.querySelector('rect[fill="none"]')
     if (!shapeEl) throw new Error('Shape element not found')
 
     act(() => {

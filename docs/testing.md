@@ -211,7 +211,7 @@ SVG export is where snapshot testing shines — the output is deterministic and 
 `src/features/export/__fixtures__/plain-rect.svg`:
 
 ```svg
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" fill="#000"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" fill="none"/></svg>
 ```
 
 `src/features/export/export.test.ts`:
@@ -229,7 +229,7 @@ function loadFixture(name: string) {
 
 describe('serializeIcon', () => {
   it('serializes a single rect', () => {
-    const icon = makeIcon([makeRect({ id: 'r1', x: 2, y: 2, width: 20, height: 20, fill: '#000' })])
+    const icon = makeIcon([makeRect({ id: 'r1', x: 2, y: 2, width: 20, height: 20 })])
     expect(serializeIcon(icon)).toBe(loadFixture('plain-rect.svg'))
   })
 })

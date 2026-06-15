@@ -22,7 +22,7 @@ For TSX, the **codegen** module (`src/features/export/codegen.ts`) parses the **
 
 ## Element Tree
 
-`iconElements` (`src/lib/svg/shapeElement.ts`) is the single icon-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which applies the fill default and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`). The JSX printer in `codegen.ts` sits **after** SVGO and converts them back (`stroke-width` → `strokeWidth`).
+`iconElements` (`src/lib/svg/shapeElement.ts`) is the single icon-to-SVG translation: it filters to `visible` shapes and maps each to a `ShapeElement` — a tag plus a flat attribute record combining geometry (`chooseRectElement`) and paint (`shapePaintAttrs`, which resolves a no-fill shape (absent `fill` or `'none'`) to `fill="none"` and drops stroke attributes when stroke is unset or `none`). Attribute keys are camelCase; the XML printer in `serialize.ts` kebab-cases them (`strokeWidth` → `stroke-width`). The JSX printer in `codegen.ts` sits **after** SVGO and converts them back (`stroke-width` → `strokeWidth`).
 
 `serialize.ts` and `codegen.ts` are format printers only — adding a shape type touches the element tree once, never the printers.
 

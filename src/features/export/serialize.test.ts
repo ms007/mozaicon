@@ -73,7 +73,7 @@ describe('serializeIcon', () => {
     ).toBe(loadFixture('hidden-shape-filtered.svg'))
   })
 
-  it('writes default fill explicitly when fill is omitted', () => {
+  it('writes fill="none" when fill is omitted', () => {
     expect(serializeIcon(doc(baseRect))).toBe(loadFixture('fill-defaults.svg'))
   })
 

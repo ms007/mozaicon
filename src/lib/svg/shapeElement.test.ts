@@ -12,8 +12,8 @@ function withRadii(radii: [number, number, number, number]) {
 }
 
 describe('shapePaintAttrs', () => {
-  it('falls back to the default fill when fill is omitted', () => {
-    expect(shapePaintAttrs(base)).toEqual({ fill: '#000' })
+  it('treats a missing fill as none', () => {
+    expect(shapePaintAttrs(base)).toEqual({ fill: 'none' })
   })
 
   it('keeps an explicit fill', () => {
@@ -21,16 +21,16 @@ describe('shapePaintAttrs', () => {
   })
 
   it('omits stroke attributes when stroke is undefined', () => {
-    expect(shapePaintAttrs({ ...base, strokeWidth: 2 })).toEqual({ fill: '#000' })
+    expect(shapePaintAttrs({ ...base, strokeWidth: 2 })).toEqual({ fill: 'none' })
   })
 
   it('omits stroke attributes when stroke is none', () => {
-    expect(shapePaintAttrs({ ...base, stroke: 'none', strokeWidth: 2 })).toEqual({ fill: '#000' })
+    expect(shapePaintAttrs({ ...base, stroke: 'none', strokeWidth: 2 })).toEqual({ fill: 'none' })
   })
 
   it('includes stroke and strokeWidth when stroked', () => {
     expect(shapePaintAttrs({ ...base, stroke: '#00f', strokeWidth: 2 })).toEqual({
-      fill: '#000',
+      fill: 'none',
       stroke: '#00f',
       strokeWidth: 2,
     })
@@ -47,7 +47,7 @@ describe('shapeToElement', () => {
       width: 20,
       height: 10,
       rx: undefined,
-      fill: '#000',
+      fill: 'none',
     })
   })
 
@@ -64,9 +64,9 @@ describe('shapeToElement', () => {
     expect(el.attrs).not.toHaveProperty('x')
   })
 
-  it('applies default fill when fill is omitted', () => {
+  it('renders a missing fill as none', () => {
     const el = shapeToElement(base)
-    expect(el.attrs.fill).toBe('#000')
+    expect(el.attrs.fill).toBe('none')
   })
 
   it('keeps an explicit fill', () => {
@@ -129,7 +129,7 @@ describe('iconElements', () => {
     const [el] = iconElements(doc)
     expect(el.tag).toBe('path')
     expect(el.attrs).toHaveProperty('d')
-    expect(el.attrs.fill).toBe('#000')
+    expect(el.attrs.fill).toBe('none')
   })
 
   it('filters hidden shapes', () => {
